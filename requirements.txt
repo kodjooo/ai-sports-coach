@@ -1,0 +1,13 @@
+# Зависимости проекта «Виртуальный тренер»
+aiogram>=3.4,<4
+SQLAlchemy[asyncio]>=2.0
+asyncpg>=0.29
+alembic>=1.13
+chromadb>=0.5
+openai>=1.30
+APScheduler>=3.10
+pydantic-settings>=2.2
+
+# Тесты
+pytest>=8.0
+pytest-asyncio>=0.23

@@ -1,0 +1,62 @@
+# Все сервисы проекта. Запуск: docker compose up -d --build
+services:
+  postgres:
+    image: postgres:16-alpine
+    restart: unless-stopped
+    environment:
+      POSTGRES_USER: ${POSTGRES_USER}
+      POSTGRES_PASSWORD: ${POSTGRES_PASSWORD}
+      POSTGRES_DB: ${POSTGRES_DB}
+    volumes:
+      - pg_data:/var/lib/postgresql/data
+    healthcheck:
+      test: ["CMD-SHELL", "pg_isready -U ${POSTGRES_USER} -d ${POSTGRES_DB}"]
+      interval: 5s
+      timeout: 5s
+      retries: 10
+
+  chroma:
+    image: chromadb/chroma:0.5.23
+    restart: unless-stopped
+    environment:
+      IS_PERSISTENT: "TRUE"
+      ANONYMIZED_TELEMETRY: "FALSE"
+    volumes:
+      - chroma_data:/chroma/chroma
+    healthcheck:
+      test: ["CMD", "python", "-c", "import urllib.request; urllib.request.urlopen('http://localhost:8000/api/v2/heartbeat')"]
+      interval: 10s
+      timeout: 5s
+      retries: 10
+
+  bot:
+    build: .
+    restart: unless-stopped
+    env_file: .env
+    environment:
+      # Внутри сети compose обращаемся к сервисам по их именам
+      POSTGRES_HOST: postgres
+      POSTGRES_PORT: 5432
+      CHROMA_HOST: chroma
+      CHROMA_PORT: 8000
+    depends_on:
+      postgres:
+        condition: service_healthy
+      chroma:
+        condition: service_healthy
+
+  # Прогон тестов в контейнере: docker compose --profile test run --rm tests
+  tests:
+    build: .
+    profiles: ["test"]
+    env_file: .env
+    environment:
+      POSTGRES_HOST: postgres
+      CHROMA_HOST: chroma
+    volumes:
+      - ./tests:/app/tests
+    command: ["python", "-m", "pytest", "-q", "tests"]
+
+volumes:
+  pg_data:
+  chroma_data:

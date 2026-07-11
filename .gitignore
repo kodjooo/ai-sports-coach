@@ -1,0 +1,19 @@
+# Секреты и окружение
+.env
+secure/
+
+# Внутренние материалы (не для публикации)
+AGENTS.md
+.claude/
+docs/
+
+# Python
+__pycache__/
+*.py[cod]
+.pytest_cache/
+.venv/
+
+# ОС/IDE
+.DS_Store
+.vscode/
+.idea/
