@@ -9,7 +9,15 @@ from app.config import settings
 
 logger = logging.getLogger(__name__)
 
-client = AsyncOpenAI(api_key=settings.openai_api_key)
+_client: AsyncOpenAI | None = None
+
+
+def get_client() -> AsyncOpenAI:
+    """Ленивая инициализация клиента OpenAI (ключ нужен только при вызове)."""
+    global _client
+    if _client is None:
+        _client = AsyncOpenAI(api_key=settings.openai_api_key)
+    return _client
 
 # Системная роль тренера (docs/requirements.md, раздел 7)
 SYSTEM_PROMPT = (
@@ -24,7 +32,7 @@ SYSTEM_PROMPT = (
 async def chat(user_prompt: str) -> str:
     """Единичный запрос к модели рассуждений."""
     try:
-        resp = await client.chat.completions.create(
+        resp = await get_client().chat.completions.create(
             model=settings.openai_model,
             messages=[
                 {"role": "system", "content": SYSTEM_PROMPT},
@@ -39,7 +47,7 @@ async def chat(user_prompt: str) -> str:
 
 async def embed(text: str) -> list[float]:
     """Эмбеддинг текста для векторной памяти."""
-    resp = await client.embeddings.create(model=settings.openai_embed_model, input=text)
+    resp = await get_client().embeddings.create(model=settings.openai_embed_model, input=text)
     return resp.data[0].embedding
 
 
@@ -47,7 +55,7 @@ async def vision_estimate_kcal(image_url: str, grams: float | None) -> str:
     """Оценка калорийности блюда по фото (Фаза 3)."""
     hint = f"Примерный вес порции: {grams} г. " if grams else ""
     try:
-        resp = await client.chat.completions.create(
+        resp = await get_client().chat.completions.create(
             model=settings.openai_model,
             messages=[
                 {"role": "system", "content": SYSTEM_PROMPT},

@@ -5,7 +5,7 @@ secure/
 # Внутренние материалы (не для публикации)
 AGENTS.md
 .claude/
-docs/
+ai-docs/
 
 # Python
 __pycache__/
