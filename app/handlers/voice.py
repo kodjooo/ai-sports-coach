@@ -9,6 +9,7 @@ from app.core import llm
 from app.handlers import chat as chat_handlers
 from app.handlers import start as start_handlers
 from app.states import Onboarding
+from app.utils import typing
 
 router = Router()
 
@@ -17,14 +18,12 @@ router = Router()
 async def on_voice(message: Message, state: FSMContext, bot: Bot) -> None:
     """Скачиваем голос, распознаём и передаём текст в нужный обработчик."""
     voice = message.voice or message.audio
-    buf = await bot.download(voice.file_id)
-    text = await llm.transcribe(buf.read(), filename="voice.ogg")
+    async with typing(message):
+        buf = await bot.download(voice.file_id)
+        text = await llm.transcribe(buf.read(), filename="voice.ogg")
     if not text:
         await message.answer("Не разобрал голосовое, повтори текстом, пожалуйста.")
         return
-
-    # Показываем распознанное, чтобы пользователь видел, что понято
-    await message.answer(f"🗣 «{text}»")
 
     current = await state.get_state()
     if current == Onboarding.interview.state:

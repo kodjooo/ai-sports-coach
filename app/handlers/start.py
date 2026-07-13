@@ -12,6 +12,7 @@ from app.core import repository as repo
 from app.core.seed import ensure_default_templates
 from app.keyboards import main_menu
 from app.states import Onboarding
+from app.utils import parse_weight, typing
 
 router = Router()
 
@@ -67,7 +68,10 @@ async def handle_interview(message: Message, state: FSMContext, text: str) -> No
 
     # Достигли лимита уточнений — просим модель завершить
     force_finish = clarifications >= MAX_CLARIFICATIONS
-    result = await llm.interview_step(history, force_finish=force_finish)
+    if force_finish:
+        await message.answer("Секунду, собираю твой персональный профиль…")
+    async with typing(message):
+        result = await llm.interview_step(history, force_finish=force_finish)
 
     reply = result.get("reply") or "Понял."
     history.append({"role": "assistant", "content": reply})
@@ -98,12 +102,11 @@ async def interview_text(message: Message, state: FSMContext) -> None:
 
 
 async def handle_weight(message: Message, state: FSMContext, text: str) -> None:
-    """Приём веса числом (текст или расшифрованный голос) в конце онбординга."""
-    raw = text.strip().replace(",", ".")
-    try:
-        weight = float(raw)
-    except ValueError:
-        await message.answer("Не понял вес. Напиши число, например 82.5")
+    """Приём веса (текст или расшифрованный голос) в конце онбординга."""
+    async with typing(message):
+        weight = await parse_weight(text)
+    if weight is None:
+        await message.answer("Не уловил вес. Напиши, сколько сейчас весишь, например «76 кг».")
         return
 
     async with async_session() as db:
@@ -113,7 +116,8 @@ async def handle_weight(message: Message, state: FSMContext, text: str) -> None:
 
     await state.clear()
     await message.answer(
-        "Готово! Профиль настроен, стартовый план создан: День A (Пн) и День B (Ср).\n"
+        f"Записал вес — {weight:g} кг. Профиль настроен, стартовый план создан: "
+        "День A (Пн) и День B (Ср).\n"
         "Загляни в «План недели» или сразу начинай тренировку.",
         reply_markup=main_menu(),
     )

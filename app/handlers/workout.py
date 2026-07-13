@@ -14,6 +14,7 @@ from app.core.db import async_session
 from app.core.models import Session, User
 from app.keyboards import effort_kb, reps_kb, replace_scope_kb
 from app.states import Workout
+from app.utils import typing
 
 router = Router()
 
@@ -134,7 +135,7 @@ async def choose_effort(cb: CallbackQuery, state: FSMContext) -> None:
 async def _finish(target, state: FSMContext) -> None:
     data = await state.get_data()
     await target.answer("Тренировка завершена! Считаю итоги…")
-    async with async_session() as db:
+    async with typing(target), async_session() as db:
         session = await db.get(Session, data["session_id"])
         user = await db.get(User, session.user_id)
         await repo.finish_session(db, session)

@@ -11,6 +11,7 @@ from app.core import context as ctx
 from app.core import llm, vector
 from app.core import repository as repo
 from app.core.db import async_session
+from app.utils import parse_weight, typing
 
 router = Router()
 
@@ -28,21 +29,21 @@ async def handle_chat(message: Message, state: FSMContext, text: str) -> None:
 
         # Режим ожидания веса (после кнопки «Записать вес»)
         if data.get("expect_weight"):
-            raw = text.replace(",", ".")
-            try:
-                weight = float(raw)
-            except ValueError:
-                await message.answer("Не похоже на число. Напиши вес, например 81.3")
+            async with typing(message):
+                weight = await parse_weight(text)
+            if weight is None:
+                await message.answer("Не уловил вес. Напиши, например «81.3».")
                 return
             await repo.log_weight(db, user.id, weight)
             await state.update_data(expect_weight=False)
-            await message.answer(f"Записал вес {weight} кг ⚖️")
+            await message.answer(f"Записал вес — {weight:g} кг ⚖️")
             return
 
         # Свободный вопрос тренеру с персональным системным промптом
         facts, memory = await ctx.build_context(db, user.id, text)
         prompt = ctx.chat_prompt(facts, memory, text)
-        answer = await llm.chat(prompt, system_prompt=user.system_prompt)
+        async with typing(message):
+            answer = await llm.chat(prompt, system_prompt=user.system_prompt)
 
     # Реплику пользователя сохраняем в память как заметку
     await vector.add_memory(
