@@ -4,6 +4,12 @@ from __future__ import annotations
 from app.core.db import async_session
 from app.core import repository as repo
 
+WEEKDAYS = ["Пн", "Вт", "Ср", "Чт", "Пт", "Сб", "Вс"]
+
+
+def _wd(i: int) -> str:
+    return WEEKDAYS[i] if 0 <= i <= 6 else "?"
+
 
 def describe(action: dict) -> str | None:
     """Человеческое описание предложенного действия для подтверждения."""
@@ -22,6 +28,13 @@ def describe(action: dict) -> str | None:
         return f"Ставить напоминания на {int(args.get('hour', 0)):02d}:{int(args.get('minute', 0)):02d}"
     if name == "log_weight":
         return f"Записать вес {args.get('weight_kg')} кг"
+    if name == "set_plan":
+        workouts = args.get("workouts", [])
+        parts = [f"{_wd(w.get('weekday', 0))} ({len(w.get('exercises', []))} упр.)" for w in workouts]
+        line = f"Новый план на {len(workouts)} дн.: " + ", ".join(parts)
+        if args.get("hour") is not None:
+            line += f"; напоминания {int(args['hour']):02d}:{int(args.get('minute', 0)):02d}"
+        return line
     return None
 
 
@@ -61,5 +74,14 @@ async def apply(action: dict, tg_id: int) -> str:
             weight = float(args.get("weight_kg"))
             await repo.log_weight(db, user.id, weight)
             return f"Записал вес {weight:g} кг."
+
+        if name == "set_plan":
+            workouts = args.get("workouts", [])
+            if not workouts:
+                return "Пустой план — нечего применять."
+            n = await repo.build_custom_plan(db, user.id, workouts)
+            if args.get("hour") is not None:
+                await repo.set_train_time(db, user, int(args["hour"]), int(args.get("minute", 0)))
+            return f"Готово! Собрал новый план на {n} дн. Загляни в «План недели»."
 
     return "Не понял действие."

@@ -116,6 +116,51 @@ COACH_TOOLS = [
             },
         },
     },
+    {
+        "type": "function",
+        "function": {
+            "name": "set_plan",
+            "description": (
+                "Полностью пересобрать план тренировок клиента: задать дни недели и "
+                "упражнения на каждый день. Используй, когда предлагаешь новую программу. "
+                "Недостающие упражнения будут созданы автоматически — указывай для них "
+                "группу мышц и краткую технику."
+            ),
+            "parameters": {
+                "type": "object",
+                "properties": {
+                    "workouts": {
+                        "type": "array",
+                        "description": "По одному объекту на тренировочный день",
+                        "items": {
+                            "type": "object",
+                            "properties": {
+                                "weekday": {"type": "integer", "description": "0=Пн … 6=Вс"},
+                                "exercises": {
+                                    "type": "array",
+                                    "items": {
+                                        "type": "object",
+                                        "properties": {
+                                            "name": {"type": "string"},
+                                            "sets": {"type": "integer"},
+                                            "reps": {"type": "integer"},
+                                            "muscle_group": {"type": "string"},
+                                            "technique": {"type": "string"},
+                                        },
+                                        "required": ["name", "sets", "reps"],
+                                    },
+                                },
+                            },
+                            "required": ["weekday", "exercises"],
+                        },
+                    },
+                    "hour": {"type": "integer"},
+                    "minute": {"type": "integer"},
+                },
+                "required": ["workouts"],
+            },
+        },
+    },
 ]
 
 

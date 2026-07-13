@@ -108,6 +108,56 @@ async def find_exercise_by_name(db: AsyncSession, name: str) -> Exercise | None:
     return res.scalar_one_or_none()
 
 
+async def find_or_create_exercise(
+    db: AsyncSession, name: str, muscle_group: str | None = None, technique: str | None = None
+) -> Exercise:
+    """Находит упражнение по названию или создаёт новое (автопополнение каталога)."""
+    name = name.strip()
+    ex = await find_exercise_by_name(db, name)
+    if ex:
+        return ex
+    ex = Exercise(
+        name=name,
+        muscle_group=muscle_group,
+        technique=technique or "Техника не описана.",
+    )
+    db.add(ex)
+    await db.flush()
+    return ex
+
+
+async def build_custom_plan(db: AsyncSession, user_id: int, workouts: list[dict]) -> int:
+    """Пересобирает план из структуры тренера.
+
+    workouts: [{"weekday": int, "exercises": [{"name","sets","reps","muscle_group","technique"}]}]
+    Недостающие упражнения автоматически заводятся в каталог. Возвращает число дней.
+    """
+    # Деактивируем прежний план
+    old = await db.execute(select(WorkoutTemplate).where(WorkoutTemplate.user_id == user_id))
+    for tpl in old.scalars().all():
+        tpl.active = False
+
+    for i, w in enumerate(sorted(workouts, key=lambda x: x.get("weekday", 0))):
+        template = WorkoutTemplate(user_id=user_id, label=f"День {i + 1}", weekday=w.get("weekday", 0))
+        db.add(template)
+        await db.flush()
+        for idx, ex in enumerate(w.get("exercises", [])):
+            exo = await find_or_create_exercise(
+                db, ex.get("name", "Упражнение"), ex.get("muscle_group"), ex.get("technique")
+            )
+            db.add(
+                TemplateItem(
+                    template_id=template.id,
+                    exercise_id=exo.id,
+                    target_sets=ex.get("sets") or 3,
+                    target_reps=ex.get("reps") or 10,
+                    order_idx=idx,
+                )
+            )
+    await db.commit()
+    return len(workouts)
+
+
 async def _active_items_by_exercise(db: AsyncSession, user_id: int, exercise_id: int) -> list[TemplateItem]:
     res = await db.execute(
         select(TemplateItem)
