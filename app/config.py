@@ -10,8 +10,10 @@ class Settings(BaseSettings):
 
     # OpenAI
     openai_api_key: str
-    openai_model: str = "gpt-4o"
+    openai_model: str = "gpt-5"
     openai_embed_model: str = "text-embedding-3-small"
+    # Режим рассуждений для reasoning-моделей (gpt-5): minimal|low|medium|high
+    openai_reasoning_effort: str = "low"
 
     # PostgreSQL
     postgres_user: str = "coach"

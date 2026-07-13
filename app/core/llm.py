@@ -34,6 +34,7 @@ async def chat(user_prompt: str) -> str:
     try:
         resp = await get_client().chat.completions.create(
             model=settings.openai_model,
+            reasoning_effort=settings.openai_reasoning_effort,
             messages=[
                 {"role": "system", "content": SYSTEM_PROMPT},
                 {"role": "user", "content": user_prompt},
@@ -57,6 +58,7 @@ async def vision_estimate_kcal(image_url: str, grams: float | None) -> str:
     try:
         resp = await get_client().chat.completions.create(
             model=settings.openai_model,
+            reasoning_effort=settings.openai_reasoning_effort,
             messages=[
                 {"role": "system", "content": SYSTEM_PROMPT},
                 {
