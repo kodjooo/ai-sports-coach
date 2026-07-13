@@ -34,6 +34,9 @@ class User(Base):
     # Персональная настройка тренера по итогам интервью
     system_prompt: Mapped[str | None] = mapped_column(String)  # сгенерированный системный промпт
     profile_summary: Mapped[str | None] = mapped_column(String)  # краткая выжимка о клиенте
+    # Время тренировки для напоминаний (часы:минуты)
+    train_hour: Mapped[int | None] = mapped_column(Integer)
+    train_minute: Mapped[int | None] = mapped_column(Integer)
     created_at: Mapped[datetime] = mapped_column(DateTime(timezone=True), server_default=func.now())
 
 

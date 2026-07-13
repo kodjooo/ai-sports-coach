@@ -9,10 +9,10 @@ from aiogram.types import Message
 from app.core import llm
 from app.core.db import async_session
 from app.core import repository as repo
-from app.core.seed import ensure_default_templates
+from app.handlers.schedule import start_schedule
 from app.keyboards import main_menu
 from app.states import Onboarding
-from app.utils import parse_weight, typing
+from app.utils import parse_weight, react, typing
 
 router = Router()
 
@@ -68,8 +68,6 @@ async def handle_interview(message: Message, state: FSMContext, text: str) -> No
 
     # Достигли лимита уточнений — просим модель завершить
     force_finish = clarifications >= MAX_CLARIFICATIONS
-    if force_finish:
-        await message.answer("Секунду, собираю твой персональный профиль…")
     async with typing(message):
         result = await llm.interview_step(history, force_finish=force_finish)
 
@@ -77,20 +75,25 @@ async def handle_interview(message: Message, state: FSMContext, text: str) -> No
     history.append({"role": "assistant", "content": reply})
 
     if result.get("done"):
+        # Первое сообщение — подтверждение, что всё понял
+        await message.answer(reply)
+        # Второе — что готовит персональную настройку (генерация может занять время)
+        await message.answer("Настраиваю тренера под тебя, секунду…")
+        async with typing(message):
+            system_prompt = await llm.build_system_prompt(
+                result.get("profile_summary"), result.get("goal")
+            )
         async with async_session() as db:
             user = await repo.get_user_by_tg(db, message.from_user.id)
             await repo.save_personalization(
                 db,
                 user,
-                system_prompt=result.get("system_prompt"),
+                system_prompt=system_prompt,
                 profile_summary=result.get("profile_summary"),
                 goal=result.get("goal"),
             )
-        await message.answer(reply)
-        # Обязательный вопрос про вес числом
-        await state.set_state(Onboarding.waiting_weight)
-        await state.update_data(history=history)
-        await message.answer("И последнее: какой сейчас вес в кг? (например 82.5)")
+        # Дальше — выбор расписания (частота/дни/время)
+        await start_schedule(message, state)
     else:
         await state.update_data(history=history, clarifications=clarifications + 1)
         await message.answer(reply)
@@ -98,6 +101,7 @@ async def handle_interview(message: Message, state: FSMContext, text: str) -> No
 
 @router.message(Onboarding.interview, F.text)
 async def interview_text(message: Message, state: FSMContext) -> None:
+    await react(message, "👀")  # метка «прочитал»
     await handle_interview(message, state, message.text.strip())
 
 
@@ -112,13 +116,11 @@ async def handle_weight(message: Message, state: FSMContext, text: str) -> None:
     async with async_session() as db:
         user = await repo.get_user_by_tg(db, message.from_user.id)
         await repo.update_user_profile(db, user, weight_kg=weight)
-        await ensure_default_templates(db, user.id)
 
     await state.clear()
     await message.answer(
-        f"Записал вес — {weight:g} кг. Профиль настроен, стартовый план создан: "
-        "День A (Пн) и День B (Ср).\n"
-        "Загляни в «План недели» или сразу начинай тренировку.",
+        f"Записал вес — {weight:g} кг. Всё готово! Профиль и план настроены.\n"
+        "Нажми «▶️ Тренировка», когда будешь готов, или загляни в «⚙️ Настройки».",
         reply_markup=main_menu(),
     )
 

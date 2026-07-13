@@ -50,6 +50,14 @@ async def update_user_profile(
     return user
 
 
+async def set_train_time(db: AsyncSession, user: User, hour: int, minute: int) -> User:
+    """Сохраняет время тренировки для напоминаний."""
+    user.train_hour = hour
+    user.train_minute = minute
+    await db.commit()
+    return user
+
+
 async def save_personalization(
     db: AsyncSession,
     user: User,
@@ -234,6 +242,45 @@ async def weight_change(db: AsyncSession, user_id: int, days: int = 7) -> float 
     if len(rows) < 2:
         return None
     return float(rows[-1].weight_kg) - float(rows[0].weight_kg)
+
+
+async def total_done_sessions(db: AsyncSession, user_id: int) -> int:
+    """Всего завершённых тренировок."""
+    res = await db.execute(
+        select(func.count()).select_from(Session).where(
+            Session.user_id == user_id, Session.status == "done"
+        )
+    )
+    return int(res.scalar_one())
+
+
+async def exercise_records(db: AsyncSession, user_id: int) -> list[tuple[str, int]]:
+    """Личные рекорды по повторам в одном сете для каждого упражнения."""
+    res = await db.execute(
+        select(SetLog.exercise_id, func.max(SetLog.reps))
+        .join(Session, Session.id == SetLog.session_id)
+        .where(Session.user_id == user_id)
+        .group_by(SetLog.exercise_id)
+    )
+    records: list[tuple[str, int]] = []
+    for ex_id, best in res.all():
+        if best is None:
+            continue
+        ex = await get_exercise(db, ex_id)
+        records.append((ex.name if ex else f"упр.{ex_id}", int(best)))
+    return records
+
+
+async def current_weight(db: AsyncSession, user_id: int) -> float | None:
+    """Последний записанный вес."""
+    res = await db.execute(
+        select(WeightLog.weight_kg)
+        .where(WeightLog.user_id == user_id)
+        .order_by(WeightLog.logged_at.desc())
+        .limit(1)
+    )
+    val = res.scalar_one_or_none()
+    return float(val) if val is not None else None
 
 
 async def exercise_record(db: AsyncSession, user_id: int, exercise_id: int) -> int | None:

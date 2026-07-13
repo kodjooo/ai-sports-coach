@@ -9,7 +9,7 @@ from app.core import llm
 from app.handlers import chat as chat_handlers
 from app.handlers import start as start_handlers
 from app.states import Onboarding
-from app.utils import typing
+from app.utils import react, typing
 
 router = Router()
 
@@ -21,6 +21,8 @@ async def on_voice(message: Message, state: FSMContext, bot: Bot) -> None:
     async with typing(message):
         buf = await bot.download(voice.file_id)
         text = await llm.transcribe(buf.read(), filename="voice.ogg")
+    # Метка «прослушал» на голосовом
+    await react(message, "👌")
     if not text:
         await message.answer("Не разобрал голосовое, повтори текстом, пожалуйста.")
         return

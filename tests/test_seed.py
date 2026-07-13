@@ -1,14 +1,15 @@
 """Тесты консистентности сид-данных."""
-from app.core.seed import DEFAULT_TEMPLATES, EXERCISES
+from app.core.seed import EXERCISES, TEMPLATE_VARIANTS
 
 
-def test_template_items_reference_existing_exercises():
+def test_variant_items_reference_existing_exercises():
     names = {e["name"] for e in EXERCISES}
-    for tpl in DEFAULT_TEMPLATES:
-        for name, _sets, _reps in tpl["items"]:
+    for variant in TEMPLATE_VARIANTS:
+        for name, _sets, _reps in variant:
             assert name in names, f"Упражнение '{name}' отсутствует в каталоге"
 
 
-def test_templates_have_weekday():
-    for tpl in DEFAULT_TEMPLATES:
-        assert 0 <= tpl["weekday"] <= 6
+def test_variants_not_empty():
+    assert TEMPLATE_VARIANTS
+    for variant in TEMPLATE_VARIANTS:
+        assert len(variant) >= 1

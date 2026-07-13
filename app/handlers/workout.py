@@ -83,7 +83,7 @@ async def _show_set(target, state: FSMContext) -> None:
     await target.answer(text, reply_markup=reps_kb())
 
 
-@router.message(F.text == "▶️ Начать тренировку")
+@router.message(F.text == "▶️ Тренировка")
 async def start_from_menu(message: Message, state: FSMContext) -> None:
     await _begin(message, message.from_user.id, state)
 

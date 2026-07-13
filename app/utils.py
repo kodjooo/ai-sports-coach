@@ -5,9 +5,17 @@ import asyncio
 import re
 from contextlib import asynccontextmanager
 
-from aiogram.types import Message
+from aiogram.types import Message, ReactionTypeEmoji
 
 from app.core import llm
+
+
+async def react(message: Message, emoji: str) -> None:
+    """Ставит реакцию-эмодзи на сообщение (метка «получил/прослушал»). Ошибки глушим."""
+    try:
+        await message.react([ReactionTypeEmoji(emoji=emoji)])
+    except Exception:
+        pass
 
 
 async def parse_weight(text: str) -> float | None:

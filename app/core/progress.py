@@ -40,6 +40,41 @@ async def build_facts(db: AsyncSession, user_id: int, limit: int = 5) -> str:
     return "\n".join(lines)
 
 
+async def full_stats(db: AsyncSession, user_id: int) -> str:
+    """Расширенная статистика: всего, неделя, вес, рекорды."""
+    total = await repo.total_done_sessions(db, user_id)
+
+    since = date.today() - timedelta(days=7)
+    week = await repo.sessions_in_period(db, user_id, since)
+    week_done = len([s for s in week if s.status == "done"])
+    week_planned = len(week)
+
+    weight = await repo.current_weight(db, user_id)
+    dw = await repo.weight_change(db, user_id, days=30)
+    records = await repo.exercise_records(db, user_id)
+
+    lines = ["📊 <b>Статистика</b>", ""]
+    lines.append(f"🏋️ Всего тренировок: <b>{total}</b>")
+    lines.append(f"📅 За неделю: <b>{week_done}</b> из {week_planned}")
+
+    if weight is not None:
+        w_line = f"⚖️ Текущий вес: <b>{weight:g} кг</b>"
+        if dw is not None:
+            sign = "−" if dw < 0 else "+"
+            w_line += f" ({sign}{abs(dw):.1f} кг за месяц)"
+        lines.append(w_line)
+    else:
+        lines.append("⚖️ Вес ещё не записан")
+
+    if records:
+        lines.append("")
+        lines.append("🏆 <b>Рекорды</b> (макс. повторов в подходе):")
+        for name, best in records:
+            lines.append(f"• {name}: {best}")
+
+    return "\n".join(lines)
+
+
 async def weekly_report(db: AsyncSession, user_id: int) -> str:
     """Недельный отчёт: тренировки, динамика веса."""
     since = date.today() - timedelta(days=7)

@@ -5,7 +5,9 @@ from aiogram.fsm.state import State, StatesGroup
 class Onboarding(StatesGroup):
     """Регистрация нового пользователя через LLM-интервью."""
 
-    interview = State()      # свободный диалог-интервью с уточнениями
+    interview = State()       # свободный диалог-интервью с уточнениями
+    schedule = State()        # выбор частоты/дней/времени кнопками
+    custom_time = State()     # ручной ввод времени тренировки
     waiting_weight = State()  # обязательный вопрос про вес числом
 
 

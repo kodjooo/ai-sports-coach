@@ -38,26 +38,18 @@ EXERCISES: list[dict] = [
     },
 ]
 
-# Стартовые дни (label, weekday 0=Пн). Наполнение — по названиям упражнений.
-DEFAULT_TEMPLATES: list[dict] = [
-    {
-        "label": "День A",
-        "weekday": 0,  # понедельник
-        "items": [
-            ("Отжимания от пола", 3, 8),
-            ("Приседания", 3, 12),
-            ("Пресс (скручивания)", 3, 15),
-        ],
-    },
-    {
-        "label": "День B",
-        "weekday": 2,  # среда
-        "items": [
-            ("Приседания", 4, 12),
-            ("Планка", 3, 40),
-            ("Отжимания от пола", 3, 8),
-        ],
-    },
+# Варианты тренировочного дня (чередуются по дням недели для разнообразия)
+TEMPLATE_VARIANTS: list[list[tuple[str, int, int]]] = [
+    [
+        ("Отжимания от пола", 3, 8),
+        ("Приседания", 3, 12),
+        ("Пресс (скручивания)", 3, 15),
+    ],
+    [
+        ("Приседания", 4, 12),
+        ("Планка", 3, 40),
+        ("Отжимания от пола", 3, 8),
+    ],
 ]
 
 
@@ -71,25 +63,26 @@ async def seed_exercises(db: AsyncSession) -> None:
     await db.commit()
 
 
-async def ensure_default_templates(db: AsyncSession, user_id: int) -> None:
-    """Создаёт стартовые шаблоны дней, если у пользователя их ещё нет."""
-    existing = await db.scalar(
-        select(func.count())
-        .select_from(WorkoutTemplate)
-        .where(WorkoutTemplate.user_id == user_id)
-    )
-    if existing and existing > 0:
-        return
+async def create_templates(db: AsyncSession, user_id: int, weekdays: list[int]) -> None:
+    """Пересоздаёт план: по одному шаблону на каждый выбранный день недели.
+
+    Варианты дней чередуются для разнообразия. Прежние шаблоны деактивируются.
+    """
+    # Деактивируем прежний план (пересоздание из онбординга или настроек)
+    old = await db.execute(select(WorkoutTemplate).where(WorkoutTemplate.user_id == user_id))
+    for tpl in old.scalars().all():
+        tpl.active = False
 
     # Карта имя упражнения -> id
     res = await db.execute(select(Exercise))
     by_name = {ex.name: ex.id for ex in res.scalars().all()}
 
-    for tpl in DEFAULT_TEMPLATES:
-        template = WorkoutTemplate(user_id=user_id, label=tpl["label"], weekday=tpl["weekday"])
+    for i, weekday in enumerate(sorted(weekdays)):
+        variant = TEMPLATE_VARIANTS[i % len(TEMPLATE_VARIANTS)]
+        template = WorkoutTemplate(user_id=user_id, label=f"День {i + 1}", weekday=weekday)
         db.add(template)
         await db.flush()  # получаем template.id
-        for idx, (name, sets, reps) in enumerate(tpl["items"]):
+        for idx, (name, sets, reps) in enumerate(variant):
             ex_id = by_name.get(name)
             if ex_id is None:
                 continue

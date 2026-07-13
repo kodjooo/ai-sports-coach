@@ -1,6 +1,7 @@
 """Свободный чат с тренером (персональный промпт) и запись веса текстом."""
 from __future__ import annotations
 
+import re
 from datetime import date
 
 from aiogram import F, Router
@@ -36,6 +37,13 @@ async def handle_chat(message: Message, state: FSMContext, text: str) -> None:
                 return
             await repo.log_weight(db, user.id, weight)
             await state.update_data(expect_weight=False)
+            await message.answer(f"Записал вес — {weight:g} кг ⚖️")
+            return
+
+        # Одинокое число (например, ответ на недельный вопрос о весе) → запись веса
+        if re.fullmatch(r"\d{2,3}([.,]\d)?\s*(кг|kg)?", text):
+            weight = float(re.sub(r"[^\d.,]", "", text).replace(",", "."))
+            await repo.log_weight(db, user.id, weight)
             await message.answer(f"Записал вес — {weight:g} кг ⚖️")
             return
 
