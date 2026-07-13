@@ -30,6 +30,11 @@ class Settings(BaseSettings):
     chroma_host: str = "chroma"
     chroma_port: int = 8000
 
+    # Redis (хранилище FSM — состояние переживает перезапуск)
+    redis_host: str = "redis"
+    redis_port: int = 6379
+    redis_db: int = 0
+
     # Планировщик
     tz: str = "Europe/Chisinau"
     reminder_hour: int = 8
@@ -44,6 +49,10 @@ class Settings(BaseSettings):
             f"postgresql+asyncpg://{self.postgres_user}:{self.postgres_password}"
             f"@{self.postgres_host}:{self.postgres_port}/{self.postgres_db}"
         )
+
+    @property
+    def redis_url(self) -> str:
+        return f"redis://{self.redis_host}:{self.redis_port}/{self.redis_db}"
 
     @property
     def sync_database_url(self) -> str:

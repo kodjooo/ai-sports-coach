@@ -7,6 +7,7 @@ import logging
 from aiogram import Bot, Dispatcher
 from aiogram.client.default import DefaultBotProperties
 from aiogram.enums import ParseMode
+from aiogram.fsm.storage.redis import RedisStorage
 from alembic import command
 from alembic.config import Config
 
@@ -39,7 +40,9 @@ async def main() -> None:
         token=settings.tg_token,
         default=DefaultBotProperties(parse_mode=ParseMode.HTML),
     )
-    dp = Dispatcher()
+    # FSM в Redis — состояние диалога переживает перезапуск бота
+    storage = RedisStorage.from_url(settings.redis_url)
+    dp = Dispatcher(storage=storage)
     dp.include_router(get_root_router())
 
     scheduler = setup_scheduler(bot)

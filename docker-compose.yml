@@ -29,6 +29,17 @@ services:
       timeout: 5s
       retries: 10
 
+  redis:
+    image: redis:7-alpine
+    restart: unless-stopped
+    volumes:
+      - redis_data:/data
+    healthcheck:
+      test: ["CMD", "redis-cli", "ping"]
+      interval: 5s
+      timeout: 5s
+      retries: 10
+
   bot:
     build: .
     restart: unless-stopped
@@ -39,10 +50,14 @@ services:
       POSTGRES_PORT: 5432
       CHROMA_HOST: chroma
       CHROMA_PORT: 8000
+      REDIS_HOST: redis
+      REDIS_PORT: 6379
     depends_on:
       postgres:
         condition: service_healthy
       chroma:
+        condition: service_healthy
+      redis:
         condition: service_healthy
 
   # Прогон тестов в контейнере: docker compose --profile test run --rm tests
@@ -60,3 +75,4 @@ services:
 volumes:
   pg_data:
   chroma_data:
+  redis_data:
