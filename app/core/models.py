@@ -37,6 +37,8 @@ class User(Base):
     # Время тренировки для напоминаний (часы:минуты)
     train_hour: Mapped[int | None] = mapped_column(Integer)
     train_minute: Mapped[int | None] = mapped_column(Integer)
+    # Бегущее резюме старой переписки с тренером (авто-суммаризация)
+    chat_summary: Mapped[str | None] = mapped_column(String)
     created_at: Mapped[datetime] = mapped_column(DateTime(timezone=True), server_default=func.now())
 
 
@@ -110,6 +112,18 @@ class WeightLog(Base):
     user_id: Mapped[int] = mapped_column(BigInteger, ForeignKey("users.id"))
     weight_kg: Mapped[Decimal | None] = mapped_column(Numeric)
     logged_at: Mapped[datetime] = mapped_column(DateTime(timezone=True), server_default=func.now())
+
+
+class ChatMessage(Base):
+    """Окно переписки пользователя с тренером (короткая память диалога)."""
+
+    __tablename__ = "chat_messages"
+
+    id: Mapped[int] = mapped_column(BigInteger, primary_key=True)
+    user_id: Mapped[int] = mapped_column(BigInteger, ForeignKey("users.id"))
+    role: Mapped[str] = mapped_column(String)  # 'user' | 'assistant'
+    content: Mapped[str] = mapped_column(String)
+    created_at: Mapped[datetime] = mapped_column(DateTime(timezone=True), server_default=func.now())
 
 
 class Meal(Base):

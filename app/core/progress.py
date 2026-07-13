@@ -27,8 +27,28 @@ async def format_session_summary(db: AsyncSession, session: Session) -> str:
     return f"{label}: " + "; ".join(parts) if parts else f"{label}: без записей"
 
 
-async def build_facts(db: AsyncSession, user_id: int, limit: int = 5) -> str:
-    """Текстовая выжимка последних тренировок для промпта LLM."""
+WEEKDAYS = ["Пн", "Вт", "Ср", "Чт", "Пт", "Сб", "Вс"]
+
+
+async def plan_text(db: AsyncSession, user_id: int) -> str:
+    """Текущий план недели одной строкой-блоком для контекста тренера."""
+    templates = await repo.list_templates(db, user_id)
+    if not templates:
+        return "план не настроен"
+    lines = []
+    for tpl in templates:
+        day = WEEKDAYS[tpl.weekday] if tpl.weekday is not None else "—"
+        items = await repo.list_template_items(db, tpl.id)
+        parts = []
+        for it in items:
+            ex = await repo.get_exercise(db, it.exercise_id)
+            parts.append(f"{ex.name if ex else '?'} {it.target_sets}×{it.target_reps}")
+        lines.append(f"{tpl.label} ({day}): " + ", ".join(parts))
+    return "; ".join(lines)
+
+
+async def build_facts(db: AsyncSession, user_id: int, limit: int = 30) -> str:
+    """Текстовая выжимка последних тренировок (до ~2 месяцев) для промпта LLM."""
     sessions = await repo.recent_sessions(db, user_id, limit=limit)
     if not sessions:
         return "Пока нет завершённых тренировок."

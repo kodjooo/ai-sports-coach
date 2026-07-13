@@ -75,6 +75,18 @@ def warmup_done_kb() -> InlineKeyboardMarkup:
     )
 
 
+def confirm_action_kb() -> InlineKeyboardMarkup:
+    """Подтверждение предложенного тренером изменения."""
+    return InlineKeyboardMarkup(
+        inline_keyboard=[
+            [
+                InlineKeyboardButton(text="✅ Применить", callback_data="act:apply"),
+                InlineKeyboardButton(text="↩️ Отменить", callback_data="act:cancel"),
+            ]
+        ]
+    )
+
+
 def cooldown_done_kb() -> InlineKeyboardMarkup:
     """Кнопка завершения тренировки после заминки."""
     return InlineKeyboardMarkup(

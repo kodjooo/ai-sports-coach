@@ -7,6 +7,7 @@ from sqlalchemy import func, select
 from sqlalchemy.ext.asyncio import AsyncSession
 
 from app.core.models import (
+    ChatMessage,
     Exercise,
     Session,
     SetLog,
@@ -48,6 +49,101 @@ async def update_user_profile(
         db.add(WeightLog(user_id=user.id, weight_kg=weight_kg))
     await db.commit()
     return user
+
+
+# ---------- Память диалога (окно + резюме) ----------
+
+async def add_chat_message(db: AsyncSession, user_id: int, role: str, content: str) -> None:
+    db.add(ChatMessage(user_id=user_id, role=role, content=content))
+    await db.commit()
+
+
+async def get_chat_window(db: AsyncSession, user_id: int, limit: int = 12) -> list[dict]:
+    """Последние сообщения диалога в хронологическом порядке."""
+    res = await db.execute(
+        select(ChatMessage)
+        .where(ChatMessage.user_id == user_id)
+        .order_by(ChatMessage.created_at.desc())
+        .limit(limit)
+    )
+    rows = list(res.scalars().all())
+    rows.reverse()
+    return [{"role": r.role, "content": r.content} for r in rows]
+
+
+async def count_chat_messages(db: AsyncSession, user_id: int) -> int:
+    res = await db.execute(
+        select(func.count()).select_from(ChatMessage).where(ChatMessage.user_id == user_id)
+    )
+    return int(res.scalar_one())
+
+
+async def pop_oldest_chat_messages(db: AsyncSession, user_id: int, count: int) -> list[dict]:
+    """Забирает и удаляет `count` самых старых сообщений (для суммаризации)."""
+    res = await db.execute(
+        select(ChatMessage)
+        .where(ChatMessage.user_id == user_id)
+        .order_by(ChatMessage.created_at)
+        .limit(count)
+    )
+    rows = list(res.scalars().all())
+    out = [{"role": r.role, "content": r.content} for r in rows]
+    for r in rows:
+        await db.delete(r)
+    await db.commit()
+    return out
+
+
+async def set_chat_summary(db: AsyncSession, user_id: int, summary: str) -> None:
+    user = await db.get(User, user_id)
+    if user:
+        user.chat_summary = summary
+        await db.commit()
+
+
+# ---------- Исполнители действий тренера ----------
+
+async def find_exercise_by_name(db: AsyncSession, name: str) -> Exercise | None:
+    res = await db.execute(select(Exercise).where(Exercise.name.ilike(f"%{name}%")).limit(1))
+    return res.scalar_one_or_none()
+
+
+async def _active_items_by_exercise(db: AsyncSession, user_id: int, exercise_id: int) -> list[TemplateItem]:
+    res = await db.execute(
+        select(TemplateItem)
+        .join(WorkoutTemplate, WorkoutTemplate.id == TemplateItem.template_id)
+        .where(
+            WorkoutTemplate.user_id == user_id,
+            WorkoutTemplate.active.is_(True),
+            TemplateItem.exercise_id == exercise_id,
+        )
+    )
+    return list(res.scalars().all())
+
+
+async def adjust_load(
+    db: AsyncSession, user_id: int, exercise_id: int, sets: int | None, reps: int | None
+) -> int:
+    """Меняет цель подходов/повторов упражнения во всех активных шаблонах. Возвращает число правок."""
+    items = await _active_items_by_exercise(db, user_id, exercise_id)
+    for it in items:
+        if sets is not None:
+            it.target_sets = sets
+        if reps is not None:
+            it.target_reps = reps
+    await db.commit()
+    return len(items)
+
+
+async def replace_exercise_in_plan(
+    db: AsyncSession, user_id: int, old_exercise_id: int, new_exercise_id: int
+) -> int:
+    """Заменяет упражнение во всех активных шаблонах пользователя."""
+    items = await _active_items_by_exercise(db, user_id, old_exercise_id)
+    for it in items:
+        it.exercise_id = new_exercise_id
+    await db.commit()
+    return len(items)
 
 
 async def set_train_time(db: AsyncSession, user: User, hour: int, minute: int) -> User:

@@ -59,6 +59,123 @@ async def chat(user_prompt: str, system_prompt: str | None = None) -> str:
         return "Сейчас не могу связаться с тренерским модулем, но твои результаты записаны."
 
 
+# Инструменты, которыми тренер может предложить изменить программу (с подтверждением)
+COACH_TOOLS = [
+    {
+        "type": "function",
+        "function": {
+            "name": "adjust_load",
+            "description": "Изменить целевые подходы и/или повторы упражнения в плане клиента",
+            "parameters": {
+                "type": "object",
+                "properties": {
+                    "exercise_name": {"type": "string", "description": "Название упражнения из плана"},
+                    "target_sets": {"type": "integer"},
+                    "target_reps": {"type": "integer"},
+                },
+                "required": ["exercise_name"],
+            },
+        },
+    },
+    {
+        "type": "function",
+        "function": {
+            "name": "replace_exercise",
+            "description": "Заменить упражнение в плане на другое",
+            "parameters": {
+                "type": "object",
+                "properties": {
+                    "old_exercise": {"type": "string"},
+                    "new_exercise": {"type": "string"},
+                },
+                "required": ["old_exercise", "new_exercise"],
+            },
+        },
+    },
+    {
+        "type": "function",
+        "function": {
+            "name": "set_time",
+            "description": "Изменить время напоминаний о тренировке",
+            "parameters": {
+                "type": "object",
+                "properties": {"hour": {"type": "integer"}, "minute": {"type": "integer"}},
+                "required": ["hour"],
+            },
+        },
+    },
+    {
+        "type": "function",
+        "function": {
+            "name": "log_weight",
+            "description": "Записать текущий вес клиента в кг",
+            "parameters": {
+                "type": "object",
+                "properties": {"weight_kg": {"type": "number"}},
+                "required": ["weight_kg"],
+            },
+        },
+    },
+]
+
+
+async def chat_with_tools(messages: list[dict], system: str) -> dict:
+    """Диалоговый ответ тренера с возможностью предложить действие (function calling).
+
+    Возвращает {"text": str, "action": {"name","args"}|None}.
+    Действие НЕ исполняется здесь — только предлагается для подтверждения.
+    """
+    full = [{"role": "system", "content": system}] + messages
+    try:
+        resp = await get_client().chat.completions.create(
+            model=settings.openai_model,
+            reasoning_effort=settings.openai_reasoning_effort,
+            tools=COACH_TOOLS,
+            tool_choice="auto",
+            messages=full,
+        )
+        msg = resp.choices[0].message
+        action = None
+        if msg.tool_calls:
+            tc = msg.tool_calls[0]
+            try:
+                action = {"name": tc.function.name, "args": json.loads(tc.function.arguments or "{}")}
+            except Exception:
+                action = None
+        return {"text": msg.content or "", "action": action}
+    except Exception as exc:
+        logger.warning("Ошибка chat_with_tools: %s", exc)
+        return {"text": "Сейчас не могу ответить, попробуй чуть позже.", "action": None}
+
+
+async def summarize_history(prev_summary: str | None, messages: list[dict]) -> str:
+    """Сжимает старые реплики (+ прежнее резюме) в новое краткое резюме."""
+    dialog = "\n".join(f"{m['role']}: {m['content']}" for m in messages)
+    try:
+        resp = await get_client().chat.completions.create(
+            model=settings.openai_model,
+            reasoning_effort="minimal",
+            messages=[
+                {
+                    "role": "system",
+                    "content": (
+                        "Обнови краткое резюме диалога клиента с тренером. Сохрани важное: "
+                        "жалобы, травмы, предпочтения, договорённости, настроение. 4–6 предложений, "
+                        "без воды. Верни только текст резюме."
+                    ),
+                },
+                {
+                    "role": "user",
+                    "content": f"Прежнее резюме:\n{prev_summary or '—'}\n\nНовые реплики:\n{dialog}",
+                },
+            ],
+        )
+        return resp.choices[0].message.content or (prev_summary or "")
+    except Exception as exc:
+        logger.warning("Ошибка суммаризации: %s", exc)
+        return prev_summary or ""
+
+
 async def transcribe(audio_bytes: bytes, filename: str = "voice.ogg") -> str:
     """Распознаёт речь из голосового сообщения (Telegram присылает ogg/opus)."""
     try:
