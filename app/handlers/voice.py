@@ -33,5 +33,7 @@ async def on_voice(message: Message, state: FSMContext, bot: Bot) -> None:
         await env_handlers.handle_equipment(message, state, text)
     elif current == Onboarding.waiting_weight.state:
         await start_handlers.handle_weight(message, state, text)
+    elif current == Onboarding.waiting_height.state:
+        await start_handlers.handle_height(message, state, text)
     else:
         await chat_handlers.handle_chat(message, state, text)

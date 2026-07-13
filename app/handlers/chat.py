@@ -165,3 +165,12 @@ async def act_cancel(cb: CallbackQuery, state: FSMContext) -> None:
 @router.message(F.text & ~F.text.startswith("/"))
 async def free_chat(message: Message, state: FSMContext) -> None:
     await handle_chat(message, state, message.text)
+
+
+@router.callback_query()
+async def stale_callback(cb: CallbackQuery) -> None:
+    """Фолбэк для устаревших кнопок (например, после перезапуска бота).
+
+    Регистрируется последним — реальные обработчики срабатывают раньше.
+    """
+    await cb.answer("Кнопка устарела. Открой /menu или начни заново — /start.", show_alert=True)

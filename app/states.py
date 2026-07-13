@@ -10,7 +10,8 @@ class Onboarding(StatesGroup):
     equipment = State()       # что есть из инвентаря (текст)
     schedule = State()        # выбор частоты/дней/времени кнопками
     custom_time = State()     # ручной ввод времени тренировки
-    waiting_weight = State()  # обязательный вопрос про вес числом
+    waiting_weight = State()  # вопрос про вес числом (если не сказан в интервью)
+    waiting_height = State()  # вопрос про рост (если не сказан в интервью)
 
 
 class Workout(StatesGroup):

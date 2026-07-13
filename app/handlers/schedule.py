@@ -97,9 +97,7 @@ async def _apply_time(message: Message, tg_id: int, state: FSMContext, hour: int
             reply_markup=main_menu(),
         )
     else:
-        # Онбординг: последний шаг — вес
-        await state.set_state(Onboarding.waiting_weight)
-        await message.answer(
-            f"Отлично, расписание: {schedule_line}.\n"
-            "И последнее: какой сейчас вес в кг? (например 82.5)"
-        )
+        # Онбординг: дальше вес/рост — только если их ещё нет
+        await message.answer(f"Отлично, расписание: {schedule_line}.")
+        from app.handlers.start import after_schedule
+        await after_schedule(message, tg_id, state)

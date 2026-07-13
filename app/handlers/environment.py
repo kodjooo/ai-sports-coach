@@ -21,6 +21,15 @@ async def start_environment(message: Message, state: FSMContext, from_settings: 
     await message.answer("Где чаще всего тренируешься?", reply_markup=env_kb())
 
 
+async def ask_equipment(message: Message, state: FSMContext) -> None:
+    """Спросить только инвентарь (место уже известно)."""
+    await state.set_state(Onboarding.equipment)
+    await message.answer(
+        "Что есть из инвентаря? Напиши через запятую (турник, гантели, резинки, скамья…) "
+        "или «ничего»."
+    )
+
+
 @router.callback_query(Onboarding.environment, F.data.startswith("env:"))
 async def pick_env(cb: CallbackQuery, state: FSMContext) -> None:
     env = cb.data.split(":", 1)[1]

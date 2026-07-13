@@ -30,6 +30,7 @@ class User(Base):
     tg_id: Mapped[int] = mapped_column(BigInteger, unique=True, nullable=False)
     name: Mapped[str | None] = mapped_column(String)
     weight_kg: Mapped[Decimal | None] = mapped_column(Numeric)
+    height_cm: Mapped[int | None] = mapped_column(Integer)  # рост, см
     goal: Mapped[str | None] = mapped_column(String)  # напр. 'похудеть+сила'
     # Персональная настройка тренера по итогам интервью
     system_prompt: Mapped[str | None] = mapped_column(String)  # сгенерированный системный промпт
