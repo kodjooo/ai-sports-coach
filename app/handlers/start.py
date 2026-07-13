@@ -77,8 +77,8 @@ async def handle_interview(message: Message, state: FSMContext, text: str) -> No
     if result.get("done"):
         # Первое сообщение — подтверждение, что всё понял
         await message.answer(reply)
-        # Второе — что готовит персональную настройку (генерация может занять время)
-        await message.answer("Настраиваю тренера под тебя, секунду…")
+        # Второе — что готовим программу (генерация может занять время)
+        await message.answer("Отлично! Составлю программу под тебя — ещё пара уточнений 👇")
         async with typing(message):
             system_prompt = await llm.build_system_prompt(
                 result.get("profile_summary"), result.get("goal")
