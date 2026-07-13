@@ -3,10 +3,10 @@ from aiogram.fsm.state import State, StatesGroup
 
 
 class Onboarding(StatesGroup):
-    """Регистрация нового пользователя."""
+    """Регистрация нового пользователя через LLM-интервью."""
 
-    waiting_goal = State()
-    waiting_weight = State()
+    interview = State()      # свободный диалог-интервью с уточнениями
+    waiting_weight = State()  # обязательный вопрос про вес числом
 
 
 class Workout(StatesGroup):

@@ -1,4 +1,4 @@
-"""Свободный чат с тренером и запись веса текстом."""
+"""Свободный чат с тренером (персональный промпт) и запись веса текстом."""
 from __future__ import annotations
 
 from datetime import date
@@ -15,9 +15,9 @@ from app.core.db import async_session
 router = Router()
 
 
-@router.message(F.text & ~F.text.startswith("/"))
-async def free_chat(message: Message, state: FSMContext) -> None:
-    text = message.text.strip()
+async def handle_chat(message: Message, state: FSMContext, text: str) -> None:
+    """Обработка свободного сообщения (текст или расшифрованный голос)."""
+    text = text.strip()
     data = await state.get_data()
 
     async with async_session() as db:
@@ -39,13 +39,18 @@ async def free_chat(message: Message, state: FSMContext) -> None:
             await message.answer(f"Записал вес {weight} кг ⚖️")
             return
 
-        # Свободный вопрос тренеру
+        # Свободный вопрос тренеру с персональным системным промптом
         facts, memory = await ctx.build_context(db, user.id, text)
         prompt = ctx.chat_prompt(facts, memory, text)
-        answer = await llm.chat(prompt)
+        answer = await llm.chat(prompt, system_prompt=user.system_prompt)
 
     # Реплику пользователя сохраняем в память как заметку
     await vector.add_memory(
         user.id, f"note-{message.message_id}", text, {"type": "user_note", "date": str(date.today())}
     )
     await message.answer(answer)
+
+
+@router.message(F.text & ~F.text.startswith("/"))
+async def free_chat(message: Message, state: FSMContext) -> None:
+    await handle_chat(message, state, message.text)

@@ -50,6 +50,24 @@ async def update_user_profile(
     return user
 
 
+async def save_personalization(
+    db: AsyncSession,
+    user: User,
+    system_prompt: str | None,
+    profile_summary: str | None,
+    goal: str | None,
+) -> User:
+    """Сохраняет результаты интервью: персональный промпт и профиль."""
+    if system_prompt:
+        user.system_prompt = system_prompt
+    if profile_summary:
+        user.profile_summary = profile_summary
+    if goal:
+        user.goal = goal
+    await db.commit()
+    return user
+
+
 # ---------- Упражнения и шаблоны ----------
 
 async def list_templates(db: AsyncSession, user_id: int) -> list[WorkoutTemplate]:

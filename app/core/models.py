@@ -31,6 +31,9 @@ class User(Base):
     name: Mapped[str | None] = mapped_column(String)
     weight_kg: Mapped[Decimal | None] = mapped_column(Numeric)
     goal: Mapped[str | None] = mapped_column(String)  # напр. 'похудеть+сила'
+    # Персональная настройка тренера по итогам интервью
+    system_prompt: Mapped[str | None] = mapped_column(String)  # сгенерированный системный промпт
+    profile_summary: Mapped[str | None] = mapped_column(String)  # краткая выжимка о клиенте
     created_at: Mapped[datetime] = mapped_column(DateTime(timezone=True), server_default=func.now())
 
 

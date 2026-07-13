@@ -10,7 +10,9 @@
 - Python 3.12, aiogram 3.x (long polling)
 - PostgreSQL (структурированные данные) + Alembic (миграции)
 - ChromaDB (семантическая память)
-- OpenAI GPT-4 (диалог, фидбек, Vision) + эмбеддинги `text-embedding-3-small`
+- OpenAI GPT-5 (диалог, фидбек, Vision) + эмбеддинги `text-embedding-3-small`
+- Распознавание голосовых сообщений (`whisper-1`)
+- Персональный онбординг: LLM-интервью → индивидуальный системный промпт тренера
 - APScheduler (утренние напоминания, недельный отчёт)
 
 ## Сервисы docker-compose
@@ -91,7 +93,7 @@ app/
   config.py          — настройки из .env
   keyboards.py       — inline/reply клавиатуры
   states.py          — FSM
-  handlers/          — start, menu, workout, chat, nutrition
+  handlers/          — start (интервью), menu, workout, chat, voice, nutrition
   core/              — db, models, repository, llm, vector, context, progress, seed
   scheduler/         — reminders (APScheduler)
 migrations/          — Alembic

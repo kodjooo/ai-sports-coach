@@ -12,8 +12,12 @@ class Settings(BaseSettings):
     openai_api_key: str
     openai_model: str = "gpt-5"
     openai_embed_model: str = "text-embedding-3-small"
+    # Модель распознавания речи (голосовые сообщения)
+    openai_transcribe_model: str = "whisper-1"
     # Режим рассуждений для reasoning-моделей (gpt-5): minimal|low|medium|high
     openai_reasoning_effort: str = "low"
+    # Более качественный режим для онбординга (генерация персонального промпта)
+    openai_reasoning_effort_onboarding: str = "medium"
 
     # PostgreSQL
     postgres_user: str = "coach"

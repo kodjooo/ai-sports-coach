@@ -142,7 +142,7 @@ async def _finish(target, state: FSMContext) -> None:
         summary = await progress.format_session_summary(db, session)
         facts, memory = await ctx.build_context(db, user.id, summary)
         prompt = ctx.feedback_prompt(facts, memory, summary)
-        feedback = await llm.chat(prompt)
+        feedback = await llm.chat(prompt, system_prompt=user.system_prompt)
 
     # Пишем итог и фидбек в векторную память
     await vector.add_memory(
