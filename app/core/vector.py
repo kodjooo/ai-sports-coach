@@ -37,6 +37,14 @@ async def add_memory(user_id: int, doc_id: str, text: str, metadata: dict) -> No
         logger.warning("Не удалось записать в ChromaDB: %s", exc)
 
 
+def clear_user(user_id: int) -> None:
+    """Удаляет всю семантическую память пользователя из ChromaDB."""
+    try:
+        _get_collection().delete(where={"user_id": user_id})
+    except Exception as exc:
+        logger.warning("Не удалось очистить память ChromaDB: %s", exc)
+
+
 async def query_memory(user_id: int, query_text: str, n_results: int = 6) -> list[str]:
     """Возвращает top-K релевантных фрагментов памяти пользователя."""
     try:

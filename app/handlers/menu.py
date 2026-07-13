@@ -11,9 +11,10 @@ from aiogram.types import CallbackQuery, Message
 from app.core.db import async_session
 from app.core import progress
 from app.core import repository as repo
+from app.core import vector
 from app.handlers.environment import start_environment
 from app.handlers.schedule import start_schedule
-from app.keyboards import main_menu, settings_menu
+from app.keyboards import main_menu, reset_confirm_kb, settings_menu
 
 router = Router()
 
@@ -122,3 +123,36 @@ async def settings_weight(cb: CallbackQuery, state: FSMContext) -> None:
     await state.update_data(expect_weight=True)
     await cb.message.answer("Напиши текущий вес в кг (например 81.3).")
     await cb.answer()
+
+
+@router.callback_query(F.data == "set:reset")
+async def settings_reset(cb: CallbackQuery) -> None:
+    await cb.message.answer(
+        "♻️ Сбросить историю? Удалю профиль, план, тренировки, вес и переписку — "
+        "и начнём настройку с нуля. Это необратимо.",
+        reply_markup=reset_confirm_kb(),
+    )
+    await cb.answer()
+
+
+@router.callback_query(F.data == "reset:no")
+async def reset_cancel(cb: CallbackQuery) -> None:
+    await cb.message.answer("Отменил, всё на месте 👌")
+    await cb.answer()
+
+
+@router.callback_query(F.data == "reset:yes")
+async def reset_confirm(cb: CallbackQuery, state: FSMContext) -> None:
+    await cb.answer()
+    async with async_session() as db:
+        user = await repo.get_user_by_tg(db, cb.from_user.id)
+        if user is None:
+            await cb.message.answer("Нечего сбрасывать. Нажми /start.")
+            return
+        await repo.reset_user(db, user)
+    vector.clear_user(user.id)
+    await state.clear()
+    await cb.message.answer("Готово, всё сброшено. Начнём заново!")
+    # Запускаем онбординг с чистого листа
+    from app.handlers.start import _start_interview
+    await _start_interview(cb.message, state)

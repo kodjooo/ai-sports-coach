@@ -3,12 +3,13 @@ from __future__ import annotations
 
 from datetime import date, datetime, timedelta, timezone
 
-from sqlalchemy import func, select
+from sqlalchemy import delete, func, select
 from sqlalchemy.ext.asyncio import AsyncSession
 
 from app.core.models import (
     ChatMessage,
     Exercise,
+    Meal,
     Session,
     SetLog,
     TemplateItem,
@@ -30,6 +31,40 @@ async def create_user(db: AsyncSession, tg_id: int, name: str | None = None) -> 
     db.add(user)
     await db.commit()
     return user
+
+
+async def reset_user(db: AsyncSession, user: User) -> None:
+    """Полный сброс: удаляет все данные пользователя и очищает профиль (кроме tg_id)."""
+    # id тренировок пользователя — для удаления связанных сетов
+    sess_ids = (
+        await db.execute(select(Session.id).where(Session.user_id == user.id))
+    ).scalars().all()
+    if sess_ids:
+        await db.execute(delete(SetLog).where(SetLog.session_id.in_(sess_ids)))
+    await db.execute(delete(Session).where(Session.user_id == user.id))
+
+    tpl_ids = (
+        await db.execute(select(WorkoutTemplate.id).where(WorkoutTemplate.user_id == user.id))
+    ).scalars().all()
+    if tpl_ids:
+        await db.execute(delete(TemplateItem).where(TemplateItem.template_id.in_(tpl_ids)))
+    await db.execute(delete(WorkoutTemplate).where(WorkoutTemplate.user_id == user.id))
+
+    await db.execute(delete(ChatMessage).where(ChatMessage.user_id == user.id))
+    await db.execute(delete(WeightLog).where(WeightLog.user_id == user.id))
+    await db.execute(delete(Meal).where(Meal.user_id == user.id))
+
+    # Обнуляем профиль (строка пользователя остаётся, tg_id сохраняется)
+    user.goal = None
+    user.weight_kg = None
+    user.system_prompt = None
+    user.profile_summary = None
+    user.train_hour = None
+    user.train_minute = None
+    user.chat_summary = None
+    user.environment = None
+    user.equipment = None
+    await db.commit()
 
 
 async def get_or_create_user(db: AsyncSession, tg_id: int, name: str | None = None) -> User:

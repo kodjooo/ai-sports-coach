@@ -28,6 +28,17 @@ def settings_menu() -> InlineKeyboardMarkup:
             [InlineKeyboardButton(text="🏋 Место и инвентарь", callback_data="set:env")],
             [InlineKeyboardButton(text="📋 План недели", callback_data="set:plan")],
             [InlineKeyboardButton(text="⚖️ Записать вес", callback_data="set:weight")],
+            [InlineKeyboardButton(text="♻️ Сбросить историю", callback_data="set:reset")],
+        ]
+    )
+
+
+def reset_confirm_kb() -> InlineKeyboardMarkup:
+    """Подтверждение полного сброса."""
+    return InlineKeyboardMarkup(
+        inline_keyboard=[
+            [InlineKeyboardButton(text="⚠️ Да, сбросить всё", callback_data="reset:yes")],
+            [InlineKeyboardButton(text="↩️ Отмена", callback_data="reset:no")],
         ]
     )
 
