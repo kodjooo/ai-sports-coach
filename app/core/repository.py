@@ -138,7 +138,13 @@ async def build_custom_plan(db: AsyncSession, user_id: int, workouts: list[dict]
         tpl.active = False
 
     for i, w in enumerate(sorted(workouts, key=lambda x: x.get("weekday", 0))):
-        template = WorkoutTemplate(user_id=user_id, label=f"День {i + 1}", weekday=w.get("weekday", 0))
+        template = WorkoutTemplate(
+            user_id=user_id,
+            label=f"День {i + 1}",
+            weekday=w.get("weekday", 0),
+            warmup=w.get("warmup"),
+            cooldown=w.get("cooldown"),
+        )
         db.add(template)
         await db.flush()
         for idx, ex in enumerate(w.get("exercises", [])):
@@ -151,6 +157,7 @@ async def build_custom_plan(db: AsyncSession, user_id: int, workouts: list[dict]
                     exercise_id=exo.id,
                     target_sets=ex.get("sets") or 3,
                     target_reps=ex.get("reps") or 10,
+                    rest_sec=ex.get("rest_sec") or 60,
                     order_idx=idx,
                 )
             )

@@ -35,6 +35,7 @@ async def _load_items(db, template_id: int) -> list[dict]:
                 "technique": (ex.technique if ex else "") or "Техника не описана.",
                 "target_sets": it.target_sets or 3,
                 "target_reps": it.target_reps or 10,
+                "rest_sec": it.rest_sec or 60,
             }
         )
     return result
@@ -61,14 +62,25 @@ async def _begin(target, user_tg: int, state: FSMContext) -> None:
             return
         session = await repo.create_session(db, user.id, template.id, date.today())
         await repo.start_session(db, session)
+        stored_warmup = template.warmup
+        stored_cooldown = template.cooldown
 
     groups = [it["muscle_group"] for it in items]
     await state.set_state(Workout.in_progress)
     await state.update_data(
-        session_id=session.id, items=items, cur_item=0, cur_set=1, pending_reps=None, groups=groups
+        session_id=session.id,
+        items=items,
+        cur_item=0,
+        cur_set=1,
+        pending_reps=None,
+        groups=groups,
+        cooldown=stored_cooldown,
     )
-    # Начинаем с разминки, к упражнениям — по кнопке
-    await target.answer(warmup.warmup_text(groups), reply_markup=warmup_done_kb())
+    # Начинаем с разминки (хранимая или собранная по группам мышц)
+    warmup_msg = stored_warmup or warmup.warmup_text(groups)
+    if stored_warmup:
+        warmup_msg = f"🔥 <b>Разминка</b>\n{stored_warmup}"
+    await target.answer(warmup_msg, reply_markup=warmup_done_kb())
 
 
 async def _show_set(target, state: FSMContext) -> None:
@@ -125,6 +137,8 @@ async def choose_effort(cb: CallbackQuery, state: FSMContext) -> None:
 
     # Переход к следующему сету/упражнению
     if data["cur_set"] < item["target_sets"]:
+        rest = item.get("rest_sec") or 60
+        await cb.message.answer(f"⏱ Отдых ~{rest} сек, потом продолжаем.")
         await state.update_data(cur_set=data["cur_set"] + 1, pending_reps=None)
         await _show_set(cb.message, state)
     elif i + 1 < len(items):
@@ -132,9 +146,9 @@ async def choose_effort(cb: CallbackQuery, state: FSMContext) -> None:
         await _show_set(cb.message, state)
     else:
         # Все упражнения выполнены → заминка перед завершением
-        await cb.message.answer(
-            warmup.cooldown_text(data.get("groups", [])), reply_markup=cooldown_done_kb()
-        )
+        cooldown = data.get("cooldown")
+        text = f"🧘 <b>Заминка</b>\n{cooldown}" if cooldown else warmup.cooldown_text(data.get("groups", []))
+        await cb.message.answer(text, reply_markup=cooldown_done_kb())
     await cb.answer("Записал ✅")
 
 

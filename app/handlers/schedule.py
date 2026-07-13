@@ -7,11 +7,13 @@ from aiogram import F, Router
 from aiogram.fsm.context import FSMContext
 from aiogram.types import CallbackQuery, Message
 
+from app.core import llm
 from app.core.db import async_session
 from app.core import repository as repo
 from app.core.seed import create_templates
 from app.keyboards import WEEKDAYS_SHORT, days_kb, freq_kb, main_menu, time_kb
 from app.states import Onboarding
+from app.utils import typing
 
 router = Router()
 
@@ -71,10 +73,19 @@ async def _apply_time(message: Message, tg_id: int, state: FSMContext, hour: int
     days = data.get("days", [0, 2, 4])
     from_settings = data.get("from_settings")
 
-    async with async_session() as db:
-        user = await repo.get_user_by_tg(db, tg_id)
-        await repo.set_train_time(db, user, hour, minute)
-        await create_templates(db, user.id, days)
+    await message.answer("Составляю персональную программу под тебя, секунду…")
+    async with typing(message):
+        async with async_session() as db:
+            user = await repo.get_user_by_tg(db, tg_id)
+            await repo.set_train_time(db, user, hour, minute)
+            profile, goal, uid = user.profile_summary, user.goal, user.id
+        # Генерируем план под профиль; при сбое — базовые шаблоны
+        workouts = await llm.generate_plan(profile, goal, days)
+        async with async_session() as db:
+            if workouts:
+                await repo.build_custom_plan(db, uid, workouts)
+            else:
+                await create_templates(db, uid, days)
 
     schedule_line = f"дни {_days_str(days)}, время {hour:02d}:{minute:02d}"
     if from_settings:

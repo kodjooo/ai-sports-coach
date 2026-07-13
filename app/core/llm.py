@@ -136,6 +136,8 @@ COACH_TOOLS = [
                             "type": "object",
                             "properties": {
                                 "weekday": {"type": "integer", "description": "0=Пн … 6=Вс"},
+                                "warmup": {"type": "string", "description": "Разминка дня"},
+                                "cooldown": {"type": "string", "description": "Заминка дня"},
                                 "exercises": {
                                     "type": "array",
                                     "items": {
@@ -144,6 +146,7 @@ COACH_TOOLS = [
                                             "name": {"type": "string"},
                                             "sets": {"type": "integer"},
                                             "reps": {"type": "integer"},
+                                            "rest_sec": {"type": "integer", "description": "Отдых между подходами, сек"},
                                             "muscle_group": {"type": "string"},
                                             "technique": {"type": "string"},
                                         },
@@ -255,6 +258,49 @@ INTERVIEW_SYSTEM = (
     "done=true, reply — короткое подтверждение вроде «Понял, информации достаточно», "
     "goal — краткая цель, profile_summary — 2–3 предложения о клиенте."
 )
+
+
+async def generate_plan(profile_summary: str | None, goal: str | None, weekdays: list[int]) -> list[dict]:
+    """Генерирует персональный план тренировок под профиль и выбранные дни.
+
+    Возвращает список workouts: [{weekday, warmup, cooldown, exercises:[{name,sets,reps,rest_sec,muscle_group,technique}]}].
+    """
+    try:
+        resp = await get_client().chat.completions.create(
+            model=settings.openai_model,
+            reasoning_effort=settings.openai_reasoning_effort_onboarding,
+            response_format={"type": "json_object"},
+            messages=[
+                {
+                    "role": "system",
+                    "content": (
+                        "Составь домашний план тренировок под клиента. Учитывай цель, уровень и "
+                        "ограничения/травмы (щади проблемные зоны, без рискованных движений). "
+                        "На каждый указанный день недели — 4–6 упражнений, сбалансированно "
+                        "(ноги, таз, толчок, тяга/спина, кор). Для каждого упражнения укажи "
+                        "подходы, повторы, отдых между подходами в секундах (rest_sec, обычно 45–90), "
+                        "группу мышц и краткую технику. Для каждого дня добавь короткую разминку "
+                        "(warmup) и заминку (cooldown) текстом. Только домашний инвентарь.\n"
+                        "Верни СТРОГО JSON: {\"workouts\": [{\"weekday\": int(0=Пн..6=Вс), "
+                        "\"warmup\": str, \"cooldown\": str, \"exercises\": [{\"name\": str, "
+                        "\"sets\": int, \"reps\": int, \"rest_sec\": int, \"muscle_group\": str, "
+                        "\"technique\": str}]}]}"
+                    ),
+                },
+                {
+                    "role": "user",
+                    "content": (
+                        f"Цель: {goal or '—'}\nПрофиль: {profile_summary or '—'}\n"
+                        f"Дни недели (0=Пн): {weekdays}"
+                    ),
+                },
+            ],
+        )
+        data = json.loads(resp.choices[0].message.content or "{}")
+        return data.get("workouts", []) or []
+    except Exception as exc:
+        logger.warning("Ошибка генерации плана: %s", exc)
+        return []
 
 
 async def build_system_prompt(profile_summary: str | None, goal: str | None) -> str:

@@ -12,7 +12,7 @@ from app.core import repository as repo
 from app.handlers.schedule import start_schedule
 from app.keyboards import main_menu
 from app.states import Onboarding
-from app.utils import parse_weight, react, typing
+from app.utils import parse_weight, typing
 
 router = Router()
 
@@ -101,7 +101,6 @@ async def handle_interview(message: Message, state: FSMContext, text: str) -> No
 
 @router.message(Onboarding.interview, F.text)
 async def interview_text(message: Message, state: FSMContext) -> None:
-    await react(message, "👀")  # метка «прочитал»
     await handle_interview(message, state, message.text.strip())
 
 

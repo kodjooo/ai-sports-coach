@@ -61,6 +61,8 @@ class WorkoutTemplate(Base):
     label: Mapped[str | None] = mapped_column(String)  # 'День A'
     weekday: Mapped[int | None] = mapped_column(Integer)  # 0..6
     active: Mapped[bool] = mapped_column(Boolean, default=True)
+    warmup: Mapped[str | None] = mapped_column(String)   # разминка дня
+    cooldown: Mapped[str | None] = mapped_column(String)  # заминка дня
 
     items: Mapped[list["TemplateItem"]] = relationship(
         back_populates="template", order_by="TemplateItem.order_idx"
@@ -75,6 +77,7 @@ class TemplateItem(Base):
     exercise_id: Mapped[int] = mapped_column(BigInteger, ForeignKey("exercises.id"))
     target_sets: Mapped[int | None] = mapped_column(Integer)
     target_reps: Mapped[int | None] = mapped_column(Integer)
+    rest_sec: Mapped[int | None] = mapped_column(Integer)  # отдых между подходами, сек
     order_idx: Mapped[int | None] = mapped_column(Integer)
 
     template: Mapped[WorkoutTemplate] = relationship(back_populates="items")

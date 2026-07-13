@@ -51,11 +51,18 @@ async def _render_plan(user_id: int) -> str:
         for tpl in templates:
             day = WEEKDAYS[tpl.weekday] if tpl.weekday is not None else "—"
             items = await repo.list_template_items(db, tpl.id)
-            names = []
+            rows = []
             for it in items:
                 ex = await repo.get_exercise(db, it.exercise_id)
-                names.append(f"{ex.name if ex else '?'} {it.target_sets}×{it.target_reps}")
-            lines.append(f"\n<b>{tpl.label}</b> ({day}):\n" + "\n".join(f"• {n}" for n in names))
+                rest = f", отдых {it.rest_sec} сек" if it.rest_sec else ""
+                rows.append(f"{ex.name if ex else '?'} {it.target_sets}×{it.target_reps}{rest}")
+            block = [f"\n<b>{tpl.label}</b> ({day}):"]
+            if tpl.warmup:
+                block.append(f"🔥 Разминка: {tpl.warmup}")
+            block += [f"• {r}" for r in rows]
+            if tpl.cooldown:
+                block.append(f"🧘 Заминка: {tpl.cooldown}")
+            lines.append("\n".join(block))
         return "\n".join(lines)
 
 
