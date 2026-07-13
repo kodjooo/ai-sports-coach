@@ -8,11 +8,11 @@ from aiogram.fsm.context import FSMContext
 from aiogram.types import CallbackQuery, Message
 
 from app.core import context as ctx
-from app.core import llm, progress, vector
+from app.core import llm, progress, vector, warmup
 from app.core import repository as repo
 from app.core.db import async_session
 from app.core.models import Session, User
-from app.keyboards import effort_kb, reps_kb, replace_scope_kb
+from app.keyboards import cooldown_done_kb, effort_kb, reps_kb, replace_scope_kb, warmup_done_kb
 from app.states import Workout
 from app.utils import typing
 
@@ -31,6 +31,7 @@ async def _load_items(db, template_id: int) -> list[dict]:
                 "item_id": it.id,
                 "exercise_id": it.exercise_id,
                 "name": ex.name if ex else "Упражнение",
+                "muscle_group": (ex.muscle_group if ex else "") or "",
                 "technique": (ex.technique if ex else "") or "Техника не описана.",
                 "target_sets": it.target_sets or 3,
                 "target_reps": it.target_reps or 10,
@@ -61,9 +62,13 @@ async def _begin(target, user_tg: int, state: FSMContext) -> None:
         session = await repo.create_session(db, user.id, template.id, date.today())
         await repo.start_session(db, session)
 
+    groups = [it["muscle_group"] for it in items]
     await state.set_state(Workout.in_progress)
-    await state.update_data(session_id=session.id, items=items, cur_item=0, cur_set=1, pending_reps=None)
-    await _show_set(target, state)
+    await state.update_data(
+        session_id=session.id, items=items, cur_item=0, cur_set=1, pending_reps=None, groups=groups
+    )
+    # Начинаем с разминки, к упражнениям — по кнопке
+    await target.answer(warmup.warmup_text(groups), reply_markup=warmup_done_kb())
 
 
 async def _show_set(target, state: FSMContext) -> None:
@@ -126,8 +131,23 @@ async def choose_effort(cb: CallbackQuery, state: FSMContext) -> None:
         await state.update_data(cur_item=i + 1, cur_set=1, pending_reps=None)
         await _show_set(cb.message, state)
     else:
-        await _finish(cb.message, state)
+        # Все упражнения выполнены → заминка перед завершением
+        await cb.message.answer(
+            warmup.cooldown_text(data.get("groups", [])), reply_markup=cooldown_done_kb()
+        )
     await cb.answer("Записал ✅")
+
+
+@router.callback_query(Workout.in_progress, F.data == "wk:warmup_done")
+async def warmup_done(cb: CallbackQuery, state: FSMContext) -> None:
+    await cb.answer()
+    await _show_set(cb.message, state)
+
+
+@router.callback_query(Workout.in_progress, F.data == "wk:cooldown_done")
+async def cooldown_done(cb: CallbackQuery, state: FSMContext) -> None:
+    await cb.answer()
+    await _finish(cb.message, state)
 
 
 # ---------- Завершение и фидбек ----------

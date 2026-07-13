@@ -4,16 +4,31 @@ from __future__ import annotations
 from datetime import date, timedelta
 
 from aiogram import F, Router
+from aiogram.filters import Command
 from aiogram.fsm.context import FSMContext
-from aiogram.types import CallbackQuery, Message
+from aiogram.types import CallbackQuery, Message, ReplyKeyboardRemove
 
 from app.core.db import async_session
 from app.core import progress
 from app.core import repository as repo
+from app.keyboards import main_menu
 
 router = Router()
 
 WEEKDAYS = ["Пн", "Вт", "Ср", "Чт", "Пт", "Сб", "Вс"]
+
+
+@router.message(Command("menu"))
+async def show_menu(message: Message) -> None:
+    await message.answer("Меню открыто.", reply_markup=main_menu())
+
+
+@router.message(F.text == "🔽 Свернуть меню")
+async def hide_menu(message: Message) -> None:
+    await message.answer(
+        "Меню свёрнуто. Чтобы открыть снова — команда /menu.",
+        reply_markup=ReplyKeyboardRemove(),
+    )
 
 
 @router.callback_query(F.data == "wk:move")

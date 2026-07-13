@@ -8,13 +8,29 @@ EFFORTS = [("easy", "😀 Легко"), ("ok", "🙂 Норм"), ("hard", "😮�
 
 
 def main_menu() -> ReplyKeyboardMarkup:
-    """Постоянное нижнее меню."""
+    """Закреплённое нижнее меню с возможностью свернуть."""
     return ReplyKeyboardMarkup(
         keyboard=[
             [KeyboardButton(text="▶️ Начать тренировку"), KeyboardButton(text="📊 План недели")],
             [KeyboardButton(text="📈 Статистика"), KeyboardButton(text="⚖️ Записать вес")],
+            [KeyboardButton(text="🔽 Свернуть меню")],
         ],
         resize_keyboard=True,
+        is_persistent=True,
+    )
+
+
+def warmup_done_kb() -> InlineKeyboardMarkup:
+    """Кнопка перехода от разминки к упражнениям."""
+    return InlineKeyboardMarkup(
+        inline_keyboard=[[InlineKeyboardButton(text="▶️ К упражнениям", callback_data="wk:warmup_done")]]
+    )
+
+
+def cooldown_done_kb() -> InlineKeyboardMarkup:
+    """Кнопка завершения тренировки после заминки."""
+    return InlineKeyboardMarkup(
+        inline_keyboard=[[InlineKeyboardButton(text="✅ Завершить тренировку", callback_data="wk:cooldown_done")]]
     )
 
 
