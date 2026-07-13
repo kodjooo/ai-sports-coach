@@ -11,6 +11,7 @@ from aiogram.types import CallbackQuery, Message
 from app.core.db import async_session
 from app.core import progress
 from app.core import repository as repo
+from app.handlers.environment import start_environment
 from app.handlers.schedule import start_schedule
 from app.keyboards import main_menu, settings_menu
 
@@ -108,6 +109,12 @@ async def settings_plan(cb: CallbackQuery) -> None:
 async def settings_schedule(cb: CallbackQuery, state: FSMContext) -> None:
     await cb.answer()
     await start_schedule(cb.message, state, from_settings=True)
+
+
+@router.callback_query(F.data == "set:env")
+async def settings_env(cb: CallbackQuery, state: FSMContext) -> None:
+    await cb.answer()
+    await start_environment(cb.message, state, from_settings=True)
 
 
 @router.callback_query(F.data == "set:weight")

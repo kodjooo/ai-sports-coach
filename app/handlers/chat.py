@@ -35,10 +35,11 @@ TOOLS_HINT = (
 )
 
 
-def _context_block(profile: str, plan: str, weight_line: str, facts: str, memory: str, summary: str) -> str:
+def _context_block(profile, plan, weight_line, facts, memory, summary, env, equip) -> str:
     return (
         "Контекст о клиенте (не показывай дословно, используй по смыслу):\n"
         f"ПРОФИЛЬ: {profile or '—'}\n"
+        f"МЕСТО ТРЕНИРОВОК: {env or 'дом'}; ИНВЕНТАРЬ: {equip or 'нет'}\n"
         f"ПЛАН: {plan}\n"
         f"ВЕС: {weight_line}\n"
         f"РЕЗЮМЕ ПРОШЛЫХ БЕСЕД: {summary or '—'}\n"
@@ -100,6 +101,7 @@ async def handle_chat(message: Message, state: FSMContext, text: str) -> None:
         summary = user.chat_summary
         profile = user.profile_summary
         personal = user.system_prompt
+        env, equip = user.environment, user.equipment
         uid = user.id
         await repo.add_chat_message(db, uid, "user", text)
 
@@ -110,7 +112,7 @@ async def handle_chat(message: Message, state: FSMContext, text: str) -> None:
     memory_docs = await vector.query_memory(uid, text)
     memory = "\n".join(f"- {d}" for d in memory_docs) if memory_docs else "нет заметок"
 
-    context_block = _context_block(profile, plan, weight_line, facts, memory, summary)
+    context_block = _context_block(profile, plan, weight_line, facts, memory, summary, env, equip)
     system = llm._system_content(personal) + "\n\n" + TOOLS_HINT + "\n\n" + context_block
     messages = window + [{"role": "user", "content": text}]
 

@@ -78,12 +78,14 @@ async def _apply_time(message: Message, tg_id: int, state: FSMContext, hour: int
         async with async_session() as db:
             user = await repo.get_user_by_tg(db, tg_id)
             await repo.set_train_time(db, user, hour, minute)
-            profile, goal, uid = user.profile_summary, user.goal, user.id
-        # Генерируем план под профиль; при сбое — базовые шаблоны
-        workouts = await llm.generate_plan(profile, goal, days)
+            profile, goal, env, equip, uid = (
+                user.profile_summary, user.goal, user.environment, user.equipment, user.id
+            )
+        # Генерируем план под профиль и среду; при сбое — базовые шаблоны
+        workouts = await llm.generate_plan(profile, goal, days, env, equip)
         async with async_session() as db:
             if workouts:
-                await repo.build_custom_plan(db, uid, workouts)
+                await repo.build_custom_plan(db, uid, workouts, environment=env)
             else:
                 await create_templates(db, uid, days)
 

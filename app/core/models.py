@@ -39,6 +39,9 @@ class User(Base):
     train_minute: Mapped[int | None] = mapped_column(Integer)
     # Бегущее резюме старой переписки с тренером (авто-суммаризация)
     chat_summary: Mapped[str | None] = mapped_column(String)
+    # Где тренируется и что есть из инвентаря
+    environment: Mapped[str | None] = mapped_column(String)  # дом/улица/зал/микс
+    equipment: Mapped[str | None] = mapped_column(String)
     created_at: Mapped[datetime] = mapped_column(DateTime(timezone=True), server_default=func.now())
 
 
@@ -51,6 +54,8 @@ class Exercise(Base):
     difficulty: Mapped[int | None] = mapped_column(Integer)  # 1..5
     technique: Mapped[str | None] = mapped_column(String)  # описание техники
     variations: Mapped[list | None] = mapped_column(JSONB)  # ['от стены', ...]
+    environment: Mapped[str | None] = mapped_column(String)  # дом/улица/зал
+    equipment: Mapped[str | None] = mapped_column(String)    # инвентарь
 
 
 class WorkoutTemplate(Base):

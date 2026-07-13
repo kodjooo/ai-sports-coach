@@ -25,8 +25,22 @@ def settings_menu() -> InlineKeyboardMarkup:
     return InlineKeyboardMarkup(
         inline_keyboard=[
             [InlineKeyboardButton(text="🗓 Дни и время тренировок", callback_data="set:schedule")],
+            [InlineKeyboardButton(text="🏋 Место и инвентарь", callback_data="set:env")],
             [InlineKeyboardButton(text="📋 План недели", callback_data="set:plan")],
             [InlineKeyboardButton(text="⚖️ Записать вес", callback_data="set:weight")],
+        ]
+    )
+
+
+# Варианты среды тренировок
+ENVIRONMENTS = [("дом", "🏠 Дом"), ("улица", "🌳 Улица"), ("зал", "🏋 Зал"), ("микс", "🔀 Микс")]
+
+
+def env_kb() -> InlineKeyboardMarkup:
+    return InlineKeyboardMarkup(
+        inline_keyboard=[
+            [InlineKeyboardButton(text=label, callback_data=f"env:{code}")]
+            for code, label in ENVIRONMENTS
         ]
     )
 

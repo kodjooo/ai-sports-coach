@@ -7,6 +7,7 @@ from aiogram.types import Message
 
 from app.core import llm
 from app.handlers import chat as chat_handlers
+from app.handlers import environment as env_handlers
 from app.handlers import start as start_handlers
 from app.states import Onboarding
 from app.utils import typing
@@ -28,6 +29,8 @@ async def on_voice(message: Message, state: FSMContext, bot: Bot) -> None:
     current = await state.get_state()
     if current == Onboarding.interview.state:
         await start_handlers.handle_interview(message, state, text)
+    elif current == Onboarding.equipment.state:
+        await env_handlers.handle_equipment(message, state, text)
     elif current == Onboarding.waiting_weight.state:
         await start_handlers.handle_weight(message, state, text)
     else:

@@ -109,7 +109,12 @@ async def find_exercise_by_name(db: AsyncSession, name: str) -> Exercise | None:
 
 
 async def find_or_create_exercise(
-    db: AsyncSession, name: str, muscle_group: str | None = None, technique: str | None = None
+    db: AsyncSession,
+    name: str,
+    muscle_group: str | None = None,
+    technique: str | None = None,
+    environment: str | None = None,
+    equipment: str | None = None,
 ) -> Exercise:
     """Находит упражнение по названию или создаёт новое (автопополнение каталога)."""
     name = name.strip()
@@ -120,13 +125,39 @@ async def find_or_create_exercise(
         name=name,
         muscle_group=muscle_group,
         technique=technique or "Техника не описана.",
+        environment=environment,
+        equipment=equipment,
     )
     db.add(ex)
     await db.flush()
     return ex
 
 
-async def build_custom_plan(db: AsyncSession, user_id: int, workouts: list[dict]) -> int:
+async def set_environment(
+    db: AsyncSession, user: User, environment: str | None, equipment: str | None
+) -> User:
+    """Сохраняет место тренировок и инвентарь пользователя."""
+    if environment is not None:
+        user.environment = environment
+    if equipment is not None:
+        user.equipment = equipment
+    await db.commit()
+    return user
+
+
+async def active_weekdays(db: AsyncSession, user_id: int) -> list[int]:
+    """Дни недели активного плана (для перегенерации из настроек)."""
+    res = await db.execute(
+        select(WorkoutTemplate.weekday).where(
+            WorkoutTemplate.user_id == user_id, WorkoutTemplate.active.is_(True)
+        )
+    )
+    return sorted({w for w in res.scalars().all() if w is not None})
+
+
+async def build_custom_plan(
+    db: AsyncSession, user_id: int, workouts: list[dict], environment: str | None = None
+) -> int:
     """Пересобирает план из структуры тренера.
 
     workouts: [{"weekday": int, "exercises": [{"name","sets","reps","muscle_group","technique"}]}]
@@ -149,7 +180,12 @@ async def build_custom_plan(db: AsyncSession, user_id: int, workouts: list[dict]
         await db.flush()
         for idx, ex in enumerate(w.get("exercises", [])):
             exo = await find_or_create_exercise(
-                db, ex.get("name", "Упражнение"), ex.get("muscle_group"), ex.get("technique")
+                db,
+                ex.get("name", "Упражнение"),
+                ex.get("muscle_group"),
+                ex.get("technique"),
+                environment=ex.get("environment") or environment,
+                equipment=ex.get("equipment"),
             )
             db.add(
                 TemplateItem(

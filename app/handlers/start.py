@@ -9,7 +9,7 @@ from aiogram.types import Message
 from app.core import llm
 from app.core.db import async_session
 from app.core import repository as repo
-from app.handlers.schedule import start_schedule
+from app.handlers.environment import start_environment
 from app.keyboards import main_menu
 from app.states import Onboarding
 from app.utils import parse_weight, typing
@@ -92,8 +92,8 @@ async def handle_interview(message: Message, state: FSMContext, text: str) -> No
                 profile_summary=result.get("profile_summary"),
                 goal=result.get("goal"),
             )
-        # Дальше — выбор расписания (частота/дни/время)
-        await start_schedule(message, state)
+        # Дальше — где тренируется и инвентарь (потом расписание)
+        await start_environment(message, state)
     else:
         await state.update_data(history=history, clarifications=clarifications + 1)
         await message.answer(reply)

@@ -260,8 +260,14 @@ INTERVIEW_SYSTEM = (
 )
 
 
-async def generate_plan(profile_summary: str | None, goal: str | None, weekdays: list[int]) -> list[dict]:
-    """Генерирует персональный план тренировок под профиль и выбранные дни.
+async def generate_plan(
+    profile_summary: str | None,
+    goal: str | None,
+    weekdays: list[int],
+    environment: str | None = None,
+    equipment: str | None = None,
+) -> list[dict]:
+    """Генерирует персональный план тренировок под профиль, среду и выбранные дни.
 
     Возвращает список workouts: [{weekday, warmup, cooldown, exercises:[{name,sets,reps,rest_sec,muscle_group,technique}]}].
     """
@@ -274,13 +280,15 @@ async def generate_plan(profile_summary: str | None, goal: str | None, weekdays:
                 {
                     "role": "system",
                     "content": (
-                        "Составь домашний план тренировок под клиента. Учитывай цель, уровень и "
+                        "Составь план тренировок под клиента. Учитывай цель, уровень и "
                         "ограничения/травмы (щади проблемные зоны, без рискованных движений). "
+                        "ВАЖНО: подбирай упражнения строго под место тренировки и доступный "
+                        "инвентарь клиента (не предлагай зал без зала, турник без турника). "
                         "На каждый указанный день недели — 4–6 упражнений, сбалансированно "
                         "(ноги, таз, толчок, тяга/спина, кор). Для каждого упражнения укажи "
                         "подходы, повторы, отдых между подходами в секундах (rest_sec, обычно 45–90), "
                         "группу мышц и краткую технику. Для каждого дня добавь короткую разминку "
-                        "(warmup) и заминку (cooldown) текстом. Только домашний инвентарь.\n"
+                        "(warmup) и заминку (cooldown) текстом.\n"
                         "Верни СТРОГО JSON: {\"workouts\": [{\"weekday\": int(0=Пн..6=Вс), "
                         "\"warmup\": str, \"cooldown\": str, \"exercises\": [{\"name\": str, "
                         "\"sets\": int, \"reps\": int, \"rest_sec\": int, \"muscle_group\": str, "
@@ -291,6 +299,8 @@ async def generate_plan(profile_summary: str | None, goal: str | None, weekdays:
                     "role": "user",
                     "content": (
                         f"Цель: {goal or '—'}\nПрофиль: {profile_summary or '—'}\n"
+                        f"Место тренировок: {environment or 'дом'}\n"
+                        f"Инвентарь: {equipment or 'нет'}\n"
                         f"Дни недели (0=Пн): {weekdays}"
                     ),
                 },
