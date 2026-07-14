@@ -516,7 +516,11 @@ async def analyze_food_text(description: str, prev: dict | None = None) -> dict:
     """Оценка КБЖУ по текстовому описанию (или коррекция прежнего разбора)."""
     ctx = ""
     if prev:
-        ctx = f"Прежний разбор: {json.dumps(prev, ensure_ascii=False)}. Учти уточнение. "
+        ctx = (
+            f"Прежний разбор: {json.dumps(prev, ensure_ascii=False)}. Это УТОЧНЕНИЕ к нему. "
+            "Сохраняй прежние граммовки порций, меняй их ТОЛЬКО если пользователь явно "
+            "назвал новое количество; при смене блюда переноси вес на новое блюдо. "
+        )
     try:
         resp = await get_client().chat.completions.create(
             model=settings.openai_model,

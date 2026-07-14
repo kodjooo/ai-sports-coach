@@ -10,7 +10,7 @@ from app.core import llm
 from app.handlers import chat as chat_handlers
 from app.handlers import environment as env_handlers
 from app.handlers import start as start_handlers
-from app.states import Onboarding
+from app.states import Nutrition, Onboarding
 from app.utils import typing
 
 router = Router()
@@ -44,6 +44,9 @@ async def on_voice(message: Message, state: FSMContext, bot: Bot) -> None:
         await start_handlers.handle_height(message, state, text)
     elif current == Onboarding.waiting_age.state:
         await start_handlers.handle_age(message, state, text)
+    elif current == Nutrition.correcting.state:
+        from app.handlers import nutrition as nutrition_handlers
+        await nutrition_handlers.handle_correction(message, state, text)
     else:
         async def flush_chat(t: str) -> None:
             await chat_handlers.handle_chat(message, state, t)
