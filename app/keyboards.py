@@ -130,12 +130,22 @@ def reminder_kb() -> InlineKeyboardMarkup:
     )
 
 
-def reps_kb(low: int = 6, high: int = 12) -> InlineKeyboardMarkup:
-    """Кнопки выбора числа повторов + доп. действия."""
-    row = [
-        InlineKeyboardButton(text=str(n), callback_data=f"reps:{n}")
-        for n in range(low, high + 1)
-    ]
+def reps_kb(target: int | None = None, is_time: bool = False) -> InlineKeyboardMarkup:
+    """Кнопки ввода результата подхода.
+
+    Повторы — диапазон вокруг цели; «временные» упражнения — секунды вокруг цели.
+    """
+    if is_time:
+        base = target or 30
+        values = sorted({max(5, base + d) for d in (-20, -10, 0, 10, 20, 30)})
+        row = [InlineKeyboardButton(text=f"{v}с", callback_data=f"reps:{v}") for v in values]
+    else:
+        t = target or 8
+        low = max(1, t - 3)
+        row = [
+            InlineKeyboardButton(text=str(n), callback_data=f"reps:{n}")
+            for n in range(low, t + 4)
+        ]
     # Разбиваем на строки по 4 кнопки
     rows = [row[i : i + 4] for i in range(0, len(row), 4)]
     rows.append(

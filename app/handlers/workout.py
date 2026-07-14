@@ -18,6 +18,14 @@ from app.utils import typing
 
 router = Router()
 
+# Ключевые слова «временных» упражнений (результат в секундах, а не повторах)
+_TIME_KEYWORDS = ("планк", "вис", "изометр", "hold", "статич", "уголок", "удержан")
+
+
+def _is_time_based(name: str, muscle_group: str) -> bool:
+    text = f"{name} {muscle_group}".lower()
+    return any(k in text for k in _TIME_KEYWORDS)
+
 
 # ---------- Запуск тренировки ----------
 
@@ -36,6 +44,7 @@ async def _load_items(db, template_id: int) -> list[dict]:
                 "target_sets": it.target_sets or 3,
                 "target_reps": it.target_reps or 10,
                 "rest_sec": it.rest_sec or 60,
+                "is_time": _is_time_based(ex.name if ex else "", (ex.muscle_group if ex else "") or ""),
             }
         )
     return result
@@ -88,11 +97,14 @@ async def _show_set(target, state: FSMContext) -> None:
     items = data["items"]
     i = data["cur_item"]
     item = items[i]
+    is_time = item.get("is_time", False)
+    unit = "сек" if is_time else "повт."
+    prompt = "Сколько секунд продержал?" if is_time else "Выбери число повторов:"
     text = (
         f"<b>{item['name']}</b> — сет {data['cur_set']} из {item['target_sets']} "
-        f"(цель ~{item['target_reps']})\nВыбери число повторов:"
+        f"(цель ~{item['target_reps']} {unit})\n{prompt}"
     )
-    await target.answer(text, reply_markup=reps_kb())
+    await target.answer(text, reply_markup=reps_kb(target=item["target_reps"], is_time=is_time))
 
 
 @router.message(F.text == "▶️ Тренировка")
