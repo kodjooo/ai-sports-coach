@@ -2,9 +2,19 @@
 from __future__ import annotations
 
 from datetime import date, datetime, timedelta, timezone
+from zoneinfo import ZoneInfo
 
 from sqlalchemy import delete, func, select
 from sqlalchemy.ext.asyncio import AsyncSession
+
+from app.config import settings
+
+
+def _local_day_start(days_ago: int = 0) -> datetime:
+    """Начало локального дня (по TZ бота) N дней назад, в UTC для сравнения с logged_at."""
+    tz = ZoneInfo(settings.tz)
+    start_local = datetime.now(tz).replace(hour=0, minute=0, second=0, microsecond=0)
+    return (start_local - timedelta(days=days_ago)).astimezone(timezone.utc)
 
 from app.core.models import (
     ChatMessage,
@@ -470,10 +480,9 @@ async def add_meal(
 
 async def meals_by_day(db: AsyncSession, user_id: int, days: int = 7) -> list[dict]:
     """Суммы БЖУ/ккал по дням за последние `days` дней (только дни с записями)."""
-    since = datetime.now(timezone.utc).replace(hour=0, minute=0, second=0, microsecond=0) - timedelta(
-        days=days - 1
-    )
-    day = func.date_trunc("day", Meal.logged_at)
+    since = _local_day_start(days - 1)
+    # Группируем по локальному дню (по TZ бота), а не по UTC
+    day = func.date_trunc("day", func.timezone(settings.tz, Meal.logged_at))
     res = await db.execute(
         select(
             day.label("d"),
@@ -500,7 +509,7 @@ async def meals_by_day(db: AsyncSession, user_id: int, days: int = 7) -> list[di
 
 async def today_totals(db: AsyncSession, user_id: int) -> dict:
     """Суммарные БЖУ/ккал за сегодня (по локальной дате сервера)."""
-    since = datetime.now(timezone.utc).replace(hour=0, minute=0, second=0, microsecond=0)
+    since = _local_day_start()  # начало сегодняшнего дня по TZ бота
     res = await db.execute(
         select(
             func.coalesce(func.sum(Meal.kcal), 0),
