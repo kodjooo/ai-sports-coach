@@ -22,8 +22,9 @@ def enabled() -> bool:
 
 
 def _extract(food: dict) -> dict | None:
-    """Достаёт ккал/Б/Ж/У на 100 г из записи USDA."""
+    """Достаёт ккал/Б/Ж/У на 100 г из записи USDA (энергия — ккал или кДж→ккал)."""
     vals: dict[str, float] = {}
+    kj: float | None = None
     for n in food.get("foodNutrients", []):
         name = (n.get("nutrientName") or "").lower()
         unit = (n.get("unitName") or "").lower()
@@ -32,6 +33,8 @@ def _extract(food: dict) -> dict | None:
             continue
         if "energy" in name and unit == "kcal" and "kcal" not in vals:
             vals["kcal"] = float(value)
+        elif "energy" in name and unit == "kj" and kj is None:
+            kj = float(value)
         elif name == "protein":
             vals["protein"] = float(value)
         elif "total lipid" in name or name == "fat":
@@ -39,7 +42,9 @@ def _extract(food: dict) -> dict | None:
         elif "carbohydrate" in name:
             vals["carbs"] = float(value)
     if "kcal" not in vals:
-        return None
+        if kj is None:
+            return None
+        vals["kcal"] = round(kj / 4.184)  # кДж → ккал
     return {
         "kcal": vals["kcal"],
         "protein": vals.get("protein", 0.0),
@@ -48,14 +53,14 @@ def _extract(food: dict) -> dict | None:
     }
 
 
-async def candidates(session: aiohttp.ClientSession, query: str, n: int = 6) -> list[dict]:
+async def candidates(session: aiohttp.ClientSession, query: str, n: int = 10) -> list[dict]:
     if not query or not enabled():
         return []
     params = {
         "query": query,
         "api_key": settings.usda_api_key,
         "pageSize": n,
-        "dataType": "Foundation,SR Legacy,Survey (FNDDS)",
+        "dataType": "SR Legacy,Survey (FNDDS),Foundation",
     }
     try:
         async with session.get(_URL, params=params, headers=_HEADERS) as r:
