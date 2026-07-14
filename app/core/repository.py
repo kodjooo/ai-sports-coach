@@ -468,6 +468,36 @@ async def add_meal(
     return meal
 
 
+async def meals_by_day(db: AsyncSession, user_id: int, days: int = 7) -> list[dict]:
+    """Суммы БЖУ/ккал по дням за последние `days` дней (только дни с записями)."""
+    since = datetime.now(timezone.utc).replace(hour=0, minute=0, second=0, microsecond=0) - timedelta(
+        days=days - 1
+    )
+    day = func.date_trunc("day", Meal.logged_at)
+    res = await db.execute(
+        select(
+            day.label("d"),
+            func.coalesce(func.sum(Meal.kcal), 0),
+            func.coalesce(func.sum(Meal.protein), 0),
+            func.coalesce(func.sum(Meal.fat), 0),
+            func.coalesce(func.sum(Meal.carbs), 0),
+        )
+        .where(Meal.user_id == user_id, Meal.logged_at >= since)
+        .group_by(day)
+        .order_by(day)
+    )
+    return [
+        {
+            "date": d,
+            "kcal": round(float(k)),
+            "protein": round(float(p)),
+            "fat": round(float(f)),
+            "carbs": round(float(c)),
+        }
+        for d, k, p, f, c in res.all()
+    ]
+
+
 async def today_totals(db: AsyncSession, user_id: int) -> dict:
     """Суммарные БЖУ/ккал за сегодня (по локальной дате сервера)."""
     since = datetime.now(timezone.utc).replace(hour=0, minute=0, second=0, microsecond=0)

@@ -75,12 +75,18 @@ async def _weekly_report(bot: Bot) -> None:
         users = list(res.scalars().all())
         for user in users:
             report = await progress.weekly_report(db, user.id)
+            # Короткий вывод тренера по данным недели
+            takeaway = await llm.chat(
+                f"Данные клиента за неделю:\n{report}\n\n"
+                "Дай 1–2 предложения вывода и один конкретный совет на следующую неделю.",
+                system_prompt=user.system_prompt,
+            )
+            body = "📈 <b>Итоги недели</b>\n" + report
+            if takeaway:
+                body += "\n\n💬 " + takeaway
+            body += "\n\nНапиши текущий вес числом, чтобы я отслеживал динамику."
             try:
-                await bot.send_message(
-                    user.tg_id,
-                    "📈 <b>Итоги недели</b>\n" + report
-                    + "\n\nНапиши текущий вес числом, чтобы я отслеживал динамику.",
-                )
+                await bot.send_message(user.tg_id, body)
             except Exception as exc:
                 logger.warning("Не удалось отправить отчёт %s: %s", user.tg_id, exc)
 

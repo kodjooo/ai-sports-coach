@@ -5,8 +5,9 @@ from datetime import date, timedelta
 
 from sqlalchemy.ext.asyncio import AsyncSession
 
+from app.core import nutrition
 from app.core import repository as repo
-from app.core.models import Session
+from app.core.models import Session, User
 
 
 async def format_session_summary(db: AsyncSession, session: Session) -> str:
@@ -103,10 +104,50 @@ async def weekly_report(db: AsyncSession, user_id: int) -> str:
     planned = len(sessions)
     dw = await repo.weight_change(db, user_id, days=7)
 
-    parts = [f"Тренировок: {len(done)} из {planned}."]
+    parts = [f"🏋️ Тренировок: {len(done)} из {planned}."]
     if dw is not None:
         sign = "−" if dw < 0 else "+"
         parts.append(f"Вес: {sign}{abs(dw):.1f} кг.")
     if len(done) >= planned and planned > 0:
         parts.append("Держишь темп 💪")
-    return " ".join(parts)
+
+    nutri = await nutrition_week(db, user_id)
+    text = " ".join(parts)
+    if nutri:
+        text += "\n\n" + nutri
+    return text
+
+
+async def nutrition_week(db: AsyncSession, user_id: int) -> str:
+    """Недельная аналитика питания: средние КБЖУ, дни в норме, сравнение с нормой."""
+    rows = await repo.meals_by_day(db, user_id, days=7)
+    if not rows:
+        return ""
+    n = len(rows)
+    avg_kcal = round(sum(r["kcal"] for r in rows) / n)
+    avg_prot = round(sum(r["protein"] for r in rows) / n)
+    avg_fat = round(sum(r["fat"] for r in rows) / n)
+    avg_carb = round(sum(r["carbs"] for r in rows) / n)
+
+    lines = ["🍎 <b>Питание за неделю</b>"]
+    lines.append(f"Дней с записями: {n} из 7")
+    lines.append(f"В среднем: {avg_kcal} ккал/день (Б{avg_prot} Ж{avg_fat} У{avg_carb})")
+
+    user = await db.get(User, user_id)
+    norm = nutrition.daily_norm(user) if user else None
+    if norm:
+        ok = over = under = 0
+        for r in rows:
+            if r["kcal"] > norm["kcal"] * 1.1:
+                over += 1
+            elif r["kcal"] < norm["kcal"] * 0.9:
+                under += 1
+            else:
+                ok += 1
+        diff = avg_kcal - norm["kcal"]
+        sign = "+" if diff >= 0 else "−"
+        lines.append(f"Норма: {norm['kcal']} ккал; в среднем {sign}{abs(diff)} ккал/день")
+        lines.append(f"В норме: {ok} · перебор: {over} · недобор: {under}")
+        if avg_prot < norm["protein"] * 0.9:
+            lines.append("⚠️ Белка в среднем маловато — добавь источники белка.")
+    return "\n".join(lines)
