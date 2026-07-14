@@ -7,7 +7,9 @@ import logging
 from aiogram import Bot, Dispatcher
 from aiogram.client.default import DefaultBotProperties
 from aiogram.enums import ParseMode
+from aiogram.exceptions import TelegramBadRequest
 from aiogram.fsm.storage.redis import RedisStorage
+from aiogram.types import ErrorEvent
 from alembic import command
 from alembic.config import Config
 
@@ -49,6 +51,16 @@ async def main() -> None:
     dp = Dispatcher(storage=storage)
     dp.message.outer_middleware(IncomingLogMiddleware())
     dp.include_router(get_root_router())
+
+    @dp.errors()
+    async def on_error(event: ErrorEvent) -> bool:
+        # Устаревшие callback после простоя бота — проглатываем без трейсбека
+        if isinstance(event.exception, TelegramBadRequest) and "query is too old" in str(
+            event.exception
+        ):
+            return True
+        logger.exception("Необработанная ошибка: %s", event.exception)
+        return True
 
     scheduler = setup_scheduler(bot)
     scheduler.start()
