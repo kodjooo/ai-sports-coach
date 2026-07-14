@@ -8,6 +8,7 @@ from aiogram import F, Router
 from aiogram.fsm.context import FSMContext
 from aiogram.types import CallbackQuery, Message
 
+from app import debounce
 from app.core import llm, progress, vector
 from app.core import repository as repo
 from app.core.db import async_session
@@ -164,7 +165,13 @@ async def act_cancel(cb: CallbackQuery, state: FSMContext) -> None:
 
 @router.message(F.text & ~F.text.startswith("/"))
 async def free_chat(message: Message, state: FSMContext) -> None:
-    await handle_chat(message, state, message.text)
+    # Склеиваем несколько сообщений подряд и отвечаем один раз
+    key = f"{message.chat.id}:{message.from_user.id}"
+
+    async def flush(text: str) -> None:
+        await handle_chat(message, state, text)
+
+    await debounce.push(key, message.text.strip(), flush)
 
 
 @router.callback_query()

@@ -5,6 +5,7 @@ from aiogram import Bot, F, Router
 from aiogram.fsm.context import FSMContext
 from aiogram.types import Message
 
+from app import debounce
 from app.core import llm
 from app.handlers import chat as chat_handlers
 from app.handlers import environment as env_handlers
@@ -27,8 +28,13 @@ async def on_voice(message: Message, state: FSMContext, bot: Bot) -> None:
         return
 
     current = await state.get_state()
+    key = f"{message.chat.id}:{message.from_user.id}"
+
+    # Интервью и свободный чат — склеиваем несколько голосовых/сообщений подряд
     if current == Onboarding.interview.state:
-        await start_handlers.handle_interview(message, state, text)
+        async def flush(t: str) -> None:
+            await start_handlers.handle_interview(message, state, t)
+        await debounce.push(key, text, flush)
     elif current == Onboarding.equipment.state:
         await env_handlers.handle_equipment(message, state, text)
     elif current == Onboarding.waiting_weight.state:
@@ -36,4 +42,6 @@ async def on_voice(message: Message, state: FSMContext, bot: Bot) -> None:
     elif current == Onboarding.waiting_height.state:
         await start_handlers.handle_height(message, state, text)
     else:
-        await chat_handlers.handle_chat(message, state, text)
+        async def flush_chat(t: str) -> None:
+            await chat_handlers.handle_chat(message, state, t)
+        await debounce.push(key, text, flush_chat)

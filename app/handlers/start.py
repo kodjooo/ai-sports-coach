@@ -6,6 +6,7 @@ from aiogram.filters import Command, CommandStart
 from aiogram.fsm.context import FSMContext
 from aiogram.types import Message
 
+from app import debounce
 from app.core import llm
 from app.core.db import async_session
 from app.core import repository as repo
@@ -127,7 +128,13 @@ async def _continue_after_persona(message: Message, tg_id: int, state: FSMContex
 
 @router.message(Onboarding.interview, F.text)
 async def interview_text(message: Message, state: FSMContext) -> None:
-    await handle_interview(message, state, message.text.strip())
+    # Склеиваем несколько сообщений подряд и обрабатываем один раз
+    key = f"{message.chat.id}:{message.from_user.id}"
+
+    async def flush(text: str) -> None:
+        await handle_interview(message, state, text)
+
+    await debounce.push(key, message.text.strip(), flush)
 
 
 async def after_schedule(message: Message, tg_id: int, state: FSMContext) -> None:
