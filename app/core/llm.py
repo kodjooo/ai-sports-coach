@@ -236,6 +236,58 @@ async def summarize_history(prev_summary: str | None, messages: list[dict]) -> s
         return prev_summary or ""
 
 
+async def exercise_howto(name: str, is_time: bool = False) -> str:
+    """Развёрнутое объяснение техники упражнения."""
+    unit = "в секундах удержания" if is_time else "в повторах"
+    try:
+        resp = await get_client().chat.completions.create(
+            model=settings.openai_model,
+            reasoning_effort=settings.openai_reasoning_effort,
+            messages=[
+                {
+                    "role": "system",
+                    "content": (
+                        "Ты тренер. Объясни технику упражнения понятно и по делу, "
+                        "без воды. Формат: исходное положение; как выполнять (по шагам); "
+                        "дыхание; 2–3 частые ошибки; 1 совет по прогрессии. "
+                        f"Упражнение измеряется {unit}."
+                    ),
+                },
+                {"role": "user", "content": f"Упражнение: {name}"},
+            ],
+        )
+        return resp.choices[0].message.content or ""
+    except Exception as exc:
+        logger.warning("Ошибка объяснения техники: %s", exc)
+        return ""
+
+
+async def explain_routine(routine_text: str, kind: str) -> str:
+    """Разворачивает разминку/заминку в понятные шаги с техникой."""
+    if not routine_text:
+        return ""
+    try:
+        resp = await get_client().chat.completions.create(
+            model=settings.openai_model,
+            reasoning_effort=settings.openai_reasoning_effort,
+            messages=[
+                {
+                    "role": "system",
+                    "content": (
+                        f"Ты тренер. Распиши {kind} по пунктам: для каждого движения — "
+                        "сколько делать (время/повторы) и краткая техника (1 строка). "
+                        "Коротко и по делу, без вступлений."
+                    ),
+                },
+                {"role": "user", "content": routine_text},
+            ],
+        )
+        return resp.choices[0].message.content or ""
+    except Exception as exc:
+        logger.warning("Ошибка объяснения %s: %s", kind, exc)
+        return ""
+
+
 async def transcribe(audio_bytes: bytes, filename: str = "voice.ogg") -> str:
     """Распознаёт речь из голосового сообщения (Telegram присылает ogg/opus)."""
     try:

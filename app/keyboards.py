@@ -116,9 +116,12 @@ def time_kb() -> InlineKeyboardMarkup:
 
 
 def warmup_done_kb() -> InlineKeyboardMarkup:
-    """Кнопка перехода от разминки к упражнениям."""
+    """Кнопки разминки: подробное объяснение и переход к упражнениям."""
     return InlineKeyboardMarkup(
-        inline_keyboard=[[InlineKeyboardButton(text="▶️ К упражнениям", callback_data="wk:warmup_done")]]
+        inline_keyboard=[
+            [InlineKeyboardButton(text="❓ Как делать разминку", callback_data="wk:warmup_info")],
+            [InlineKeyboardButton(text="▶️ К упражнениям", callback_data="wk:warmup_done")],
+        ]
     )
 
 
@@ -135,9 +138,12 @@ def confirm_action_kb() -> InlineKeyboardMarkup:
 
 
 def cooldown_done_kb() -> InlineKeyboardMarkup:
-    """Кнопка завершения тренировки после заминки."""
+    """Кнопки заминки: подробное объяснение и завершение."""
     return InlineKeyboardMarkup(
-        inline_keyboard=[[InlineKeyboardButton(text="✅ Завершить тренировку", callback_data="wk:cooldown_done")]]
+        inline_keyboard=[
+            [InlineKeyboardButton(text="❓ Как делать заминку", callback_data="wk:cooldown_info")],
+            [InlineKeyboardButton(text="✅ Завершить тренировку", callback_data="wk:cooldown_done")],
+        ]
     )
 
 

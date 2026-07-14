@@ -1,6 +1,7 @@
 """Режим тренировки: пошаговый ввод кнопками, запись сетов, фидбек LLM."""
 from __future__ import annotations
 
+import asyncio
 from datetime import date
 
 from aiogram import F, Router
@@ -83,12 +84,14 @@ async def _begin(target, user_tg: int, state: FSMContext) -> None:
         cur_set=1,
         pending_reps=None,
         groups=groups,
+        warmup=stored_warmup or warmup.warmup_text(groups),
         cooldown=stored_cooldown,
     )
     # Начинаем с разминки (хранимая или собранная по группам мышц)
-    warmup_msg = stored_warmup or warmup.warmup_text(groups)
     if stored_warmup:
         warmup_msg = f"🔥 <b>Разминка</b>\n{stored_warmup}"
+    else:
+        warmup_msg = warmup.warmup_text(groups)
     await target.answer(warmup_msg, reply_markup=warmup_done_kb())
 
 
@@ -150,9 +153,10 @@ async def choose_effort(cb: CallbackQuery, state: FSMContext) -> None:
     # Переход к следующему сету/упражнению
     if data["cur_set"] < item["target_sets"]:
         rest = item.get("rest_sec") or 60
-        await cb.message.answer(f"⏱ Отдых ~{rest} сек, потом продолжаем.")
+        await cb.message.answer(f"⏱ Отдых {rest} сек — дам сигнал, когда продолжать.")
         await state.update_data(cur_set=data["cur_set"] + 1, pending_reps=None)
         await _show_set(cb.message, state)
+        asyncio.create_task(_rest_timer(cb.message, rest))
     elif i + 1 < len(items):
         await state.update_data(cur_item=i + 1, cur_set=1, pending_reps=None)
         await _show_set(cb.message, state)
@@ -162,6 +166,26 @@ async def choose_effort(cb: CallbackQuery, state: FSMContext) -> None:
         text = f"🧘 <b>Заминка</b>\n{cooldown}" if cooldown else warmup.cooldown_text(data.get("groups", []))
         await cb.message.answer(text, reply_markup=cooldown_done_kb())
     await cb.answer("Записал ✅")
+
+
+@router.callback_query(Workout.in_progress, F.data == "wk:warmup_info")
+async def warmup_info(cb: CallbackQuery, state: FSMContext) -> None:
+    await cb.answer()
+    data = await state.get_data()
+    async with typing(cb.message):
+        text = await llm.explain_routine(data.get("warmup", ""), "разминку")
+    if text:
+        await cb.message.answer(text)
+
+
+@router.callback_query(Workout.in_progress, F.data == "wk:cooldown_info")
+async def cooldown_info(cb: CallbackQuery, state: FSMContext) -> None:
+    await cb.answer()
+    data = await state.get_data()
+    async with typing(cb.message):
+        text = await llm.explain_routine(data.get("cooldown", ""), "заминку")
+    if text:
+        await cb.message.answer(text)
 
 
 @router.callback_query(Workout.in_progress, F.data == "wk:warmup_done")
@@ -174,6 +198,20 @@ async def warmup_done(cb: CallbackQuery, state: FSMContext) -> None:
 async def cooldown_done(cb: CallbackQuery, state: FSMContext) -> None:
     await cb.answer()
     await _finish(cb.message, state)
+
+
+async def _rest_timer(message, seconds: int) -> None:
+    """Отсчёт отдыха: для длинных пауз — сигнал в середине, и «время!» в конце."""
+    try:
+        if seconds >= 75:
+            await asyncio.sleep(seconds / 2)
+            await message.answer(f"⏳ Половина отдыха, осталось ~{seconds // 2} сек.")
+            await asyncio.sleep(seconds - seconds / 2)
+        else:
+            await asyncio.sleep(seconds)
+        await message.answer("⏱ Время! Следующий подход 💪")
+    except Exception:
+        pass
 
 
 # ---------- Завершение и фидбек ----------
@@ -210,17 +248,22 @@ async def _finish(target, state: FSMContext) -> None:
 
 @router.callback_query(Workout.in_progress, F.data == "wk:howto")
 async def show_howto(cb: CallbackQuery, state: FSMContext) -> None:
+    await cb.answer()
     data = await state.get_data()
     item = data["items"][data["cur_item"]]
-    await cb.message.answer(f"<b>Техника — {item['name']}</b>\n{item['technique']}")
-    await cb.answer()
+    async with typing(cb.message):
+        detailed = await llm.exercise_howto(item["name"], item.get("is_time", False))
+    text = detailed or item["technique"]
+    await cb.message.answer(f"<b>Техника — {item['name']}</b>\n{text}")
 
 
 @router.callback_query(Workout.in_progress, F.data == "wk:replace")
 async def replace_start(cb: CallbackQuery, state: FSMContext) -> None:
-    """Показываем варианты замены — другие упражнения каталога."""
+    """Показываем варианты замены — приоритет той же группе мышц, с указанием группы."""
     data = await state.get_data()
-    cur_ex_id = data["items"][data["cur_item"]]["exercise_id"]
+    cur = data["items"][data["cur_item"]]
+    cur_ex_id = cur["exercise_id"]
+    cur_group = (cur.get("muscle_group") or "").split("/")[0].strip().lower()
     from aiogram.types import InlineKeyboardButton, InlineKeyboardMarkup
 
     async with async_session() as db:
@@ -229,11 +272,20 @@ async def replace_start(cb: CallbackQuery, state: FSMContext) -> None:
 
         res = await db.execute(select(Exercise).where(Exercise.id != cur_ex_id))
         others = list(res.scalars().all())
+
+    # Сначала — упражнения на ту же группу мышц (равнозначная замена)
+    def same_group(ex) -> bool:
+        return cur_group and cur_group in (ex.muscle_group or "").lower()
+
+    others.sort(key=lambda ex: (not same_group(ex), ex.name))
     rows = [
-        [InlineKeyboardButton(text=ex.name, callback_data=f"repex:{ex.id}")] for ex in others[:8]
+        [InlineKeyboardButton(text=f"{ex.name} · {ex.muscle_group or '—'}", callback_data=f"repex:{ex.id}")]
+        for ex in others[:8]
     ]
     await cb.message.answer(
-        "На что заменить?", reply_markup=InlineKeyboardMarkup(inline_keyboard=rows)
+        f"На что заменить? (сейчас: {cur['name']} · {cur.get('muscle_group') or '—'})\n"
+        "Сверху — на ту же группу мышц:",
+        reply_markup=InlineKeyboardMarkup(inline_keyboard=rows),
     )
     await cb.answer()
 
@@ -267,7 +319,10 @@ async def replace_apply(cb: CallbackQuery, state: FSMContext) -> None:
             {
                 "exercise_id": new_ex_id,
                 "name": ex.name,
+                "muscle_group": (ex.muscle_group or ""),
                 "technique": (ex.technique or "Техника не описана."),
+                # Пересчитываем тип (повторы/секунды) под новое упражнение
+                "is_time": _is_time_based(ex.name, ex.muscle_group or ""),
             }
         )
         note = f"Заменили {item['name']}"
