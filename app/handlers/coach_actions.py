@@ -78,11 +78,12 @@ async def apply(action: dict, tg_id: int) -> str:
             return f"Записал вес {weight:g} кг."
 
         if name == "log_meal":
-            from app.core import llm
+            from app.core import llm, openfoodfacts
 
             analysis = await llm.analyze_food_text(args.get("description", ""))
             if not analysis.get("items"):
                 return "Не понял, что именно съедено."
+            analysis = await openfoodfacts.refine(analysis)
             await repo.add_meal(db, user.id, analysis)
             t = analysis.get("total", {})
             return (

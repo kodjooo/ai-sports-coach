@@ -5,7 +5,7 @@ from aiogram import Bot, F, Router
 from aiogram.fsm.context import FSMContext
 from aiogram.types import CallbackQuery, InlineKeyboardButton, InlineKeyboardMarkup, Message
 
-from app.core import llm, nutrition
+from app.core import llm, nutrition, openfoodfacts
 from app.core import repository as repo
 from app.core.db import async_session
 from app.states import Nutrition
@@ -39,6 +39,10 @@ def _format(analysis: dict) -> str:
         f"Б {round(t.get('protein') or 0)} / Ж {round(t.get('fat') or 0)} / "
         f"У {round(t.get('carbs') or 0)}"
     )
+    sources = {it.get("source") for it in analysis.get("items", []) if it.get("source")}
+    if sources:
+        names = {"usda": "USDA", "off": "OpenFoodFacts"}
+        lines.append("<i>Уточнено по базе: " + ", ".join(names.get(s, s) for s in sources) + ".</i>")
     return "\n".join(lines)
 
 
@@ -50,6 +54,8 @@ async def on_photo(message: Message, state: FSMContext, bot: Bot) -> None:
 
     async with typing(message):
         analysis = await llm.analyze_food_photo(image_url)
+        if analysis.get("is_food"):
+            analysis = await openfoodfacts.refine(analysis)
 
     if not analysis.get("is_food"):
         await message.answer("Это не похоже на еду 🤔 Пришли фото блюда.")
@@ -101,6 +107,8 @@ async def meal_correction(message: Message, state: FSMContext) -> None:
     prev = data.get("meal") or {}
     async with typing(message):
         analysis = await llm.analyze_food_text(message.text.strip(), prev=prev)
+        if analysis.get("items"):
+            analysis = await openfoodfacts.refine(analysis)
     if not analysis.get("items"):
         await message.answer("Не понял правку. Опиши блюдо и вес, например «рис 200 г, курица 150 г».")
         return

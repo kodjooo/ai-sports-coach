@@ -35,6 +35,10 @@ class Settings(BaseSettings):
     redis_port: int = 6379
     redis_db: int = 0
 
+    # USDA FoodData Central — точная база для генерик-продуктов.
+    # Бесплатный ключ: https://fdc.nal.usda.gov/api-key-signup.html (для теста — DEMO_KEY)
+    usda_api_key: str = ""
+
     # Планировщик
     tz: str = "Europe/Chisinau"
     reminder_hour: int = 8

@@ -426,9 +426,11 @@ async def embed(text: str) -> list[float]:
 
 _FOOD_SCHEMA_HINT = (
     "Верни СТРОГО JSON: {\"is_food\": bool, \"note\": str, "
-    "\"items\": [{\"name\": str, \"grams\": number, \"kcal\": number, "
+    "\"items\": [{\"name\": str, \"query\": str, \"grams\": number, \"kcal\": number, "
     "\"protein\": number, \"fat\": number, \"carbs\": number}], "
     "\"total\": {\"kcal\": number, \"protein\": number, \"fat\": number, \"carbs\": number}}. "
+    "name — название по-русски; query — простое обобщённое название продукта по-английски "
+    "для поиска в базе продуктов (напр. \"boiled rice\", \"chicken breast\", \"olive oil\"). "
     "Оцени порции в граммах и БЖУ/ккал по каждому ингредиенту, посчитай total как сумму. "
     "Если на изображении не еда — is_food=false, items=[]. Значения — реалистичные, целые."
 )
