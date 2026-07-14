@@ -59,6 +59,17 @@ docker compose down -v       # удалить и данные
 docker compose --profile test run --rm tests
 ```
 
+## Логирование переписки (для анализа)
+
+По умолчанию выключено. Включить в `.env`:
+
+```
+LOG_DIALOG=true
+LOG_DIALOG_USERS=            # пусто = все; или список tg_id через запятую
+```
+
+Просмотр: `docker compose logs bot | grep DIALOG`.
+
 ## Миграции БД
 
 Миграции применяются автоматически при старте контейнера `bot` (`alembic upgrade head`).

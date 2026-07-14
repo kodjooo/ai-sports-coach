@@ -15,6 +15,7 @@ from app.config import settings
 from app.core.db import async_session
 from app.core.seed import seed_exercises
 from app.handlers import get_root_router
+from app.middlewares import IncomingLogMiddleware, OutgoingLogMiddleware
 from app.scheduler.reminders import setup_scheduler
 
 logging.basicConfig(level=logging.INFO)
@@ -40,9 +41,13 @@ async def main() -> None:
         token=settings.tg_token,
         default=DefaultBotProperties(parse_mode=ParseMode.HTML),
     )
+    # Логирование переписки (если включено)
+    bot.session.middleware(OutgoingLogMiddleware())
+
     # FSM в Redis — состояние диалога переживает перезапуск бота
     storage = RedisStorage.from_url(settings.redis_url)
     dp = Dispatcher(storage=storage)
+    dp.message.outer_middleware(IncomingLogMiddleware())
     dp.include_router(get_root_router())
 
     scheduler = setup_scheduler(bot)

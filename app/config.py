@@ -40,6 +40,11 @@ class Settings(BaseSettings):
     reminder_hour: int = 8
     reminder_minute: int = 0
 
+    # Логирование переписки (для анализа). Выключено по умолчанию.
+    log_dialog: bool = False
+    # Список tg_id через запятую — логировать только их. Пусто = все (при log_dialog=true).
+    log_dialog_users: str = ""
+
     model_config = SettingsConfigDict(env_file=".env", extra="ignore")
 
     @property
@@ -53,6 +58,15 @@ class Settings(BaseSettings):
     @property
     def redis_url(self) -> str:
         return f"redis://{self.redis_host}:{self.redis_port}/{self.redis_db}"
+
+    @property
+    def log_dialog_user_ids(self) -> set[int]:
+        ids: set[int] = set()
+        for part in self.log_dialog_users.split(","):
+            part = part.strip()
+            if part.isdigit():
+                ids.add(int(part))
+        return ids
 
     @property
     def sync_database_url(self) -> str:

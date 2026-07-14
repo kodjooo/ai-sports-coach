@@ -5,7 +5,7 @@ from aiogram import Bot, F, Router
 from aiogram.fsm.context import FSMContext
 from aiogram.types import Message
 
-from app import debounce
+from app import debounce, dialoglog
 from app.core import llm
 from app.handlers import chat as chat_handlers
 from app.handlers import environment as env_handlers
@@ -26,6 +26,7 @@ async def on_voice(message: Message, state: FSMContext, bot: Bot) -> None:
     if not text:
         await message.answer("Не разобрал голосовое, повтори текстом, пожалуйста.")
         return
+    dialoglog.log_in(message.from_user.id, f"[голос] {text}")
 
     current = await state.get_state()
     key = f"{message.chat.id}:{message.from_user.id}"
