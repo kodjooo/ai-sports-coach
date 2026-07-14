@@ -119,6 +119,18 @@ COACH_TOOLS = [
     {
         "type": "function",
         "function": {
+            "name": "log_meal",
+            "description": "Записать съеденное по текстовому описанию клиента (КБЖУ посчитает система)",
+            "parameters": {
+                "type": "object",
+                "properties": {"description": {"type": "string", "description": "Что и сколько съел"}},
+                "required": ["description"],
+            },
+        },
+    },
+    {
+        "type": "function",
+        "function": {
             "name": "set_plan",
             "description": (
                 "Полностью пересобрать план тренировок клиента: задать дни недели и "
@@ -254,10 +266,11 @@ INTERVIEW_SYSTEM = (
     "рост, где тренируется или какой инвентарь — извлеки это в поля ниже.\n"
     "Верни СТРОГО JSON без markdown со схемой: "
     '{"done": bool, "reply": str, "goal": str|null, "profile_summary": str|null, '
-    '"weight_kg": number|null, "height_cm": number|null, '
+    '"weight_kg": number|null, "height_cm": number|null, "age": number|null, '
+    '"sex": ("м"|"ж")|null, '
     '"environment": ("дом"|"улица"|"зал"|"микс")|null, "equipment": str|null}. '
-    "Поля weight_kg/height_cm/environment/equipment заполняй ТОЛЬКО если клиент их "
-    "явно назвал, иначе null. reply всегда содержит человеческую реакцию. Пока "
+    "Поля weight_kg/height_cm/age/sex/environment/equipment заполняй ТОЛЬКО если "
+    "клиент их явно назвал, иначе null. reply всегда содержит человеческую реакцию. Пока "
     "done=false — в конце reply следующий вопрос. Когда информации достаточно "
     "(или пришёл флаг завершения) done=true, reply — короткое подтверждение вроде "
     "«Понял, информации достаточно», goal — краткая цель, profile_summary — "
@@ -409,6 +422,61 @@ async def embed(text: str) -> list[float]:
     """Эмбеддинг текста для векторной памяти."""
     resp = await get_client().embeddings.create(model=settings.openai_embed_model, input=text)
     return resp.data[0].embedding
+
+
+_FOOD_SCHEMA_HINT = (
+    "Верни СТРОГО JSON: {\"is_food\": bool, \"note\": str, "
+    "\"items\": [{\"name\": str, \"grams\": number, \"kcal\": number, "
+    "\"protein\": number, \"fat\": number, \"carbs\": number}], "
+    "\"total\": {\"kcal\": number, \"protein\": number, \"fat\": number, \"carbs\": number}}. "
+    "Оцени порции в граммах и БЖУ/ккал по каждому ингредиенту, посчитай total как сумму. "
+    "Если на изображении не еда — is_food=false, items=[]. Значения — реалистичные, целые."
+)
+
+
+async def analyze_food_photo(image_url: str) -> dict:
+    """Разбирает фото блюда: ингредиенты, граммы, БЖУ, ккал."""
+    try:
+        resp = await get_client().chat.completions.create(
+            model=settings.openai_model,
+            reasoning_effort=settings.openai_reasoning_effort,
+            response_format={"type": "json_object"},
+            messages=[
+                {"role": "system", "content": "Ты нутрициолог. " + _FOOD_SCHEMA_HINT},
+                {
+                    "role": "user",
+                    "content": [
+                        {"type": "text", "text": "Определи, что за блюдо, и посчитай КБЖУ."},
+                        {"type": "image_url", "image_url": {"url": image_url}},
+                    ],
+                },
+            ],
+        )
+        return json.loads(resp.choices[0].message.content or "{}")
+    except Exception as exc:
+        logger.warning("Ошибка анализа фото еды: %s", exc)
+        return {"is_food": False, "items": [], "total": {}, "note": "ошибка анализа"}
+
+
+async def analyze_food_text(description: str, prev: dict | None = None) -> dict:
+    """Оценка КБЖУ по текстовому описанию (или коррекция прежнего разбора)."""
+    ctx = ""
+    if prev:
+        ctx = f"Прежний разбор: {json.dumps(prev, ensure_ascii=False)}. Учти уточнение. "
+    try:
+        resp = await get_client().chat.completions.create(
+            model=settings.openai_model,
+            reasoning_effort=settings.openai_reasoning_effort,
+            response_format={"type": "json_object"},
+            messages=[
+                {"role": "system", "content": "Ты нутрициолог. " + _FOOD_SCHEMA_HINT},
+                {"role": "user", "content": ctx + f"Описание еды: {description}"},
+            ],
+        )
+        return json.loads(resp.choices[0].message.content or "{}")
+    except Exception as exc:
+        logger.warning("Ошибка анализа еды по тексту: %s", exc)
+        return {"is_food": False, "items": [], "total": {}, "note": "ошибка анализа"}
 
 
 async def vision_estimate_kcal(image_url: str, grams: float | None) -> str:

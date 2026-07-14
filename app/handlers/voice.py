@@ -42,6 +42,8 @@ async def on_voice(message: Message, state: FSMContext, bot: Bot) -> None:
         await start_handlers.handle_weight(message, state, text)
     elif current == Onboarding.waiting_height.state:
         await start_handlers.handle_height(message, state, text)
+    elif current == Onboarding.waiting_age.state:
+        await start_handlers.handle_age(message, state, text)
     else:
         async def flush_chat(t: str) -> None:
             await chat_handlers.handle_chat(message, state, t)

@@ -4,14 +4,14 @@ from __future__ import annotations
 from aiogram import F, Router
 from aiogram.filters import Command, CommandStart
 from aiogram.fsm.context import FSMContext
-from aiogram.types import Message
+from aiogram.types import CallbackQuery, Message
 
 from app import debounce
 from app.core import llm
 from app.core.db import async_session
 from app.core import repository as repo
 from app.handlers import environment as env_handlers
-from app.keyboards import main_menu
+from app.keyboards import activity_kb, main_menu, sex_kb
 from app.states import Onboarding
 from app.utils import parse_weight, typing
 
@@ -92,6 +92,10 @@ async def handle_interview(message: Message, state: FSMContext, text: str) -> No
                 user.weight_kg = w
             if h:
                 user.height_cm = int(h)
+            if result.get("age"):
+                user.age = int(result["age"])
+            if result.get("sex"):
+                user.sex = result["sex"]
             if result.get("environment"):
                 user.environment = result["environment"]
             if result.get("equipment"):
@@ -138,16 +142,31 @@ async def interview_text(message: Message, state: FSMContext) -> None:
 
 
 async def after_schedule(message: Message, tg_id: int, state: FSMContext) -> None:
-    """После сборки плана — спросить вес и рост, только если их ещё нет."""
+    await _ask_next_profile(message, tg_id, state)
+
+
+async def _ask_next_profile(message: Message, tg_id: int, state: FSMContext) -> None:
+    """Спрашивает по очереди только недостающие данные профиля, затем финиш."""
     async with async_session() as db:
         user = await repo.get_user_by_tg(db, tg_id)
-        weight, height = user.weight_kg, user.height_cm
+        weight, height, sex, age, activity = (
+            user.weight_kg, user.height_cm, user.sex, user.age, user.activity
+        )
     if weight is None:
         await state.set_state(Onboarding.waiting_weight)
         await message.answer("Какой сейчас вес в кг? (например 82.5)")
     elif height is None:
         await state.set_state(Onboarding.waiting_height)
         await message.answer("А какой рост в см? (например 178)")
+    elif sex is None:
+        await state.set_state(Onboarding.sex)
+        await message.answer("Укажи пол — для расчёта нормы калорий:", reply_markup=sex_kb())
+    elif age is None:
+        await state.set_state(Onboarding.waiting_age)
+        await message.answer("Сколько тебе лет?")
+    elif activity is None:
+        await state.set_state(Onboarding.activity)
+        await message.answer("Какой у тебя уровень активности?", reply_markup=activity_kb())
     else:
         await _finish_onboarding(message, state)
 
@@ -172,7 +191,7 @@ async def handle_weight(message: Message, state: FSMContext, text: str) -> None:
         user = await repo.get_user_by_tg(db, message.from_user.id)
         await repo.update_user_profile(db, user, weight_kg=weight)
     await message.answer(f"Записал вес — {weight:g} кг.")
-    await after_schedule(message, message.from_user.id, state)
+    await _ask_next_profile(message, message.from_user.id, state)
 
 
 async def handle_height(message: Message, state: FSMContext, text: str) -> None:
@@ -189,7 +208,22 @@ async def handle_height(message: Message, state: FSMContext, text: str) -> None:
         user.height_cm = height
         await db.commit()
     await message.answer(f"Записал рост — {height} см.")
-    await _finish_onboarding(message, state)
+    await _ask_next_profile(message, message.from_user.id, state)
+
+
+async def handle_age(message: Message, state: FSMContext, text: str) -> None:
+    import re
+
+    m = re.search(r"(\d{1,3})", text)
+    if not m or not (10 <= int(m.group(1)) <= 100):
+        await message.answer("Не уловил возраст. Напиши число, например 30.")
+        return
+    age = int(m.group(1))
+    async with async_session() as db:
+        user = await repo.get_user_by_tg(db, message.from_user.id)
+        user.age = age
+        await db.commit()
+    await _ask_next_profile(message, message.from_user.id, state)
 
 
 @router.message(Onboarding.waiting_weight, F.text)
@@ -200,3 +234,30 @@ async def onboarding_weight(message: Message, state: FSMContext) -> None:
 @router.message(Onboarding.waiting_height, F.text)
 async def onboarding_height(message: Message, state: FSMContext) -> None:
     await handle_height(message, state, message.text)
+
+
+@router.message(Onboarding.waiting_age, F.text)
+async def onboarding_age(message: Message, state: FSMContext) -> None:
+    await handle_age(message, state, message.text)
+
+
+@router.callback_query(Onboarding.sex, F.data.startswith("sex:"))
+async def onboarding_sex(cb: CallbackQuery, state: FSMContext) -> None:
+    sex = cb.data.split(":", 1)[1]
+    async with async_session() as db:
+        user = await repo.get_user_by_tg(db, cb.from_user.id)
+        user.sex = sex
+        await db.commit()
+    await cb.answer()
+    await _ask_next_profile(cb.message, cb.from_user.id, state)
+
+
+@router.callback_query(Onboarding.activity, F.data.startswith("actlvl:"))
+async def onboarding_activity(cb: CallbackQuery, state: FSMContext) -> None:
+    activity = cb.data.split(":", 1)[1]
+    async with async_session() as db:
+        user = await repo.get_user_by_tg(db, cb.from_user.id)
+        user.activity = activity
+        await db.commit()
+    await cb.answer()
+    await _ask_next_profile(cb.message, cb.from_user.id, state)

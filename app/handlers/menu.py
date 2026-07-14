@@ -9,7 +9,7 @@ from aiogram.fsm.context import FSMContext
 from aiogram.types import CallbackQuery, Message
 
 from app.core.db import async_session
-from app.core import progress
+from app.core import nutrition, progress
 from app.core import repository as repo
 from app.core import vector
 from app.handlers.environment import start_environment
@@ -78,6 +78,37 @@ async def show_plan_cb(cb: CallbackQuery) -> None:
 
 
 # ---------- Статистика ----------
+
+@router.message(F.text == "🍎 Питание")
+async def show_nutrition(message: Message) -> None:
+    async with async_session() as db:
+        user = await repo.get_user_by_tg(db, message.from_user.id)
+        if user is None:
+            await message.answer("Сначала нажми /start")
+            return
+        totals = await repo.today_totals(db, user.id)
+        norm = nutrition.daily_norm(user)
+
+    lines = ["🍎 <b>Питание сегодня</b>", ""]
+    if norm:
+        lines.append(
+            f"Калории: <b>{totals['kcal']} / {norm['kcal']}</b> "
+            f"(осталось {max(norm['kcal'] - totals['kcal'], 0)})"
+        )
+        lines.append(
+            f"Белки: {totals['protein']} / {norm['protein']} г\n"
+            f"Жиры: {totals['fat']} / {norm['fat']} г\n"
+            f"Углеводы: {totals['carbs']} / {norm['carbs']} г"
+        )
+    else:
+        lines.append(
+            f"Съедено: {totals['kcal']} ккал (Б {totals['protein']} Ж {totals['fat']} У {totals['carbs']})"
+        )
+        lines.append("\n<i>Пройди /profile (пол/возраст/активность) — и посчитаю норму.</i>")
+    lines.append(f"\nПриёмов пищи: {totals['meals']}")
+    lines.append("\n📷 Пришли фото еды или напиши, что съел — запишу и посчитаю КБЖУ.")
+    await message.answer("\n".join(lines))
+
 
 @router.message(F.text == "📊 Статистика")
 async def show_stats(message: Message) -> None:

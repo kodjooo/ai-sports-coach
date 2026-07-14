@@ -12,6 +12,9 @@ class Onboarding(StatesGroup):
     custom_time = State()     # ручной ввод времени тренировки
     waiting_weight = State()  # вопрос про вес числом (если не сказан в интервью)
     waiting_height = State()  # вопрос про рост (если не сказан в интервью)
+    sex = State()             # пол (кнопки)
+    waiting_age = State()     # возраст числом
+    activity = State()        # уровень активности (кнопки)
 
 
 class Workout(StatesGroup):
@@ -21,6 +24,7 @@ class Workout(StatesGroup):
 
 
 class Nutrition(StatesGroup):
-    """Учёт питания (Фаза 3)."""
+    """Учёт питания."""
 
-    waiting_grams = State()  # ждём вес порции после фото
+    confirming = State()   # показан разбор блюда, ждём Сохранить/Исправить
+    correcting = State()   # ждём текстовую правку разбора

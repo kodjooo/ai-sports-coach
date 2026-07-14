@@ -28,6 +28,8 @@ def describe(action: dict) -> str | None:
         return f"Ставить напоминания на {int(args.get('hour', 0)):02d}:{int(args.get('minute', 0)):02d}"
     if name == "log_weight":
         return f"Записать вес {args.get('weight_kg')} кг"
+    if name == "log_meal":
+        return f"Записать съеденное: {args.get('description')}"
     if name == "set_plan":
         workouts = args.get("workouts", [])
         parts = [f"{_wd(w.get('weekday', 0))} ({len(w.get('exercises', []))} упр.)" for w in workouts]
@@ -74,6 +76,19 @@ async def apply(action: dict, tg_id: int) -> str:
             weight = float(args.get("weight_kg"))
             await repo.log_weight(db, user.id, weight)
             return f"Записал вес {weight:g} кг."
+
+        if name == "log_meal":
+            from app.core import llm
+
+            analysis = await llm.analyze_food_text(args.get("description", ""))
+            if not analysis.get("items"):
+                return "Не понял, что именно съедено."
+            await repo.add_meal(db, user.id, analysis)
+            t = analysis.get("total", {})
+            return (
+                f"Записал: {round(t.get('kcal') or 0)} ккал "
+                f"(Б{round(t.get('protein') or 0)} Ж{round(t.get('fat') or 0)} У{round(t.get('carbs') or 0)})."
+            )
 
         if name == "set_plan":
             workouts = args.get("workouts", [])

@@ -10,6 +10,7 @@ from app.core.models import (
     ChatMessage,
     Exercise,
     Meal,
+    MealItem,
     Session,
     SetLog,
     TemplateItem,
@@ -428,6 +429,65 @@ async def log_weight(db: AsyncSession, user_id: int, weight_kg: float) -> Weight
     db.add(row)
     await db.commit()
     return row
+
+
+# ---------- Питание ----------
+
+async def add_meal(
+    db: AsyncSession, user_id: int, analysis: dict, photo_file_id: str | None = None
+) -> Meal:
+    """Сохраняет приём пищи: итоговые БЖУ + ингредиенты.
+
+    analysis: {"items":[{name,grams,kcal,protein,fat,carbs}], "total":{kcal,protein,fat,carbs}}
+    """
+    total = analysis.get("total", {})
+    meal = Meal(
+        user_id=user_id,
+        photo_file_id=photo_file_id,
+        kcal=total.get("kcal"),
+        protein=total.get("protein"),
+        fat=total.get("fat"),
+        carbs=total.get("carbs"),
+        note=analysis.get("note"),
+    )
+    db.add(meal)
+    await db.flush()
+    for it in analysis.get("items", []):
+        db.add(
+            MealItem(
+                meal_id=meal.id,
+                name=it.get("name", "?"),
+                grams=it.get("grams"),
+                kcal=it.get("kcal"),
+                protein=it.get("protein"),
+                fat=it.get("fat"),
+                carbs=it.get("carbs"),
+            )
+        )
+    await db.commit()
+    return meal
+
+
+async def today_totals(db: AsyncSession, user_id: int) -> dict:
+    """Суммарные БЖУ/ккал за сегодня (по локальной дате сервера)."""
+    since = datetime.now(timezone.utc).replace(hour=0, minute=0, second=0, microsecond=0)
+    res = await db.execute(
+        select(
+            func.coalesce(func.sum(Meal.kcal), 0),
+            func.coalesce(func.sum(Meal.protein), 0),
+            func.coalesce(func.sum(Meal.fat), 0),
+            func.coalesce(func.sum(Meal.carbs), 0),
+            func.count(Meal.id),
+        ).where(Meal.user_id == user_id, Meal.logged_at >= since)
+    )
+    kcal, protein, fat, carbs, count = res.one()
+    return {
+        "kcal": round(float(kcal)),
+        "protein": round(float(protein)),
+        "fat": round(float(fat)),
+        "carbs": round(float(carbs)),
+        "meals": int(count),
+    }
 
 
 # ---------- Метрики для контекста LLM и отчётов ----------

@@ -31,6 +31,9 @@ class User(Base):
     name: Mapped[str | None] = mapped_column(String)
     weight_kg: Mapped[Decimal | None] = mapped_column(Numeric)
     height_cm: Mapped[int | None] = mapped_column(Integer)  # рост, см
+    sex: Mapped[str | None] = mapped_column(String)  # 'м' | 'ж'
+    age: Mapped[int | None] = mapped_column(Integer)
+    activity: Mapped[str | None] = mapped_column(String)  # уровень активности (ключ)
     goal: Mapped[str | None] = mapped_column(String)  # напр. 'похудеть+сила'
     # Персональная настройка тренера по итогам интервью
     system_prompt: Mapped[str | None] = mapped_column(String)  # сгенерированный системный промпт
@@ -136,14 +139,33 @@ class ChatMessage(Base):
 
 
 class Meal(Base):
-    """Фаза 2/3 — учёт питания."""
+    """Приём пищи (итоговые БЖУ/ккал)."""
 
     __tablename__ = "meals"
 
     id: Mapped[int] = mapped_column(BigInteger, primary_key=True)
     user_id: Mapped[int] = mapped_column(BigInteger, ForeignKey("users.id"))
     photo_file_id: Mapped[str | None] = mapped_column(String)
-    grams: Mapped[Decimal | None] = mapped_column(Numeric)
-    kcal_est: Mapped[Decimal | None] = mapped_column(Numeric)
+    grams: Mapped[Decimal | None] = mapped_column(Numeric)      # устар., не используется
+    kcal_est: Mapped[Decimal | None] = mapped_column(Numeric)   # устар., не используется
+    kcal: Mapped[Decimal | None] = mapped_column(Numeric)
+    protein: Mapped[Decimal | None] = mapped_column(Numeric)
+    fat: Mapped[Decimal | None] = mapped_column(Numeric)
+    carbs: Mapped[Decimal | None] = mapped_column(Numeric)
     note: Mapped[str | None] = mapped_column(String)
     logged_at: Mapped[datetime] = mapped_column(DateTime(timezone=True), server_default=func.now())
+
+
+class MealItem(Base):
+    """Ингредиент приёма пищи."""
+
+    __tablename__ = "meal_items"
+
+    id: Mapped[int] = mapped_column(BigInteger, primary_key=True)
+    meal_id: Mapped[int] = mapped_column(BigInteger, ForeignKey("meals.id"))
+    name: Mapped[str] = mapped_column(String)
+    grams: Mapped[Decimal | None] = mapped_column(Numeric)
+    kcal: Mapped[Decimal | None] = mapped_column(Numeric)
+    protein: Mapped[Decimal | None] = mapped_column(Numeric)
+    fat: Mapped[Decimal | None] = mapped_column(Numeric)
+    carbs: Mapped[Decimal | None] = mapped_column(Numeric)

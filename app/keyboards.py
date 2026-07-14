@@ -11,7 +11,7 @@ def main_menu() -> ReplyKeyboardMarkup:
     """Ёмкое закреплённое нижнее меню."""
     return ReplyKeyboardMarkup(
         keyboard=[
-            [KeyboardButton(text="▶️ Тренировка")],
+            [KeyboardButton(text="▶️ Тренировка"), KeyboardButton(text="🍎 Питание")],
             [KeyboardButton(text="📊 Статистика"), KeyboardButton(text="⚙️ Настройки")],
         ],
         resize_keyboard=True,
@@ -52,6 +52,28 @@ def env_kb() -> InlineKeyboardMarkup:
         inline_keyboard=[
             [InlineKeyboardButton(text=label, callback_data=f"env:{code}")]
             for code, label in ENVIRONMENTS
+        ]
+    )
+
+
+def sex_kb() -> InlineKeyboardMarkup:
+    return InlineKeyboardMarkup(
+        inline_keyboard=[
+            [
+                InlineKeyboardButton(text="♂️ Мужской", callback_data="sex:м"),
+                InlineKeyboardButton(text="♀️ Женский", callback_data="sex:ж"),
+            ]
+        ]
+    )
+
+
+def activity_kb() -> InlineKeyboardMarkup:
+    from app.core.nutrition import ACTIVITY_LABELS
+
+    return InlineKeyboardMarkup(
+        inline_keyboard=[
+            [InlineKeyboardButton(text=label, callback_data=f"actlvl:{code}")]
+            for code, label in ACTIVITY_LABELS
         ]
     )
 
