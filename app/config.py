@@ -11,6 +11,8 @@ class Settings(BaseSettings):
     # OpenAI
     openai_api_key: str
     openai_model: str = "gpt-5"
+    # Экономная модель для узких/служебных задач (в ~10 раз дешевле)
+    openai_model_mini: str = "gpt-5-mini"
     openai_embed_model: str = "text-embedding-3-small"
     # Модель распознавания речи (голосовые сообщения)
     openai_transcribe_model: str = "whisper-1"

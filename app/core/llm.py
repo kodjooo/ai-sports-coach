@@ -8,6 +8,7 @@ import logging
 from openai import AsyncOpenAI
 
 from app.config import settings
+from app.core import usage
 
 logger = logging.getLogger(__name__)
 
@@ -45,7 +46,7 @@ def _system_content(system_prompt: str | None) -> str:
 async def chat(user_prompt: str, system_prompt: str | None = None) -> str:
     """Единичный запрос к модели рассуждений с персональным системным промптом."""
     try:
-        resp = await get_client().chat.completions.create(
+        resp = await usage.complete(get_client(), "chat",
             model=settings.openai_model,
             reasoning_effort=settings.openai_reasoning_effort,
             messages=[
@@ -187,7 +188,7 @@ async def chat_with_tools(messages: list[dict], system: str) -> dict:
     """
     full = [{"role": "system", "content": system}] + messages
     try:
-        resp = await get_client().chat.completions.create(
+        resp = await usage.complete(get_client(), "chat_tools",
             model=settings.openai_model,
             reasoning_effort=settings.openai_reasoning_effort,
             tools=COACH_TOOLS,
@@ -212,8 +213,8 @@ async def summarize_history(prev_summary: str | None, messages: list[dict]) -> s
     """Сжимает старые реплики (+ прежнее резюме) в новое краткое резюме."""
     dialog = "\n".join(f"{m['role']}: {m['content']}" for m in messages)
     try:
-        resp = await get_client().chat.completions.create(
-            model=settings.openai_model,
+        resp = await usage.complete(get_client(), "summarize",
+            model=settings.openai_model_mini,
             reasoning_effort="minimal",
             messages=[
                 {
@@ -240,8 +241,8 @@ async def equivalent_load(old_name: str, sets: int, reps: int, new_name: str, is
     """Подбирает подходы/повторы (или секунды) для нового упражнения, равнозначные старому."""
     unit = "секунды удержания" if is_time else "повторы"
     try:
-        resp = await get_client().chat.completions.create(
-            model=settings.openai_model,
+        resp = await usage.complete(get_client(), "equivalent_load",
+            model=settings.openai_model_mini,
             reasoning_effort="minimal",
             response_format={"type": "json_object"},
             messages=[
@@ -269,8 +270,8 @@ async def equivalent_load(old_name: str, sets: int, reps: int, new_name: str, is
 async def estimate_burn(summary: str, weight_kg: float | None, sex: str | None) -> int:
     """Грубая оценка потраченных калорий за тренировку (домашняя силовая/кор)."""
     try:
-        resp = await get_client().chat.completions.create(
-            model=settings.openai_model,
+        resp = await usage.complete(get_client(), "estimate_burn",
+            model=settings.openai_model_mini,
             reasoning_effort="minimal",
             response_format={"type": "json_object"},
             messages=[
@@ -300,8 +301,8 @@ async def exercise_howto(name: str, is_time: bool = False) -> str:
     """Развёрнутое объяснение техники упражнения."""
     unit = "в секундах удержания" if is_time else "в повторах"
     try:
-        resp = await get_client().chat.completions.create(
-            model=settings.openai_model,
+        resp = await usage.complete(get_client(), "howto",
+            model=settings.openai_model_mini,
             reasoning_effort=settings.openai_reasoning_effort,
             messages=[
                 {
@@ -327,8 +328,8 @@ async def explain_routine(routine_text: str, kind: str) -> str:
     if not routine_text:
         return ""
     try:
-        resp = await get_client().chat.completions.create(
-            model=settings.openai_model,
+        resp = await usage.complete(get_client(), "explain_routine",
+            model=settings.openai_model_mini,
             reasoning_effort=settings.openai_reasoning_effort,
             messages=[
                 {
@@ -406,7 +407,7 @@ async def generate_plan(
     Возвращает список workouts: [{weekday, warmup, cooldown, exercises:[{name,sets,reps,rest_sec,muscle_group,technique}]}].
     """
     try:
-        resp = await get_client().chat.completions.create(
+        resp = await usage.complete(get_client(), "generate_plan",
             model=settings.openai_model,
             reasoning_effort=settings.openai_reasoning_effort_onboarding,
             response_format={"type": "json_object"},
@@ -459,7 +460,7 @@ async def generate_plan(
 async def build_system_prompt(profile_summary: str | None, goal: str | None) -> str:
     """Генерирует персональный системный промпт тренера (тяжёлый шаг после интервью)."""
     try:
-        resp = await get_client().chat.completions.create(
+        resp = await usage.complete(get_client(), "system_prompt",
             model=settings.openai_model,
             reasoning_effort=settings.openai_reasoning_effort_onboarding,
             messages=[
@@ -491,8 +492,8 @@ async def extract_weight(text: str) -> float | None:
     Понимает «76», «76 кг», «семьдесят шесть», «вешу примерно 76,5».
     """
     try:
-        resp = await get_client().chat.completions.create(
-            model=settings.openai_model,
+        resp = await usage.complete(get_client(), "extract_weight",
+            model=settings.openai_model_mini,
             reasoning_effort="minimal",
             response_format={"type": "json_object"},
             messages=[
@@ -524,7 +525,7 @@ async def interview_step(history: list[dict], force_finish: bool = False) -> dic
             {"role": "system", "content": "Информации достаточно. Заверши интервью (done=true)."}
         )
     try:
-        resp = await get_client().chat.completions.create(
+        resp = await usage.complete(get_client(), "interview",
             model=settings.openai_model,
             reasoning_effort=settings.openai_reasoning_effort_onboarding,
             response_format={"type": "json_object"},
@@ -578,7 +579,7 @@ def _known_hint(known: list[dict] | None) -> str:
 async def analyze_food_photo(image_url: str, known: list[dict] | None = None) -> dict:
     """Разбирает фото блюда: ингредиенты, граммы, БЖУ, ккал."""
     try:
-        resp = await get_client().chat.completions.create(
+        resp = await usage.complete(get_client(), "food_photo",
             model=settings.openai_model,
             reasoning_effort=settings.openai_reasoning_effort,
             response_format={"type": "json_object"},
@@ -609,8 +610,8 @@ async def analyze_food_text(description: str, prev: dict | None = None, known: l
             "назвал новое количество; при смене блюда переноси вес на новое блюдо. "
         )
     try:
-        resp = await get_client().chat.completions.create(
-            model=settings.openai_model,
+        resp = await usage.complete(get_client(), "food_text",
+            model=settings.openai_model_mini,
             reasoning_effort=settings.openai_reasoning_effort,
             response_format={"type": "json_object"},
             messages=[
@@ -628,7 +629,7 @@ async def vision_estimate_kcal(image_url: str, grams: float | None) -> str:
     """Оценка калорийности блюда по фото (Фаза 3)."""
     hint = f"Примерный вес порции: {grams} г. " if grams else ""
     try:
-        resp = await get_client().chat.completions.create(
+        resp = await usage.complete(get_client(), "vision_kcal",
             model=settings.openai_model,
             reasoning_effort=settings.openai_reasoning_effort,
             messages=[
