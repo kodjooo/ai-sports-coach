@@ -59,10 +59,7 @@ async def move_one(cb: CallbackQuery) -> None:
             moved = await repo.create_session(db, user.id, tpl_id, date.today(), status="moved")
             await repo.set_session_status(db, moved, "moved")
             await repo.create_session(db, user.id, tpl_id, date.today() + timedelta(days=1))
-    await cb.message.answer(
-        "Ок, перенёс на завтра. Дни в плане не менял — начни завтра кнопкой «▶️ Тренировка» "
-        "(автонапоминание придёт только в твои плановые дни)."
-    )
+    await cb.message.answer("Ок, перенёс на завтра — напомню завтра. Сегодня отдыхай 🙌")
     await cb.answer()
 
 

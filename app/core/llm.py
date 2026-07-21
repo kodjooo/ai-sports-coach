@@ -266,6 +266,36 @@ async def equivalent_load(old_name: str, sets: int, reps: int, new_name: str, is
         return {"sets": sets, "reps": reps}
 
 
+async def estimate_burn(summary: str, weight_kg: float | None, sex: str | None) -> int:
+    """Грубая оценка потраченных калорий за тренировку (домашняя силовая/кор)."""
+    try:
+        resp = await get_client().chat.completions.create(
+            model=settings.openai_model,
+            reasoning_effort="minimal",
+            response_format={"type": "json_object"},
+            messages=[
+                {
+                    "role": "system",
+                    "content": (
+                        "Оцени примерно, сколько ккал потрачено за тренировку по её составу "
+                        "(упражнения, подходы, повторы/секунды, ощущение) и параметрам клиента. "
+                        "Реалистично для домашней силовой/функциональной сессии (обычно 100–400 ккал). "
+                        'Верни СТРОГО JSON {"kcal": целое}.'
+                    ),
+                },
+                {
+                    "role": "user",
+                    "content": f"Вес: {weight_kg or '—'} кг, пол: {sex or '—'}.\nТренировка: {summary}",
+                },
+            ],
+        )
+        data = json.loads(resp.choices[0].message.content or "{}")
+        return int(data.get("kcal") or 0)
+    except Exception as exc:
+        logger.warning("Ошибка оценки затрат ккал: %s", exc)
+        return 0
+
+
 async def exercise_howto(name: str, is_time: bool = False) -> str:
     """Развёрнутое объяснение техники упражнения."""
     unit = "в секундах удержания" if is_time else "в повторах"

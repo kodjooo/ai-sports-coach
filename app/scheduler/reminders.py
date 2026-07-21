@@ -27,18 +27,35 @@ def _now_hm() -> tuple[int, int]:
     return now.hour, (now.minute // 5) * 5
 
 
+async def _training_today(db, user, today):
+    """Есть ли тренировка сегодня и по какому шаблону.
+
+    Учитывает перенос: явно запланированная сессия на сегодня → тренировка есть;
+    плановый день недели → есть, если сессию с этого дня не перенесли (moved).
+    """
+    weekday = today.weekday()
+    tpl = await repo.get_template_for_weekday(db, user.id, weekday)
+    planned = await repo.planned_session_on(db, user.id, today)
+    if planned:
+        ptpl = await repo.get_template(db, planned.template_id) if planned.template_id else None
+        return True, (ptpl or tpl)
+    if tpl and not await repo.has_session_status_on(db, user.id, today, "moved"):
+        return True, tpl
+    return False, None
+
+
 async def _tick(bot: Bot) -> None:
     """Раз в 5 минут проверяем, кому пора напомнить о тренировке."""
     hour, minute = _now_hm()
-    weekday = date.today().weekday()
+    today = date.today()
     async with async_session() as db:
         res = await db.execute(select(User))
         users = list(res.scalars().all())
         for user in users:
             if user.train_hour is None:
                 continue
-            template = await repo.get_template_for_weekday(db, user.id, weekday)
-            if template is None:
+            train_today, template = await _training_today(db, user, today)
+            if not train_today or template is None:
                 continue
 
             start_dt = datetime(2000, 1, 1, user.train_hour, user.train_minute or 0)

@@ -106,6 +106,7 @@ class Session(Base):
     status: Mapped[str | None] = mapped_column(String)  # planned/done/skipped/moved
     started_at: Mapped[datetime | None] = mapped_column(DateTime(timezone=True))
     finished_at: Mapped[datetime | None] = mapped_column(DateTime(timezone=True))
+    kcal_burned: Mapped[int | None] = mapped_column(Integer)  # оценка потраченных ккал
 
 
 class SetLog(Base):

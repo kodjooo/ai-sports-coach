@@ -345,6 +345,10 @@ async def _finish(target, state: FSMContext) -> None:
         summary = await progress.format_session_summary(db, session)
         # Прогрессия плана на следующий раз по ощущениям
         await repo.apply_progression(db, user.id, session.id)
+        # Оценка потраченных калорий
+        burned = await llm.estimate_burn(summary, float(user.weight_kg) if user.weight_kg else None, user.sex)
+        session.kcal_burned = burned
+        await db.commit()
         facts, memory = await ctx.build_context(db, user.id, summary)
         prompt = ctx.feedback_prompt(facts, memory, summary)
         feedback = await llm.chat(prompt, system_prompt=user.system_prompt)
@@ -361,7 +365,10 @@ async def _finish(target, state: FSMContext) -> None:
             {"type": "coach_feedback", "date": str(date.today())},
         )
     await state.clear()
-    await target.answer(feedback or "Отличная работа!")
+    msg = feedback or "Отличная работа!"
+    if burned:
+        msg += f"\n\n🔥 Потрачено ~{burned} ккал за тренировку."
+    await target.answer(msg)
 
 
 # ---------- Техника и замена ----------

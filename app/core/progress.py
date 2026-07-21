@@ -74,9 +74,13 @@ async def full_stats(db: AsyncSession, user_id: int) -> str:
     dw = await repo.weight_change(db, user_id, days=30)
     records = await repo.exercise_records(db, user_id)
 
+    burned_week = await repo.calories_burned(db, user_id, days=7)
+
     lines = ["📊 <b>Статистика</b>", ""]
     lines.append(f"🏋️ Всего тренировок: <b>{total}</b>")
     lines.append(f"📅 За неделю: <b>{week_done}</b> из {week_planned}")
+    if burned_week:
+        lines.append(f"🔥 Потрачено за неделю: <b>~{burned_week}</b> ккал")
 
     if weight is not None:
         w_line = f"⚖️ Текущий вес: <b>{weight:g} кг</b>"

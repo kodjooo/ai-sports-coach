@@ -607,6 +607,27 @@ async def today_totals(db: AsyncSession, user_id: int) -> dict:
 
 # ---------- Метрики для контекста LLM и отчётов ----------
 
+async def planned_session_on(db: AsyncSession, user_id: int, day: date) -> Session | None:
+    """Явно запланированная (перенесённая) сессия на дату — статус 'planned'."""
+    res = await db.execute(
+        select(Session).where(
+            Session.user_id == user_id,
+            Session.planned_date == day,
+            Session.status == "planned",
+        )
+    )
+    return res.scalars().first()
+
+
+async def has_session_status_on(db: AsyncSession, user_id: int, day: date, status: str) -> bool:
+    res = await db.execute(
+        select(func.count())
+        .select_from(Session)
+        .where(Session.user_id == user_id, Session.planned_date == day, Session.status == status)
+    )
+    return int(res.scalar_one()) > 0
+
+
 async def recent_sessions(db: AsyncSession, user_id: int, limit: int = 5) -> list[Session]:
     res = await db.execute(
         select(Session)
@@ -641,6 +662,19 @@ async def weight_change(db: AsyncSession, user_id: int, days: int = 7) -> float 
     if len(rows) < 2:
         return None
     return float(rows[-1].weight_kg) - float(rows[0].weight_kg)
+
+
+async def calories_burned(db: AsyncSession, user_id: int, days: int = 7) -> int:
+    """Суммарно потрачено ккал за тренировки за период (дней)."""
+    since = _local_day_start(days - 1)
+    res = await db.execute(
+        select(func.coalesce(func.sum(Session.kcal_burned), 0)).where(
+            Session.user_id == user_id,
+            Session.status == "done",
+            Session.finished_at >= since,
+        )
+    )
+    return int(res.scalar_one())
 
 
 async def total_done_sessions(db: AsyncSession, user_id: int) -> int:
