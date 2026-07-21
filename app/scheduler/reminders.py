@@ -33,6 +33,9 @@ async def _training_today(db, user, today):
     Учитывает перенос: явно запланированная сессия на сегодня → тренировка есть;
     плановый день недели → есть, если сессию с этого дня не перенесли (moved).
     """
+    # Уже тренировался сегодня — не напоминать
+    if await repo.has_session_status_on(db, user.id, today, "done"):
+        return False, None
     weekday = today.weekday()
     tpl = await repo.get_template_for_weekday(db, user.id, weekday)
     planned = await repo.planned_session_on(db, user.id, today)

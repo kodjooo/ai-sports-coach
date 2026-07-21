@@ -91,10 +91,11 @@ async def _render_plan(user_id: int) -> str:
                 rows.append(f"{ex.name if ex else '?'} {it.target_sets}×{it.target_reps}{rest}")
             block = [f"\n<b>{tpl.label}</b> ({day}):"]
             if tpl.warmup:
-                block.append(f"🔥 Разминка: {tpl.warmup}")
+                block.append(f"\n🔥 <b>Разминка</b>\n{tpl.warmup}")
+            block.append("\n💪 <b>Основная часть</b>")
             block += [f"• {r}" for r in rows]
             if tpl.cooldown:
-                block.append(f"🧘 Заминка: {tpl.cooldown}")
+                block.append(f"\n🧘 <b>Заминка</b>\n{tpl.cooldown}")
             lines.append("\n".join(block))
         return "\n".join(lines)
 
