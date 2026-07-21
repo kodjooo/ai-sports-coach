@@ -184,6 +184,17 @@ async def settings_env(cb: CallbackQuery, state: FSMContext) -> None:
     await start_environment(cb.message, state, from_settings=True)
 
 
+@router.callback_query(F.data == "set:level")
+async def settings_level(cb: CallbackQuery, state: FSMContext) -> None:
+    from app.keyboards import level_kb
+    from app.states import Onboarding
+
+    await state.set_state(Onboarding.level)
+    await state.update_data(from_settings=True)
+    await cb.message.answer("Какой у тебя уровень подготовки?", reply_markup=level_kb())
+    await cb.answer()
+
+
 @router.callback_query(F.data == "set:exd")
 async def settings_exd(cb: CallbackQuery, state: FSMContext) -> None:
     from app.keyboards import exercises_count_kb

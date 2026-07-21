@@ -299,12 +299,17 @@ async def onboarding_activity(cb: CallbackQuery, state: FSMContext) -> None:
 @router.callback_query(Onboarding.level, F.data.startswith("lvl:"))
 async def onboarding_level(cb: CallbackQuery, state: FSMContext) -> None:
     level = cb.data.split(":", 1)[1]
+    data = await state.get_data()
     async with async_session() as db:
         user = await repo.get_user_by_tg(db, cb.from_user.id)
         user.level = level
         await db.commit()
     await cb.answer()
-    await _ask_next_profile(cb.message, cb.from_user.id, state)
+    if data.get("from_settings"):
+        from app.handlers.environment import _regenerate
+        await _regenerate(cb.message, cb.from_user.id, state)
+    else:
+        await _ask_next_profile(cb.message, cb.from_user.id, state)
 
 
 @router.callback_query(Onboarding.exercises, F.data.startswith("exd:"))
