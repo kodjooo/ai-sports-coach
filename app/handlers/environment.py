@@ -52,9 +52,10 @@ async def handle_equipment(message: Message, state: FSMContext, text: str) -> No
     if data.get("from_settings"):
         await _regenerate(message, message.from_user.id, state)
     else:
-        # Онбординг: дальше расписание
-        from app.handlers.schedule import start_schedule
-        await start_schedule(message, state)
+        # Онбординг: дальше собираем профиль (пол/возраст/уровень/вес/рост/активность),
+        # и только потом расписание — чтобы план учитывал всё это
+        from app.handlers.start import _ask_next_profile
+        await _ask_next_profile(message, message.from_user.id, state)
 
 
 @router.message(Onboarding.equipment, F.text)
@@ -69,11 +70,12 @@ async def _regenerate(message: Message, tg_id: int, state: FSMContext) -> None:
         async with async_session() as db:
             user = await repo.get_user_by_tg(db, tg_id)
             days = await repo.active_weekdays(db, user.id)
-            profile, goal, env, equip, uid = (
-                user.profile_summary, user.goal, user.environment, user.equipment, user.id
+            profile, goal, env, equip, sex, level, uid = (
+                user.profile_summary, user.goal, user.environment, user.equipment,
+                user.sex, user.level, user.id,
             )
         days = days or [0, 2, 4]
-        workouts = await llm.generate_plan(profile, goal, days, env, equip)
+        workouts = await llm.generate_plan(profile, goal, days, env, equip, sex, level)
         async with async_session() as db:
             if workouts:
                 await repo.build_custom_plan(db, uid, workouts, environment=env)

@@ -67,6 +67,18 @@ def sex_kb() -> InlineKeyboardMarkup:
     )
 
 
+LEVELS = [("новичок", "🌱 Новичок"), ("средний", "💪 Средний"), ("продвинутый", "🏆 Продвинутый")]
+
+
+def level_kb() -> InlineKeyboardMarkup:
+    return InlineKeyboardMarkup(
+        inline_keyboard=[
+            [InlineKeyboardButton(text=label, callback_data=f"lvl:{code}")]
+            for code, label in LEVELS
+        ]
+    )
+
+
 def activity_kb() -> InlineKeyboardMarkup:
     from app.core.nutrition import ACTIVITY_LABELS
 
@@ -176,13 +188,32 @@ def reps_kb(target: int | None = None, is_time: bool = False) -> InlineKeyboardM
         ]
     # Разбиваем на строки по 4 кнопки
     rows = [row[i : i + 4] for i in range(0, len(row), 4)]
+    rows.append([InlineKeyboardButton(text="✏️ Другое число", callback_data="wk:manual")])
     rows.append(
         [
             InlineKeyboardButton(text="❓ Как правильно?", callback_data="wk:howto"),
             InlineKeyboardButton(text="🔄 Заменить", callback_data="wk:replace"),
         ]
     )
+    rows.append(
+        [
+            InlineKeyboardButton(text="⏭ Пропустить подход", callback_data="wk:skipset"),
+            InlineKeyboardButton(text="⏭⏭ Упражнение", callback_data="wk:skipex"),
+        ]
+    )
+    rows.append([InlineKeyboardButton(text="🏁 Завершить тренировку", callback_data="wk:finishask")])
     return InlineKeyboardMarkup(inline_keyboard=rows)
+
+
+def finish_confirm_kb() -> InlineKeyboardMarkup:
+    """Досрочное завершение тренировки."""
+    return InlineKeyboardMarkup(
+        inline_keyboard=[
+            [InlineKeyboardButton(text="✅ Завершить и сохранить", callback_data="wk:finish_save")],
+            [InlineKeyboardButton(text="🗑 Отменить (сбросить прогресс)", callback_data="wk:finish_discard")],
+            [InlineKeyboardButton(text="↩️ Продолжить тренировку", callback_data="wk:finish_cont")],
+        ]
+    )
 
 
 def effort_kb() -> InlineKeyboardMarkup:

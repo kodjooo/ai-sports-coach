@@ -236,6 +236,36 @@ async def summarize_history(prev_summary: str | None, messages: list[dict]) -> s
         return prev_summary or ""
 
 
+async def equivalent_load(old_name: str, sets: int, reps: int, new_name: str, is_time: bool) -> dict:
+    """Подбирает подходы/повторы (или секунды) для нового упражнения, равнозначные старому."""
+    unit = "секунды удержания" if is_time else "повторы"
+    try:
+        resp = await get_client().chat.completions.create(
+            model=settings.openai_model,
+            reasoning_effort="minimal",
+            response_format={"type": "json_object"},
+            messages=[
+                {
+                    "role": "system",
+                    "content": (
+                        "Подбери нагрузку для нового упражнения, равнозначную по сложности "
+                        f"старому. Результат нового измеряется в: {unit}. "
+                        'Верни СТРОГО JSON {"sets": int, "reps": int} (reps — повторы или секунды).'
+                    ),
+                },
+                {
+                    "role": "user",
+                    "content": f"Было: {old_name} {sets}×{reps}. Стало: {new_name}.",
+                },
+            ],
+        )
+        data = json.loads(resp.choices[0].message.content or "{}")
+        return {"sets": int(data.get("sets") or sets), "reps": int(data.get("reps") or reps)}
+    except Exception as exc:
+        logger.warning("Ошибка подбора нагрузки: %s", exc)
+        return {"sets": sets, "reps": reps}
+
+
 async def exercise_howto(name: str, is_time: bool = False) -> str:
     """Развёрнутое объяснение техники упражнения."""
     unit = "в секундах удержания" if is_time else "в повторах"
@@ -319,10 +349,11 @@ INTERVIEW_SYSTEM = (
     "Верни СТРОГО JSON без markdown со схемой: "
     '{"done": bool, "reply": str, "goal": str|null, "profile_summary": str|null, '
     '"weight_kg": number|null, "height_cm": number|null, "age": number|null, '
-    '"sex": ("м"|"ж")|null, '
+    '"sex": ("м"|"ж")|null, "level": ("новичок"|"средний"|"продвинутый")|null, '
     '"environment": ("дом"|"улица"|"зал"|"микс")|null, "equipment": str|null}. '
-    "Поля weight_kg/height_cm/age/sex/environment/equipment заполняй ТОЛЬКО если "
-    "клиент их явно назвал, иначе null. reply всегда содержит человеческую реакцию. Пока "
+    "Поля weight_kg/height_cm/age/sex/level/environment/equipment заполняй ТОЛЬКО если "
+    "клиент их явно назвал/явно следует из слов, иначе null. level оценивай по опыту "
+    "(нет опыта → новичок). reply всегда содержит человеческую реакцию. Пока "
     "done=false — в конце reply следующий вопрос. Когда информации достаточно "
     "(или пришёл флаг завершения) done=true, reply — короткое подтверждение вроде "
     "«Понял, информации достаточно», goal — краткая цель, profile_summary — "
@@ -336,8 +367,10 @@ async def generate_plan(
     weekdays: list[int],
     environment: str | None = None,
     equipment: str | None = None,
+    sex: str | None = None,
+    level: str | None = None,
 ) -> list[dict]:
-    """Генерирует персональный план тренировок под профиль, среду и выбранные дни.
+    """Генерирует персональный план тренировок под профиль, пол, уровень, среду и дни.
 
     Возвращает список workouts: [{weekday, warmup, cooldown, exercises:[{name,sets,reps,rest_sec,muscle_group,technique}]}].
     """
@@ -350,15 +383,22 @@ async def generate_plan(
                 {
                     "role": "system",
                     "content": (
-                        "Составь план тренировок под клиента. Учитывай цель, уровень и "
-                        "ограничения/травмы (щади проблемные зоны, без рискованных движений). "
-                        "ВАЖНО: подбирай упражнения строго под место тренировки и доступный "
-                        "инвентарь клиента (не предлагай зал без зала, турник без турника). "
-                        "На каждый указанный день недели — 4–6 упражнений, сбалансированно "
-                        "(ноги, таз, толчок, тяга/спина, кор). Для каждого упражнения укажи "
-                        "подходы, повторы, отдых между подходами в секундах (rest_sec, обычно 45–90), "
-                        "группу мышц и краткую технику. Для каждого дня добавь короткую разминку "
-                        "(warmup) и заминку (cooldown) текстом.\n"
+                        "Составь персональный план тренировок под клиента.\n"
+                        "ЖЁСТКИЕ ПРАВИЛА:\n"
+                        "- Сложность СТРОГО под уровень клиента. Для новичка — простые, "
+                        "безопасные, регрессированные варианты; НЕ давай продвинутых движений.\n"
+                        "- Учитывай пол клиента при подборе (акценты, типичные предпочтения).\n"
+                        "- РАЗНООБРАЗИЕ: в одном дне НЕ повторяй одно и то же упражнение и не "
+                        "ставь несколько почти одинаковых (напр. 2–3 вида приседаний или 2 планки). "
+                        "Максимум 1 планка на тренировку и максимум 1 упражнение на группу-паттерн.\n"
+                        "- Баланс паттернов: ноги, тяз/задняя цепь, толчок, тяга/спина, кор.\n"
+                        "- Строго под место тренировки и доступный инвентарь (не предлагай зал/"
+                        "турник, если их нет; работай тем, что есть).\n"
+                        "- Щади травмы/ограничения.\n"
+                        "На каждый день — 4–6 РАЗНЫХ упражнений: подходы, повторы, отдых между "
+                        "подходами (rest_sec, 45–90), группа мышц, техника. Разминку (warmup) и "
+                        "заминку (cooldown) распиши ПОДРОБНО и по пунктам: каждое движение с "
+                        "временем/повторами и короткой техникой (готовый чек-лист, не общая фраза).\n"
                         "Верни СТРОГО JSON: {\"workouts\": [{\"weekday\": int(0=Пн..6=Вс), "
                         "\"warmup\": str, \"cooldown\": str, \"exercises\": [{\"name\": str, "
                         "\"sets\": int, \"reps\": int, \"rest_sec\": int, \"muscle_group\": str, "
@@ -368,7 +408,9 @@ async def generate_plan(
                 {
                     "role": "user",
                     "content": (
-                        f"Цель: {goal or '—'}\nПрофиль: {profile_summary or '—'}\n"
+                        f"Цель: {goal or '—'}\nПол: {sex or '—'}\n"
+                        f"Уровень подготовки: {level or 'новичок'}\n"
+                        f"Профиль: {profile_summary or '—'}\n"
                         f"Место тренировок: {environment or 'дом'}\n"
                         f"Инвентарь: {equipment or 'нет'}\n"
                         f"Дни недели (0=Пн): {weekdays}"

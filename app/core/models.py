@@ -34,6 +34,7 @@ class User(Base):
     sex: Mapped[str | None] = mapped_column(String)  # 'м' | 'ж'
     age: Mapped[int | None] = mapped_column(Integer)
     activity: Mapped[str | None] = mapped_column(String)  # уровень активности (ключ)
+    level: Mapped[str | None] = mapped_column(String)  # подготовка: новичок/средний/продвинутый
     goal: Mapped[str | None] = mapped_column(String)  # напр. 'похудеть+сила'
     # Персональная настройка тренера по итогам интервью
     system_prompt: Mapped[str | None] = mapped_column(String)  # сгенерированный системный промпт

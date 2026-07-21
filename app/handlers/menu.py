@@ -28,7 +28,28 @@ async def show_menu(message: Message) -> None:
 
 @router.callback_query(F.data == "wk:move")
 async def move_workout(cb: CallbackQuery) -> None:
-    """Перенос тренировки: фиксируем перенос на завтра."""
+    """Перенос тренировки: спросить, сдвигать ли всё расписание."""
+    from aiogram.types import InlineKeyboardButton, InlineKeyboardMarkup
+
+    kb = InlineKeyboardMarkup(
+        inline_keyboard=[
+            [InlineKeyboardButton(text="⏭ Только эту (на завтра)", callback_data="mv:one")],
+            [InlineKeyboardButton(text="📅 Сдвинуть всю неделю на день", callback_data="mv:week")],
+            [InlineKeyboardButton(text="↩️ Отмена", callback_data="mv:no")],
+        ]
+    )
+    await cb.message.answer("Перенести только сегодняшнюю тренировку или сдвинуть всё расписание?", reply_markup=kb)
+    await cb.answer()
+
+
+@router.callback_query(F.data == "mv:no")
+async def move_cancel(cb: CallbackQuery) -> None:
+    await cb.message.answer("Ок, расписание без изменений.")
+    await cb.answer()
+
+
+@router.callback_query(F.data == "mv:one")
+async def move_one(cb: CallbackQuery) -> None:
     weekday = date.today().weekday()
     async with async_session() as db:
         user = await repo.get_user_by_tg(db, cb.from_user.id)
@@ -38,7 +59,17 @@ async def move_workout(cb: CallbackQuery) -> None:
             moved = await repo.create_session(db, user.id, tpl_id, date.today(), status="moved")
             await repo.set_session_status(db, moved, "moved")
             await repo.create_session(db, user.id, tpl_id, date.today() + timedelta(days=1))
-    await cb.message.answer("Ок, перенёс на завтра. Отдыхай сегодня 🙌")
+    await cb.message.answer("Ок, перенёс на завтра. Дни недели в плане не менял 🙌")
+    await cb.answer()
+
+
+@router.callback_query(F.data == "mv:week")
+async def move_week(cb: CallbackQuery) -> None:
+    async with async_session() as db:
+        user = await repo.get_user_by_tg(db, cb.from_user.id)
+        if user:
+            await repo.shift_templates_by_day(db, user.id, 1)
+    await cb.message.answer("Сдвинул всё расписание на день вперёд 📅")
     await cb.answer()
 
 

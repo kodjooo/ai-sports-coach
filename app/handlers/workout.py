@@ -13,7 +13,15 @@ from app.core import llm, progress, vector, warmup
 from app.core import repository as repo
 from app.core.db import async_session
 from app.core.models import Session, User
-from app.keyboards import cooldown_done_kb, effort_kb, reps_kb, replace_scope_kb, warmup_done_kb
+from app.keyboards import (
+    cooldown_done_kb,
+    effort_kb,
+    finish_confirm_kb,
+    main_menu,
+    reps_kb,
+    replace_scope_kb,
+    warmup_done_kb,
+)
 from app.states import Workout
 from app.utils import typing
 
@@ -102,12 +110,14 @@ async def _show_set(target, state: FSMContext) -> None:
     item = items[i]
     is_time = item.get("is_time", False)
     unit = "сек" if is_time else "повт."
+    # Цель: подсказка по ощущению прошлого подхода, иначе плановая
+    goal = data.get("suggest") or item["target_reps"]
     prompt = "Сколько секунд продержал?" if is_time else "Выбери число повторов:"
     text = (
         f"<b>{item['name']}</b> — сет {data['cur_set']} из {item['target_sets']} "
-        f"(цель ~{item['target_reps']} {unit})\n{prompt}"
+        f"(цель ~{goal} {unit})\n{prompt}"
     )
-    await target.answer(text, reply_markup=reps_kb(target=item["target_reps"], is_time=is_time))
+    await target.answer(text, reply_markup=reps_kb(target=goal, is_time=is_time))
 
 
 @router.message(F.text == "▶️ Тренировка")
@@ -123,6 +133,29 @@ async def start_from_reminder(cb: CallbackQuery, state: FSMContext) -> None:
 
 # ---------- Ввод повторов и ощущения ----------
 
+@router.callback_query(Workout.in_progress, F.data == "wk:manual")
+async def manual_reps(cb: CallbackQuery, state: FSMContext) -> None:
+    """Ручной ввод результата, если нужной кнопки нет."""
+    data = await state.get_data()
+    is_time = data["items"][data["cur_item"]].get("is_time", False)
+    await state.set_state(Workout.manual_reps)
+    await cb.message.answer("Напиши число " + ("секунд." if is_time else "повторов."))
+    await cb.answer()
+
+
+@router.message(Workout.manual_reps, F.text)
+async def manual_reps_input(message: Message, state: FSMContext) -> None:
+    import re
+
+    m = re.search(r"\d+", message.text)
+    if not m:
+        await message.answer("Не понял число. Напиши, например 12.")
+        return
+    await state.set_state(Workout.in_progress)
+    await state.update_data(pending_reps=int(m.group()))
+    await message.answer("Как ощущение?", reply_markup=effort_kb())
+
+
 @router.callback_query(Workout.in_progress, F.data.startswith("reps:"))
 async def choose_reps(cb: CallbackQuery, state: FSMContext) -> None:
     reps = int(cb.data.split(":")[1])
@@ -137,35 +170,100 @@ async def choose_effort(cb: CallbackQuery, state: FSMContext) -> None:
     data = await state.get_data()
     reps = data.get("pending_reps")
     if reps is None:
-        await cb.answer("Сначала выбери повторы")
+        await cb.answer("Сначала выбери число")
         return
 
-    items = data["items"]
-    i = data["cur_item"]
-    item = items[i]
-
-    # Немедленная запись сета в БД
+    item = data["items"][data["cur_item"]]
     async with async_session() as db:
         await repo.log_set(
             db, data["session_id"], item["exercise_id"], data["cur_set"], reps, effort
         )
+    # Автокоррекция: подсказка на следующий подход по ощущению
+    step = 5 if item.get("is_time") else 2
+    if effort == "easy":
+        suggest = reps + step
+    elif effort == "hard":
+        suggest = max(1, reps - step)
+    else:
+        suggest = reps
+    await state.update_data(suggest=suggest)
+    await cb.answer("Записал ✅")
+    await _advance(cb.message, state)
 
-    # Переход к следующему сету/упражнению
+
+async def _advance(target, state: FSMContext) -> None:
+    """Переход к следующему подходу/упражнению/заминке."""
+    data = await state.get_data()
+    items = data["items"]
+    i = data["cur_item"]
+    item = items[i]
     if data["cur_set"] < item["target_sets"]:
         rest = item.get("rest_sec") or 60
-        await cb.message.answer(f"⏱ Отдых {rest} сек — дам сигнал, когда продолжать.")
+        await target.answer(f"⏱ Отдых {rest} сек — дам сигнал, когда продолжать.")
         await state.update_data(cur_set=data["cur_set"] + 1, pending_reps=None)
-        await _show_set(cb.message, state)
-        asyncio.create_task(_rest_timer(cb.message, rest))
+        await _show_set(target, state)
+        asyncio.create_task(_rest_timer(target, rest))
     elif i + 1 < len(items):
-        await state.update_data(cur_item=i + 1, cur_set=1, pending_reps=None)
+        rest = item.get("rest_sec") or 60
+        await target.answer(f"⏱ Отдых {rest} сек перед следующим упражнением.")
+        await state.update_data(cur_item=i + 1, cur_set=1, pending_reps=None, suggest=None)
+        await _show_set(target, state)
+        asyncio.create_task(_rest_timer(target, rest))
+    else:
+        cooldown = data.get("cooldown")
+        text = f"🧘 <b>Заминка</b>\n{cooldown}" if cooldown else warmup.cooldown_text(data.get("groups", []))
+        await target.answer(text, reply_markup=cooldown_done_kb())
+
+
+@router.callback_query(Workout.in_progress, F.data == "wk:skipset")
+async def skip_set(cb: CallbackQuery, state: FSMContext) -> None:
+    await cb.answer("Подход пропущен")
+    await state.update_data(pending_reps=None)
+    await _advance(cb.message, state)
+
+
+@router.callback_query(Workout.in_progress, F.data == "wk:skipex")
+async def skip_exercise(cb: CallbackQuery, state: FSMContext) -> None:
+    """Пропуск упражнения целиком — сразу к следующему/заминке."""
+    data = await state.get_data()
+    items = data["items"]
+    i = data["cur_item"]
+    await cb.answer("Упражнение пропущено")
+    if i + 1 < len(items):
+        await state.update_data(cur_item=i + 1, cur_set=1, pending_reps=None, suggest=None)
         await _show_set(cb.message, state)
     else:
-        # Все упражнения выполнены → заминка перед завершением
         cooldown = data.get("cooldown")
         text = f"🧘 <b>Заминка</b>\n{cooldown}" if cooldown else warmup.cooldown_text(data.get("groups", []))
         await cb.message.answer(text, reply_markup=cooldown_done_kb())
-    await cb.answer("Записал ✅")
+
+
+@router.callback_query(Workout.in_progress, F.data == "wk:finishask")
+async def finish_ask(cb: CallbackQuery, state: FSMContext) -> None:
+    await cb.message.answer("Завершить тренировку?", reply_markup=finish_confirm_kb())
+    await cb.answer()
+
+
+@router.callback_query(Workout.in_progress, F.data == "wk:finish_cont")
+async def finish_cont(cb: CallbackQuery, state: FSMContext) -> None:
+    await cb.answer("Продолжаем")
+    await _show_set(cb.message, state)
+
+
+@router.callback_query(Workout.in_progress, F.data == "wk:finish_save")
+async def finish_save(cb: CallbackQuery, state: FSMContext) -> None:
+    await cb.answer()
+    await _finish(cb.message, state)
+
+
+@router.callback_query(Workout.in_progress, F.data == "wk:finish_discard")
+async def finish_discard(cb: CallbackQuery, state: FSMContext) -> None:
+    data = await state.get_data()
+    async with async_session() as db:
+        await repo.delete_session(db, data["session_id"])
+    await state.clear()
+    await cb.message.answer("Тренировка отменена, прогресс сброшен.", reply_markup=main_menu())
+    await cb.answer()
 
 
 @router.callback_query(Workout.in_progress, F.data == "wk:warmup_info")
@@ -225,6 +323,8 @@ async def _finish(target, state: FSMContext) -> None:
         await repo.finish_session(db, session)
 
         summary = await progress.format_session_summary(db, session)
+        # Прогрессия плана на следующий раз по ощущениям
+        await repo.apply_progression(db, user.id, session.id)
         facts, memory = await ctx.build_context(db, user.id, summary)
         prompt = ctx.feedback_prompt(facts, memory, summary)
         feedback = await llm.chat(prompt, system_prompt=user.system_prompt)
@@ -270,8 +370,15 @@ async def replace_start(cb: CallbackQuery, state: FSMContext) -> None:
         from sqlalchemy import select
         from app.core.models import Exercise
 
+        user = await repo.get_user_by_tg(db, cb.from_user.id)
+        env = (user.environment if user else None)
         res = await db.execute(select(Exercise).where(Exercise.id != cur_ex_id))
         others = list(res.scalars().all())
+
+    # Фильтр по среде пользователя (не предлагать зал/улицу без них)
+    if env and env != "микс":
+        suitable = [ex for ex in others if not ex.environment or ex.environment == env]
+        others = suitable or others
 
     # Сначала — упражнения на ту же группу мышц (равнозначная замена)
     def same_group(ex) -> bool:
@@ -282,12 +389,19 @@ async def replace_start(cb: CallbackQuery, state: FSMContext) -> None:
         [InlineKeyboardButton(text=f"{ex.name} · {ex.muscle_group or '—'}", callback_data=f"repex:{ex.id}")]
         for ex in others[:8]
     ]
+    rows.append([InlineKeyboardButton(text="↩️ Отмена замены", callback_data="wk:replace_cancel")])
     await cb.message.answer(
         f"На что заменить? (сейчас: {cur['name']} · {cur.get('muscle_group') or '—'})\n"
         "Сверху — на ту же группу мышц:",
         reply_markup=InlineKeyboardMarkup(inline_keyboard=rows),
     )
     await cb.answer()
+
+
+@router.callback_query(Workout.in_progress, F.data == "wk:replace_cancel")
+async def replace_cancel(cb: CallbackQuery, state: FSMContext) -> None:
+    await cb.answer("Замена отменена")
+    await _show_set(cb.message, state)
 
 
 @router.callback_query(Workout.in_progress, F.data.startswith("repex:"))
@@ -312,31 +426,42 @@ async def replace_apply(cb: CallbackQuery, state: FSMContext) -> None:
     items = data["items"]
     i = data["cur_item"]
     item = items[i]
+    old_name = item["name"]
+    old_sets = item["target_sets"]
+    old_reps = item["target_reps"]
 
     async with async_session() as db:
         ex = await repo.get_exercise(db, new_ex_id)
-        item.update(
-            {
-                "exercise_id": new_ex_id,
-                "name": ex.name,
-                "muscle_group": (ex.muscle_group or ""),
-                "technique": (ex.technique or "Техника не описана."),
-                # Пересчитываем тип (повторы/секунды) под новое упражнение
-                "is_time": _is_time_based(ex.name, ex.muscle_group or ""),
-            }
-        )
-        note = f"Заменили {item['name']}"
-        if scope == "forever":
-            await repo.replace_template_item_exercise(db, item["item_id"], new_ex_id)
-            note = f"Заменили упражнение в плане навсегда на {ex.name}"
+        is_time = _is_time_based(ex.name, ex.muscle_group or "")
         user = await repo.get_user_by_tg(db, cb.from_user.id)
 
+    # Подбираем равнозначную нагрузку под новое упражнение
+    async with typing(cb.message):
+        load = await llm.equivalent_load(old_name, old_sets, old_reps, ex.name, is_time)
+
+    item.update(
+        {
+            "exercise_id": new_ex_id,
+            "name": ex.name,
+            "muscle_group": (ex.muscle_group or ""),
+            "technique": (ex.technique or "Техника не описана."),
+            "is_time": is_time,
+            "target_sets": load["sets"],
+            "target_reps": load["reps"],
+        }
+    )
+    note = f"Заменили на {ex.name}"
+    if scope == "forever":
+        async with async_session() as db:
+            await repo.replace_template_item_exercise(db, item["item_id"], new_ex_id)
+        note = f"Заменили упражнение в плане навсегда на {ex.name}"
+
     items[i] = item
-    await state.update_data(items=items)
-    # Факт замены — в память
+    await state.update_data(items=items, suggest=None)
     await vector.add_memory(
         user.id, f"change-{cb.id}", note, {"type": "change", "date": str(date.today())}
     )
-    await cb.message.answer(f"Готово: теперь {ex.name}.")
+    unit = "сек" if is_time else "повт."
+    await cb.message.answer(f"Готово: теперь {ex.name} — {load['sets']}×{load['reps']} {unit}.")
     await cb.answer()
     await _show_set(cb.message, state)

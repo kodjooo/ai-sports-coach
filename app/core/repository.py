@@ -191,6 +191,19 @@ async def set_environment(
     return user
 
 
+async def shift_templates_by_day(db: AsyncSession, user_id: int, days: int = 1) -> None:
+    """Сдвигает дни недели всех активных шаблонов на `days` вперёд (по модулю 7)."""
+    res = await db.execute(
+        select(WorkoutTemplate).where(
+            WorkoutTemplate.user_id == user_id, WorkoutTemplate.active.is_(True)
+        )
+    )
+    for tpl in res.scalars().all():
+        if tpl.weekday is not None:
+            tpl.weekday = (tpl.weekday + days) % 7
+    await db.commit()
+
+
 async def active_weekdays(db: AsyncSession, user_id: int) -> list[int]:
     """Дни недели активного плана (для перегенерации из настроек)."""
     res = await db.execute(
@@ -402,6 +415,13 @@ async def set_session_status(db: AsyncSession, session: Session, status: str) ->
     return session
 
 
+async def delete_session(db: AsyncSession, session_id: int) -> None:
+    """Полностью удаляет сессию и её подходы (досрочная отмена тренировки)."""
+    await db.execute(delete(SetLog).where(SetLog.session_id == session_id))
+    await db.execute(delete(Session).where(Session.id == session_id))
+    await db.commit()
+
+
 # ---------- Логи сетов ----------
 
 async def log_set(
@@ -423,6 +443,28 @@ async def log_set(
     db.add(row)
     await db.commit()
     return row
+
+
+async def apply_progression(db: AsyncSession, user_id: int, session_id: int) -> None:
+    """Прогрессия плана: по ощущениям сессии двигаем целевые повторы в шаблонах.
+
+    Преобладало 'easy' → +1 повтор, 'hard' → −1 (в активных шаблонах пользователя).
+    """
+    logs = await session_set_logs(db, session_id)
+    by_ex: dict[int, list[str]] = {}
+    for log in logs:
+        by_ex.setdefault(log.exercise_id, []).append(log.effort or "ok")
+    for ex_id, efforts in by_ex.items():
+        easy = efforts.count("easy")
+        hard = efforts.count("hard")
+        delta = 1 if easy > hard and easy >= len(efforts) / 2 else (-1 if hard > easy else 0)
+        if delta == 0:
+            continue
+        items = await _active_items_by_exercise(db, user_id, ex_id)
+        for it in items:
+            if it.target_reps:
+                it.target_reps = max(1, it.target_reps + delta)
+    await db.commit()
 
 
 async def session_set_logs(db: AsyncSession, session_id: int) -> list[SetLog]:

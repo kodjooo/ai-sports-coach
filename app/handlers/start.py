@@ -11,7 +11,7 @@ from app.core import llm
 from app.core.db import async_session
 from app.core import repository as repo
 from app.handlers import environment as env_handlers
-from app.keyboards import activity_kb, main_menu, sex_kb
+from app.keyboards import activity_kb, level_kb, main_menu, sex_kb
 from app.states import Onboarding
 from app.utils import parse_weight, typing
 
@@ -98,6 +98,8 @@ async def handle_interview(message: Message, state: FSMContext, text: str) -> No
                 user.age = int(result["age"])
             if result.get("sex"):
                 user.sex = result["sex"]
+            if result.get("level"):
+                user.level = result["level"]
             if result.get("environment"):
                 user.environment = result["environment"]
             if result.get("equipment"):
@@ -144,16 +146,21 @@ async def interview_text(message: Message, state: FSMContext) -> None:
 
 
 async def after_schedule(message: Message, tg_id: int, state: FSMContext) -> None:
-    await _ask_next_profile(message, tg_id, state)
+    # Профиль уже собран до расписания, поэтому здесь просто финиш
+    await _finish_onboarding(message, state)
 
 
 async def _ask_next_profile(message: Message, tg_id: int, state: FSMContext) -> None:
     """Спрашивает по очереди только недостающие данные профиля, затем финиш."""
     async with async_session() as db:
         user = await repo.get_user_by_tg(db, tg_id)
-        weight, height, sex, age, activity = (
-            user.weight_kg, user.height_cm, user.sex, user.age, user.activity
+        weight, height, sex, age, activity, level = (
+            user.weight_kg, user.height_cm, user.sex, user.age, user.activity, user.level
         )
+    if level is None:
+        await state.set_state(Onboarding.level)
+        await message.answer("Какой у тебя уровень подготовки?", reply_markup=level_kb())
+        return
     if weight is None:
         await state.set_state(Onboarding.waiting_weight)
         await message.answer("Какой сейчас вес в кг? (например 82.5)")
@@ -174,7 +181,9 @@ async def _ask_next_profile(message: Message, tg_id: int, state: FSMContext) -> 
             reply_markup=activity_kb(),
         )
     else:
-        await _finish_onboarding(message, state)
+        # Профиль собран — переходим к расписанию (там сгенерируется план под всё это)
+        from app.handlers.schedule import start_schedule
+        await start_schedule(message, state)
 
 
 async def _finish_onboarding(message: Message, state: FSMContext) -> None:
@@ -264,6 +273,17 @@ async def onboarding_activity(cb: CallbackQuery, state: FSMContext) -> None:
     async with async_session() as db:
         user = await repo.get_user_by_tg(db, cb.from_user.id)
         user.activity = activity
+        await db.commit()
+    await cb.answer()
+    await _ask_next_profile(cb.message, cb.from_user.id, state)
+
+
+@router.callback_query(Onboarding.level, F.data.startswith("lvl:"))
+async def onboarding_level(cb: CallbackQuery, state: FSMContext) -> None:
+    level = cb.data.split(":", 1)[1]
+    async with async_session() as db:
+        user = await repo.get_user_by_tg(db, cb.from_user.id)
+        user.level = level
         await db.commit()
     await cb.answer()
     await _ask_next_profile(cb.message, cb.from_user.id, state)

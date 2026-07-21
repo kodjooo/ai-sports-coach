@@ -15,12 +15,14 @@ class Onboarding(StatesGroup):
     sex = State()             # пол (кнопки)
     waiting_age = State()     # возраст числом
     activity = State()        # уровень активности (кнопки)
+    level = State()           # уровень подготовки (кнопки)
 
 
 class Workout(StatesGroup):
     """Активная тренировка."""
 
-    in_progress = State()  # ждём выбор повторов/ощущения
+    in_progress = State()   # ждём выбор повторов/ощущения
+    manual_reps = State()   # ручной ввод числа повторов/секунд
 
 
 class Nutrition(StatesGroup):
