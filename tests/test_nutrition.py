@@ -5,7 +5,8 @@ from app.core import nutrition
 
 
 def _user(**kw):
-    base = dict(weight_kg=80, height_cm=180, age=30, sex="м", activity="средняя", goal="поддержание")
+    base = dict(weight_kg=80, height_cm=180, age=30, sex="м", activity="средняя",
+                goal="поддержание", nutrition_goal=None)
     base.update(kw)
     return SimpleNamespace(**base)
 

@@ -122,6 +122,10 @@ async def show_nutrition(message: Message) -> None:
 
     lines = ["🍎 <b>Питание сегодня</b>", ""]
     if norm:
+        async with async_session() as db:
+            u = await repo.get_user_by_tg(db, message.from_user.id)
+            _, mode_label = nutrition.mode_of(u)
+        lines.append(f"Режим: <b>{u.nutrition_goal or 'авто'}</b> ({mode_label})")
         lines.append(
             f"Калории: <b>{totals['kcal']} / {norm['kcal']}</b> "
             f"(осталось {max(norm['kcal'] - totals['kcal'], 0)})"
@@ -178,6 +182,28 @@ async def settings_schedule(cb: CallbackQuery, state: FSMContext) -> None:
 async def settings_env(cb: CallbackQuery, state: FSMContext) -> None:
     await cb.answer()
     await start_environment(cb.message, state, from_settings=True)
+
+
+@router.callback_query(F.data == "set:exd")
+async def settings_exd(cb: CallbackQuery, state: FSMContext) -> None:
+    from app.keyboards import exercises_count_kb
+    from app.states import Onboarding
+
+    await state.set_state(Onboarding.exercises)
+    await state.update_data(from_settings=True)
+    await cb.message.answer("Сколько упражнений в тренировке?", reply_markup=exercises_count_kb())
+    await cb.answer()
+
+
+@router.callback_query(F.data == "set:ngoal")
+async def settings_ngoal(cb: CallbackQuery, state: FSMContext) -> None:
+    from app.keyboards import nutrition_goal_kb
+    from app.states import Onboarding
+
+    await state.set_state(Onboarding.nutrition_goal)
+    await state.update_data(from_settings=True)
+    await cb.message.answer("Цель по питанию?", reply_markup=nutrition_goal_kb())
+    await cb.answer()
 
 
 @router.callback_query(F.data == "set:weight")

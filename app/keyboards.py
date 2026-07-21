@@ -26,6 +26,8 @@ def settings_menu() -> InlineKeyboardMarkup:
         inline_keyboard=[
             [InlineKeyboardButton(text="🗓 Дни и время тренировок", callback_data="set:schedule")],
             [InlineKeyboardButton(text="🏋 Место и инвентарь", callback_data="set:env")],
+            [InlineKeyboardButton(text="🔢 Упражнений в тренировке", callback_data="set:exd")],
+            [InlineKeyboardButton(text="🍽 Цель по питанию", callback_data="set:ngoal")],
             [InlineKeyboardButton(text="📋 План недели", callback_data="set:plan")],
             [InlineKeyboardButton(text="⚖️ Записать вес", callback_data="set:weight")],
             [InlineKeyboardButton(text="♻️ Сбросить историю", callback_data="set:reset")],
@@ -75,6 +77,26 @@ def level_kb() -> InlineKeyboardMarkup:
         inline_keyboard=[
             [InlineKeyboardButton(text=label, callback_data=f"lvl:{code}")]
             for code, label in LEVELS
+        ]
+    )
+
+
+def exercises_count_kb() -> InlineKeyboardMarkup:
+    return InlineKeyboardMarkup(
+        inline_keyboard=[
+            [InlineKeyboardButton(text=f"{n} упражнения" if n < 5 else f"{n} упражнений",
+                                  callback_data=f"exd:{n}") for n in (3, 4, 5)]
+        ]
+    )
+
+
+def nutrition_goal_kb() -> InlineKeyboardMarkup:
+    from app.core.nutrition import NUTRITION_LABELS
+
+    return InlineKeyboardMarkup(
+        inline_keyboard=[
+            [InlineKeyboardButton(text=label, callback_data=f"ngoal:{code}")]
+            for code, label in NUTRITION_LABELS
         ]
     )
 

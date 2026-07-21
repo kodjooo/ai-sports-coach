@@ -11,7 +11,14 @@ from app.core import llm
 from app.core.db import async_session
 from app.core import repository as repo
 from app.handlers import environment as env_handlers
-from app.keyboards import activity_kb, level_kb, main_menu, sex_kb
+from app.keyboards import (
+    activity_kb,
+    exercises_count_kb,
+    level_kb,
+    main_menu,
+    nutrition_goal_kb,
+    sex_kb,
+)
 from app.states import Onboarding
 from app.utils import parse_weight, typing
 
@@ -157,9 +164,20 @@ async def _ask_next_profile(message: Message, tg_id: int, state: FSMContext) -> 
         weight, height, sex, age, activity, level = (
             user.weight_kg, user.height_cm, user.sex, user.age, user.activity, user.level
         )
+        exd, ngoal = user.exercises_per_day, user.nutrition_goal
     if level is None:
         await state.set_state(Onboarding.level)
         await message.answer("Какой у тебя уровень подготовки?", reply_markup=level_kb())
+        return
+    if exd is None:
+        await state.set_state(Onboarding.exercises)
+        await message.answer("Сколько упражнений в одной тренировке?", reply_markup=exercises_count_kb())
+        return
+    if ngoal is None:
+        await state.set_state(Onboarding.nutrition_goal)
+        await message.answer(
+            "Цель по питанию (как считать калории)?", reply_markup=nutrition_goal_kb()
+        )
         return
     if weight is None:
         await state.set_state(Onboarding.waiting_weight)
@@ -287,3 +305,36 @@ async def onboarding_level(cb: CallbackQuery, state: FSMContext) -> None:
         await db.commit()
     await cb.answer()
     await _ask_next_profile(cb.message, cb.from_user.id, state)
+
+
+@router.callback_query(Onboarding.exercises, F.data.startswith("exd:"))
+async def onboarding_exercises(cb: CallbackQuery, state: FSMContext) -> None:
+    n = int(cb.data.split(":", 1)[1])
+    data = await state.get_data()
+    async with async_session() as db:
+        user = await repo.get_user_by_tg(db, cb.from_user.id)
+        user.exercises_per_day = n
+        await db.commit()
+    await cb.answer()
+    if data.get("from_settings"):
+        # Меняли из настроек — пересобираем план под новое число
+        from app.handlers.environment import _regenerate
+        await _regenerate(cb.message, cb.from_user.id, state)
+    else:
+        await _ask_next_profile(cb.message, cb.from_user.id, state)
+
+
+@router.callback_query(Onboarding.nutrition_goal, F.data.startswith("ngoal:"))
+async def onboarding_nutrition_goal(cb: CallbackQuery, state: FSMContext) -> None:
+    ngoal = cb.data.split(":", 1)[1]
+    data = await state.get_data()
+    async with async_session() as db:
+        user = await repo.get_user_by_tg(db, cb.from_user.id)
+        user.nutrition_goal = ngoal
+        await db.commit()
+    await cb.answer()
+    if data.get("from_settings"):
+        await state.set_state(None)
+        await cb.message.answer(f"Готово, режим питания: {ngoal}. Норма пересчитана.")
+    else:
+        await _ask_next_profile(cb.message, cb.from_user.id, state)

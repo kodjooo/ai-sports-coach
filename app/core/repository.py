@@ -75,6 +75,12 @@ async def reset_user(db: AsyncSession, user: User) -> None:
     user.chat_summary = None
     user.environment = None
     user.equipment = None
+    user.sex = None
+    user.age = None
+    user.activity = None
+    user.level = None
+    user.exercises_per_day = None
+    user.nutrition_goal = None
     await db.commit()
 
 

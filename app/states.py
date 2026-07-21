@@ -16,6 +16,8 @@ class Onboarding(StatesGroup):
     waiting_age = State()     # возраст числом
     activity = State()        # уровень активности (кнопки)
     level = State()           # уровень подготовки (кнопки)
+    exercises = State()       # упражнений в день (кнопки)
+    nutrition_goal = State()  # режим питания (кнопки)
 
 
 class Workout(StatesGroup):
