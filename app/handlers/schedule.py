@@ -11,7 +11,7 @@ from app.core import llm
 from app.core.db import async_session
 from app.core import repository as repo
 from app.core.seed import create_templates
-from app.keyboards import WEEKDAYS_SHORT, days_kb, freq_kb, main_menu, time_kb
+from app.keyboards import WEEKDAYS_SHORT, days_kb, freq_kb, main_menu, time_kb, time_only_kb
 from app.states import Onboarding
 from app.utils import typing
 
@@ -29,6 +29,44 @@ async def start_schedule(message: Message, state: FSMContext, from_settings: boo
     await message.answer(
         "Сколько раз в неделю удобно тренироваться?", reply_markup=freq_kb()
     )
+
+
+async def start_time_only(message: Message, state: FSMContext) -> None:
+    """Смена только времени напоминаний — план не трогаем."""
+    await state.set_state(Onboarding.time_only)
+    await message.answer("Во сколько напоминать о тренировке?", reply_markup=time_only_kb())
+
+
+async def _save_time_only(message: Message, tg_id: int, state: FSMContext, hour: int, minute: int) -> None:
+    async with async_session() as db:
+        user = await repo.get_user_by_tg(db, tg_id)
+        await repo.set_train_time(db, user, hour, minute)
+    await state.clear()
+    await message.answer(
+        f"Готово! Время напоминаний: {hour:02d}:{minute:02d}. План не менял.",
+        reply_markup=main_menu(),
+    )
+
+
+@router.callback_query(Onboarding.time_only, F.data.startswith("tmset:"))
+async def time_only_pick(cb: CallbackQuery, state: FSMContext) -> None:
+    val = cb.data.split(":", 1)[1]
+    if val == "other":
+        await state.set_state(Onboarding.time_only_custom)
+        await cb.message.answer("Напиши время в формате ЧЧ:ММ, например 07:30")
+        await cb.answer()
+        return
+    await _save_time_only(cb.message, cb.from_user.id, state, int(val), 0)
+    await cb.answer()
+
+
+@router.message(Onboarding.time_only_custom, F.text)
+async def time_only_custom(message: Message, state: FSMContext) -> None:
+    m = re.match(r"^(\d{1,2})[:.\s](\d{2})$", message.text.strip())
+    if not m or int(m.group(1)) > 23 or int(m.group(2)) > 59:
+        await message.answer("Не понял время. Формат ЧЧ:ММ, например 07:30")
+        return
+    await _save_time_only(message, message.from_user.id, state, int(m.group(1)), int(m.group(2)))
 
 
 @router.callback_query(Onboarding.schedule, F.data.startswith("sf:"))

@@ -24,7 +24,8 @@ def main_menu() -> ReplyKeyboardMarkup:
 def settings_menu() -> InlineKeyboardMarkup:
     return InlineKeyboardMarkup(
         inline_keyboard=[
-            [InlineKeyboardButton(text="🗓 Дни и время тренировок", callback_data="set:schedule")],
+            [InlineKeyboardButton(text="📅 Дни тренировок", callback_data="set:schedule")],
+            [InlineKeyboardButton(text="⏰ Время напоминаний", callback_data="set:time")],
             [InlineKeyboardButton(text="🏋 Место и инвентарь", callback_data="set:env")],
             [InlineKeyboardButton(text="🎚 Уровень подготовки", callback_data="set:level")],
             [InlineKeyboardButton(text="🔢 Упражнений в тренировке", callback_data="set:exd")],
@@ -147,6 +148,14 @@ def time_kb() -> InlineKeyboardMarkup:
     row = [InlineKeyboardButton(text=f"{h:02d}:00", callback_data=f"st:{h}") for h in TIME_PRESETS]
     rows = [row[i : i + 3] for i in range(0, len(row), 3)]
     rows.append([InlineKeyboardButton(text="Другое время", callback_data="st:other")])
+    return InlineKeyboardMarkup(inline_keyboard=rows)
+
+
+def time_only_kb() -> InlineKeyboardMarkup:
+    """Выбор только времени напоминаний (без пересборки плана)."""
+    row = [InlineKeyboardButton(text=f"{h:02d}:00", callback_data=f"tmset:{h}") for h in TIME_PRESETS]
+    rows = [row[i : i + 3] for i in range(0, len(row), 3)]
+    rows.append([InlineKeyboardButton(text="Другое время", callback_data="tmset:other")])
     return InlineKeyboardMarkup(inline_keyboard=rows)
 
 

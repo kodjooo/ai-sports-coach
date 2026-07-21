@@ -10,6 +10,8 @@ class Onboarding(StatesGroup):
     equipment = State()       # что есть из инвентаря (текст)
     schedule = State()        # выбор частоты/дней/времени кнопками
     custom_time = State()     # ручной ввод времени тренировки
+    time_only = State()       # смена только времени напоминаний (без пересборки плана)
+    time_only_custom = State()  # ручной ввод времени в режиме «только время»
     waiting_weight = State()  # вопрос про вес числом (если не сказан в интервью)
     waiting_height = State()  # вопрос про рост (если не сказан в интервью)
     sex = State()             # пол (кнопки)

@@ -119,6 +119,7 @@ async def show_nutrition(message: Message) -> None:
             return
         totals = await repo.today_totals(db, user.id)
         norm = nutrition.daily_norm(user)
+        burned_today = await repo.calories_burned(db, user.id, days=1)
 
     lines = ["🍎 <b>Питание сегодня</b>", ""]
     if norm:
@@ -142,6 +143,8 @@ async def show_nutrition(message: Message) -> None:
         )
         lines.append("\n<i>Пройди /profile (пол/возраст/активность) — и посчитаю норму.</i>")
     lines.append(f"\nПриёмов пищи: {totals['meals']}")
+    if burned_today:
+        lines.append(f"🔥 Потрачено на тренировке: ~{burned_today} ккал (не входит в норму выше)")
     lines.append("\n📷 Пришли фото еды или напиши, что съел — запишу и посчитаю КБЖУ.")
     await message.answer("\n".join(lines))
 
@@ -177,6 +180,14 @@ async def settings_plan(cb: CallbackQuery) -> None:
 async def settings_schedule(cb: CallbackQuery, state: FSMContext) -> None:
     await cb.answer()
     await start_schedule(cb.message, state, from_settings=True)
+
+
+@router.callback_query(F.data == "set:time")
+async def settings_time(cb: CallbackQuery, state: FSMContext) -> None:
+    from app.handlers.schedule import start_time_only
+
+    await cb.answer()
+    await start_time_only(cb.message, state)
 
 
 @router.callback_query(F.data == "set:env")
