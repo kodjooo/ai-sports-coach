@@ -32,7 +32,8 @@ def _confirm_kb(draft_id: str) -> InlineKeyboardMarkup:
 
 def _format(analysis: dict) -> str:
     t = analysis.get("total", {})
-    lines = ["🍽 <b>Разбор блюда</b>"]
+    dish = analysis.get("dish")
+    lines = [f"🍽 <b>{dish}</b>" if dish else "🍽 <b>Разбор блюда</b>", "Состав:"]
     for it in analysis.get("items", []):
         lines.append(
             f"• {it.get('name', '?')} ~{round(it.get('grams') or 0)} г — "
@@ -75,7 +76,10 @@ async def on_photo(message: Message, state: FSMContext, bot: Bot) -> None:
     image_url = f"https://api.telegram.org/file/bot{bot.token}/{file.file_path}"
 
     async with typing(message):
-        analysis = await llm.analyze_food_photo(image_url)
+        async with async_session() as db:
+            user = await repo.get_user_by_tg(db, message.from_user.id)
+            known = await repo.recent_dishes(db, user.id) if user else []
+        analysis = await llm.analyze_food_photo(image_url, known=known)
         if analysis.get("is_food"):
             analysis = await openfoodfacts.refine(analysis)
 
@@ -103,10 +107,13 @@ async def meal_save(cb: CallbackQuery, state: FSMContext) -> None:
         norm = nutrition.daily_norm(user)
     text = "Записал ✅"
     if norm:
-        left = norm["kcal"] - totals["kcal"]
+        left_k = max(norm["kcal"] - totals["kcal"], 0)
+        left_p = max(norm["protein"] - totals["protein"], 0)
+        left_f = max(norm["fat"] - totals["fat"], 0)
+        left_c = max(norm["carbs"] - totals["carbs"], 0)
         text += (
-            f"\nСегодня: {totals['kcal']} / {norm['kcal']} ккал "
-            f"(осталось {max(left, 0)}), Б {totals['protein']} Ж {totals['fat']} У {totals['carbs']}"
+            f"\nСегодня: {totals['kcal']} / {norm['kcal']} ккал\n"
+            f"Осталось добрать: {left_k} ккал · Б {left_p} · Ж {left_f} · У {left_c} г"
         )
     try:
         await cb.message.edit_reply_markup(reply_markup=None)  # убираем кнопки у карточки
@@ -158,7 +165,10 @@ async def handle_correction(message: Message, state: FSMContext, text: str) -> N
         return
 
     async with typing(message):
-        analysis = await llm.analyze_food_text(text, prev=prev)
+        async with async_session() as db:
+            user = await repo.get_user_by_tg(db, message.from_user.id)
+            known = await repo.recent_dishes(db, user.id) if user else []
+        analysis = await llm.analyze_food_text(text, prev=prev, known=known)
         if analysis.get("items"):
             analysis = await openfoodfacts.refine(analysis)
     if not analysis.get("items"):

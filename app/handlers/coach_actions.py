@@ -80,7 +80,8 @@ async def apply(action: dict, tg_id: int) -> str:
         if name == "log_meal":
             from app.core import llm, openfoodfacts
 
-            analysis = await llm.analyze_food_text(args.get("description", ""))
+            known = await repo.recent_dishes(db, user.id)
+            analysis = await llm.analyze_food_text(args.get("description", ""), known=known)
             if not analysis.get("items"):
                 return "Не понял, что именно съедено."
             analysis = await openfoodfacts.refine(analysis)

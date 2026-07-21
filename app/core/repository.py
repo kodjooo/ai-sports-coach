@@ -506,7 +506,7 @@ async def add_meal(
         protein=total.get("protein"),
         fat=total.get("fat"),
         carbs=total.get("carbs"),
-        note=analysis.get("note"),
+        note=analysis.get("dish") or analysis.get("note"),
     )
     db.add(meal)
     await db.flush()
@@ -553,6 +553,34 @@ async def meals_by_day(db: AsyncSession, user_id: int, days: int = 7) -> list[di
         }
         for d, k, p, f, c in res.all()
     ]
+
+
+async def recent_dishes(db: AsyncSession, user_id: int, limit: int = 20) -> list[dict]:
+    """Недавно записанные блюда (для консистентности разбора): dish + суммарные КБЖУ."""
+    res = await db.execute(
+        select(Meal.note, Meal.kcal, Meal.protein, Meal.fat, Meal.carbs)
+        .where(Meal.user_id == user_id, Meal.note.isnot(None))
+        .order_by(Meal.logged_at.desc())
+        .limit(limit)
+    )
+    seen: set[str] = set()
+    out: list[dict] = []
+    for note, kcal, protein, fat, carbs in res.all():
+        name = (note or "").strip()
+        key = name.lower()
+        if not name or key in seen:
+            continue
+        seen.add(key)
+        out.append(
+            {
+                "dish": name,
+                "kcal": round(float(kcal or 0)),
+                "protein": round(float(protein or 0)),
+                "fat": round(float(fat or 0)),
+                "carbs": round(float(carbs or 0)),
+            }
+        )
+    return out
 
 
 async def today_totals(db: AsyncSession, user_id: int) -> dict:

@@ -65,7 +65,7 @@ async def equipment_text(message: Message, state: FSMContext) -> None:
 
 async def _regenerate(message: Message, tg_id: int, state: FSMContext) -> None:
     """Пересобирает план под новую среду (из настроек), сохраняя дни."""
-    await message.answer("Пересобираю программу под новое место и инвентарь…")
+    await message.answer("Пересобираю программу под новые настройки…")
     async with typing(message):
         async with async_session() as db:
             user = await repo.get_user_by_tg(db, tg_id)
@@ -80,4 +80,4 @@ async def _regenerate(message: Message, tg_id: int, state: FSMContext) -> None:
             if workouts:
                 await repo.build_custom_plan(db, uid, workouts, environment=env)
     await state.clear()
-    await message.answer("Готово! Обновил план под твоё место и инвентарь 💪", reply_markup=main_menu())
+    await message.answer("Готово! Пересобрал программу под новые настройки 💪", reply_markup=main_menu())

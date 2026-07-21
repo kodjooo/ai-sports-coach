@@ -89,7 +89,7 @@ async def full_stats(db: AsyncSession, user_id: int) -> str:
 
     if records:
         lines.append("")
-        lines.append("🏆 <b>Рекорды</b> (макс. повторов в подходе):")
+        lines.append("🏆 <b>Рекорды</b> (лучший подход, повт./сек):")
         for name, best in records:
             lines.append(f"• {name}: {best}")
 
@@ -101,7 +101,8 @@ async def weekly_report(db: AsyncSession, user_id: int) -> str:
     since = date.today() - timedelta(days=7)
     sessions = await repo.sessions_in_period(db, user_id, since)
     done = [s for s in sessions if s.status == "done"]
-    planned = len(sessions)
+    # Знаменатель — без перенесённых (moved), чтобы не раздувался
+    planned = len([s for s in sessions if s.status != "moved"])
     dw = await repo.weight_change(db, user_id, days=7)
 
     parts = [f"🏋️ Тренировок: {len(done)} из {planned}."]

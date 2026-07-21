@@ -339,7 +339,10 @@ async def onboarding_nutrition_goal(cb: CallbackQuery, state: FSMContext) -> Non
         await db.commit()
     await cb.answer()
     if data.get("from_settings"):
+        from app.core.nutrition import NUTRITION_LABELS
+
+        label = dict(NUTRITION_LABELS).get(ngoal, ngoal)
         await state.set_state(None)
-        await cb.message.answer(f"Готово, режим питания: {ngoal}. Норма пересчитана.")
+        await cb.message.answer(f"Готово, режим питания: {label}. Норма пересчитана.")
     else:
         await _ask_next_profile(cb.message, cb.from_user.id, state)

@@ -520,18 +520,32 @@ async def embed(text: str) -> list[float]:
 
 
 _FOOD_SCHEMA_HINT = (
-    "Верни СТРОГО JSON: {\"is_food\": bool, \"note\": str, "
+    "Верни СТРОГО JSON: {\"is_food\": bool, \"dish\": str, \"note\": str, "
     "\"items\": [{\"name\": str, \"query\": str, \"grams\": number, \"kcal\": number, "
     "\"protein\": number, \"fat\": number, \"carbs\": number}], "
     "\"total\": {\"kcal\": number, \"protein\": number, \"fat\": number, \"carbs\": number}}. "
-    "name — название по-русски; query — простое обобщённое название продукта по-английски "
-    "для поиска в базе продуктов (напр. \"boiled rice\", \"chicken breast\", \"olive oil\"). "
+    "dish — краткое название блюда целиком по-русски (напр. «Плов с курицей», «Овсянка с бананом»). "
+    "name — ингредиент по-русски; query — простое обобщённое название продукта по-английски "
+    "для поиска в базе (напр. \"boiled rice\", \"chicken breast\", \"olive oil\"). "
     "Оцени порции в граммах и БЖУ/ккал по каждому ингредиенту, посчитай total как сумму. "
     "Если на изображении не еда — is_food=false, items=[]. Значения — реалистичные, целые."
 )
 
 
-async def analyze_food_photo(image_url: str) -> dict:
+def _known_hint(known: list[dict] | None) -> str:
+    """Подсказка о ранее записанных блюдах — чтобы быть консистентным и не гадать заново."""
+    if not known:
+        return ""
+    import json as _json
+
+    return (
+        "\nРанее клиент уже записывал такие блюда (используй их В ПЕРВУЮ ОЧЕРЕДЬ: если "
+        "текущее совпадает — верни те же состав/БЖУ, скорректировав под граммы; если это "
+        "точно другое блюдо — оцени заново):\n" + _json.dumps(known, ensure_ascii=False)
+    )
+
+
+async def analyze_food_photo(image_url: str, known: list[dict] | None = None) -> dict:
     """Разбирает фото блюда: ингредиенты, граммы, БЖУ, ккал."""
     try:
         resp = await get_client().chat.completions.create(
@@ -539,7 +553,7 @@ async def analyze_food_photo(image_url: str) -> dict:
             reasoning_effort=settings.openai_reasoning_effort,
             response_format={"type": "json_object"},
             messages=[
-                {"role": "system", "content": "Ты нутрициолог. " + _FOOD_SCHEMA_HINT},
+                {"role": "system", "content": "Ты нутрициолог. " + _FOOD_SCHEMA_HINT + _known_hint(known)},
                 {
                     "role": "user",
                     "content": [
@@ -555,7 +569,7 @@ async def analyze_food_photo(image_url: str) -> dict:
         return {"is_food": False, "items": [], "total": {}, "note": "ошибка анализа"}
 
 
-async def analyze_food_text(description: str, prev: dict | None = None) -> dict:
+async def analyze_food_text(description: str, prev: dict | None = None, known: list[dict] | None = None) -> dict:
     """Оценка КБЖУ по текстовому описанию (или коррекция прежнего разбора)."""
     ctx = ""
     if prev:
@@ -570,7 +584,7 @@ async def analyze_food_text(description: str, prev: dict | None = None) -> dict:
             reasoning_effort=settings.openai_reasoning_effort,
             response_format={"type": "json_object"},
             messages=[
-                {"role": "system", "content": "Ты нутрициолог. " + _FOOD_SCHEMA_HINT},
+                {"role": "system", "content": "Ты нутрициолог. " + _FOOD_SCHEMA_HINT + _known_hint(known)},
                 {"role": "user", "content": ctx + f"Описание еды: {description}"},
             ],
         )

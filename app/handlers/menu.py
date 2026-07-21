@@ -59,7 +59,10 @@ async def move_one(cb: CallbackQuery) -> None:
             moved = await repo.create_session(db, user.id, tpl_id, date.today(), status="moved")
             await repo.set_session_status(db, moved, "moved")
             await repo.create_session(db, user.id, tpl_id, date.today() + timedelta(days=1))
-    await cb.message.answer("Ок, перенёс на завтра. Дни недели в плане не менял 🙌")
+    await cb.message.answer(
+        "Ок, перенёс на завтра. Дни в плане не менял — начни завтра кнопкой «▶️ Тренировка» "
+        "(автонапоминание придёт только в твои плановые дни)."
+    )
     await cb.answer()
 
 
@@ -125,15 +128,16 @@ async def show_nutrition(message: Message) -> None:
         async with async_session() as db:
             u = await repo.get_user_by_tg(db, message.from_user.id)
             _, mode_label = nutrition.mode_of(u)
-        lines.append(f"Режим: <b>{u.nutrition_goal or 'авто'}</b> ({mode_label})")
+        goal_name = dict(nutrition.NUTRITION_LABELS).get(u.nutrition_goal, "авто")
+        lines.append(f"Режим: <b>{goal_name}</b> ({mode_label})")
         lines.append(
             f"Калории: <b>{totals['kcal']} / {norm['kcal']}</b> "
             f"(осталось {max(norm['kcal'] - totals['kcal'], 0)})"
         )
         lines.append(
-            f"Белки: {totals['protein']} / {norm['protein']} г\n"
-            f"Жиры: {totals['fat']} / {norm['fat']} г\n"
-            f"Углеводы: {totals['carbs']} / {norm['carbs']} г"
+            f"Белки: {totals['protein']} / {norm['protein']} г (осталось {max(norm['protein'] - totals['protein'], 0)})\n"
+            f"Жиры: {totals['fat']} / {norm['fat']} г (осталось {max(norm['fat'] - totals['fat'], 0)})\n"
+            f"Углеводы: {totals['carbs']} / {norm['carbs']} г (осталось {max(norm['carbs'] - totals['carbs'], 0)})"
         )
     else:
         lines.append(

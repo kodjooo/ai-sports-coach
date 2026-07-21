@@ -202,14 +202,15 @@ async def _advance(target, state: FSMContext) -> None:
         await target.answer(f"⏱ Отдых {rest} сек — дам сигнал, когда продолжать.")
         await state.update_data(cur_set=data["cur_set"] + 1, pending_reps=None)
         await _show_set(target, state)
-        asyncio.create_task(_rest_timer(target, rest))
+        _start_rest(target, rest)
     elif i + 1 < len(items):
         rest = item.get("rest_sec") or 60
         await target.answer(f"⏱ Отдых {rest} сек перед следующим упражнением.")
         await state.update_data(cur_item=i + 1, cur_set=1, pending_reps=None, suggest=None)
         await _show_set(target, state)
-        asyncio.create_task(_rest_timer(target, rest))
+        _start_rest(target, rest)
     else:
+        _cancel_rest(target.chat.id)
         cooldown = data.get("cooldown")
         text = f"🧘 <b>Заминка</b>\n{cooldown}" if cooldown else warmup.cooldown_text(data.get("groups", []))
         await target.answer(text, reply_markup=cooldown_done_kb())
@@ -225,6 +226,7 @@ async def skip_set(cb: CallbackQuery, state: FSMContext) -> None:
 @router.callback_query(Workout.in_progress, F.data == "wk:skipex")
 async def skip_exercise(cb: CallbackQuery, state: FSMContext) -> None:
     """Пропуск упражнения целиком — сразу к следующему/заминке."""
+    _cancel_rest(cb.message.chat.id)
     data = await state.get_data()
     items = data["items"]
     i = data["cur_item"]
@@ -240,6 +242,7 @@ async def skip_exercise(cb: CallbackQuery, state: FSMContext) -> None:
 
 @router.callback_query(Workout.in_progress, F.data == "wk:finishask")
 async def finish_ask(cb: CallbackQuery, state: FSMContext) -> None:
+    _cancel_rest(cb.message.chat.id)
     await cb.message.answer("Завершить тренировку?", reply_markup=finish_confirm_kb())
     await cb.answer()
 
@@ -258,6 +261,7 @@ async def finish_save(cb: CallbackQuery, state: FSMContext) -> None:
 
 @router.callback_query(Workout.in_progress, F.data == "wk:finish_discard")
 async def finish_discard(cb: CallbackQuery, state: FSMContext) -> None:
+    _cancel_rest(cb.message.chat.id)
     data = await state.get_data()
     async with async_session() as db:
         await repo.delete_session(db, data["session_id"])
@@ -298,6 +302,21 @@ async def cooldown_done(cb: CallbackQuery, state: FSMContext) -> None:
     await _finish(cb.message, state)
 
 
+# Активные таймеры отдыха по чату — чтобы отменять при завершении/пропуске/отмене
+_rest_tasks: dict[int, asyncio.Task] = {}
+
+
+def _cancel_rest(chat_id: int) -> None:
+    task = _rest_tasks.pop(chat_id, None)
+    if task and not task.done():
+        task.cancel()
+
+
+def _start_rest(message, seconds: int) -> None:
+    _cancel_rest(message.chat.id)
+    _rest_tasks[message.chat.id] = asyncio.create_task(_rest_timer(message, seconds))
+
+
 async def _rest_timer(message, seconds: int) -> None:
     """Отсчёт отдыха: для длинных пауз — сигнал в середине, и «время!» в конце."""
     try:
@@ -315,6 +334,7 @@ async def _rest_timer(message, seconds: int) -> None:
 # ---------- Завершение и фидбек ----------
 
 async def _finish(target, state: FSMContext) -> None:
+    _cancel_rest(target.chat.id)
     data = await state.get_data()
     await target.answer("Тренировка завершена! Считаю итоги…")
     async with typing(target), async_session() as db:

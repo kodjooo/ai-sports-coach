@@ -94,7 +94,8 @@ async def _apply_time(message: Message, tg_id: int, state: FSMContext, hour: int
     if from_settings:
         await state.clear()
         await message.answer(
-            f"Готово! Обновил расписание: {schedule_line}. Напомню за 30 минут и в момент старта.",
+            f"Готово! Расписание: {schedule_line}. Напомню за 30 минут и в момент старта.\n"
+            "Программу пересобрал под новое расписание (ручные замены в плане сброшены).",
             reply_markup=main_menu(),
         )
     else:
