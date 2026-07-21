@@ -78,7 +78,7 @@ async def apply(action: dict, tg_id: int) -> str:
             return f"Записал вес {weight:g} кг."
 
         if name == "log_meal":
-            from app.core import llm, openfoodfacts
+            from app.core import llm, nutrition, openfoodfacts
 
             known = await repo.recent_dishes(db, user.id)
             analysis = await llm.analyze_food_text(args.get("description", ""), known=known)
@@ -87,10 +87,22 @@ async def apply(action: dict, tg_id: int) -> str:
             analysis = await openfoodfacts.refine(analysis)
             await repo.add_meal(db, user.id, analysis)
             t = analysis.get("total", {})
-            return (
-                f"Записал: {round(t.get('kcal') or 0)} ккал "
+            dish = analysis.get("dish") or "приём пищи"
+            msg = (
+                f"Записал: {dish} — {round(t.get('kcal') or 0)} ккал "
                 f"(Б{round(t.get('protein') or 0)} Ж{round(t.get('fat') or 0)} У{round(t.get('carbs') or 0)})."
             )
+            totals = await repo.today_totals(db, user.id)
+            norm = nutrition.daily_norm(user)
+            if norm:
+                msg += (
+                    f"\nСегодня: {totals['kcal']} / {norm['kcal']} ккал\n"
+                    f"Осталось добрать: {max(norm['kcal'] - totals['kcal'], 0)} ккал · "
+                    f"Б {max(norm['protein'] - totals['protein'], 0)} · "
+                    f"Ж {max(norm['fat'] - totals['fat'], 0)} · "
+                    f"У {max(norm['carbs'] - totals['carbs'], 0)} г"
+                )
+            return msg
 
         if name == "set_plan":
             workouts = args.get("workouts", [])
