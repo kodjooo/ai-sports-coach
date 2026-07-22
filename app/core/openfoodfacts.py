@@ -90,6 +90,9 @@ async def refine(analysis: dict) -> dict:
     refined_any = False
     async with aiohttp.ClientSession(timeout=_TIMEOUT) as session:
         for it in items:
+            # Значения с этикетки — точные, не трогаем
+            if it.get("source") == "label":
+                continue
             grams = it.get("grams")
             model_kcal = it.get("kcal")
             if not grams or not model_kcal:

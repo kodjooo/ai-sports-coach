@@ -46,7 +46,7 @@ def _format(analysis: dict) -> str:
     )
     sources = {it.get("source") for it in analysis.get("items", []) if it.get("source")}
     if sources:
-        names = {"usda": "USDA", "off": "OpenFoodFacts"}
+        names = {"usda": "USDA", "off": "OpenFoodFacts", "label": "этикетка на упаковке"}
         lines.append("<i>Уточнено по базе: " + ", ".join(names.get(s, s) for s in sources) + ".</i>")
     return "\n".join(lines)
 
