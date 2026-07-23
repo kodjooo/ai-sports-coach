@@ -3,7 +3,8 @@ from __future__ import annotations
 
 import asyncio
 import os
-from datetime import date
+from datetime import date, datetime
+from zoneinfo import ZoneInfo
 
 from aiogram import F, Router
 from aiogram.fsm.context import FSMContext
@@ -39,6 +40,11 @@ _TIME_KEYWORDS = ("планк", "вис", "изометр", "hold", "стати�
 def _is_time_based(name: str, muscle_group: str) -> bool:
     text = f"{name} {muscle_group}".lower()
     return any(k in text for k in _TIME_KEYWORDS)
+
+
+def _today() -> date:
+    """Сегодняшняя дата в часовом поясе бота (не UTC контейнера)."""
+    return datetime.now(ZoneInfo(settings.tz)).date()
 
 
 def _gif_path(gif: str | None) -> str | None:
@@ -121,7 +127,7 @@ async def _begin(target, user_tg: int, state: FSMContext) -> None:
         if user is None:
             await target.answer("Сначала нажми /start")
             return
-        weekday = date.today().weekday()
+        weekday = _today().weekday()
         template = await repo.get_template_for_weekday(db, user.id, weekday)
         if template is None:
             templates = await repo.list_templates(db, user.id)
@@ -133,7 +139,7 @@ async def _begin(target, user_tg: int, state: FSMContext) -> None:
         if not all_items:
             await target.answer("В плане нет упражнений.")
             return
-        session = await repo.create_session(db, user.id, template.id, date.today())
+        session = await repo.create_session(db, user.id, template.id, _today())
         await repo.start_session(db, session)
         stored_warmup = template.warmup
         stored_cooldown = template.cooldown

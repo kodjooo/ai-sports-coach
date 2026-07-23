@@ -10,12 +10,23 @@ from aiogram.types import Message
 from app.core import llm
 
 
+# Разумный диапазон веса тела (кг) — отсекаем опечатки/случайные числа
+WEIGHT_MIN, WEIGHT_MAX = 30.0, 300.0
+
+
+def valid_weight(w: float | None) -> float | None:
+    """Возвращает вес, если он в разумном диапазоне, иначе None."""
+    if w is None:
+        return None
+    return w if WEIGHT_MIN <= w <= WEIGHT_MAX else None
+
+
 async def parse_weight(text: str) -> float | None:
-    """Понимает вес: числом из текста, иначе через LLM (для голоса и слов)."""
+    """Понимает вес: числом из текста, иначе через LLM. Отсекает нереалистичные значения."""
     m = re.search(r"(\d+(?:[.,]\d+)?)", text)
     if m:
-        return float(m.group(1).replace(",", "."))
-    return await llm.extract_weight(text)
+        return valid_weight(float(m.group(1).replace(",", ".")))
+    return valid_weight(await llm.extract_weight(text))
 
 
 @asynccontextmanager

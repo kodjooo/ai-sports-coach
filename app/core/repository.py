@@ -270,7 +270,13 @@ async def build_custom_plan(
     for tpl in old.scalars().all():
         tpl.active = False
 
+    used_weekdays: set[int] = set()
     for i, w in enumerate(sorted(workouts, key=lambda x: x.get("weekday", 0))):
+        # Валидация дня недели: только 0..6 и без дублей (иначе get_template_for_weekday упадёт)
+        wd = w.get("weekday", 0)
+        if not isinstance(wd, int) or not (0 <= wd <= 6) or wd in used_weekdays:
+            continue
+        used_weekdays.add(wd)
         warm = w.get("warmup") or []
         cool = w.get("cooldown") or []
         # Обратная совместимость: если разминка/заминка пришла строкой (старый формат) —
@@ -284,7 +290,7 @@ async def build_custom_plan(
         template = WorkoutTemplate(
             user_id=user_id,
             label=f"День {i + 1}",
-            weekday=w.get("weekday", 0),
+            weekday=wd,
             # Текстовая сводка — для показа плана и обратной совместимости
             warmup=warm_text or None,
             cooldown=cool_text or None,

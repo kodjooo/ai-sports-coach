@@ -73,7 +73,13 @@ async def apply(action: dict, tg_id: int) -> str:
             return f"Напоминания теперь на {hour:02d}:{minute:02d}."
 
         if name == "log_weight":
-            weight = float(args.get("weight_kg"))
+            from app.utils import valid_weight
+            try:
+                weight = valid_weight(float(args.get("weight_kg")))
+            except (TypeError, ValueError):
+                weight = None
+            if weight is None:
+                return "Не понял вес — напиши число в кг (например 82.5)."
             await repo.log_weight(db, user.id, weight)
             return f"Записал вес {weight:g} кг."
 

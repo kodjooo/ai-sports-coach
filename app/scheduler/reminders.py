@@ -59,32 +59,34 @@ async def _tick(bot: Bot) -> None:
     def _in_window(minutes_of_day: int) -> bool:
         return tick0 <= minutes_of_day < tick0 + 5
 
-    today = date.today()
+    from zoneinfo import ZoneInfo
+    today = datetime.now(ZoneInfo(settings.tz)).date()  # день в TZ бота, не UTC
     async with async_session() as db:
         res = await db.execute(select(User))
         users = list(res.scalars().all())
         for user in users:
-            if user.train_hour is None:
-                continue
-            train_today, template = await _training_today(db, user, today)
-            if not train_today or template is None:
-                continue
+            try:
+                if user.train_hour is None:
+                    continue
+                train_today, template = await _training_today(db, user, today)
+                if not train_today or template is None:
+                    continue
 
-            start_min = user.train_hour * 60 + (user.train_minute or 0)
-            pre_min = start_min - 30
+                start_min = user.train_hour * 60 + (user.train_minute or 0)
+                pre_min = start_min - 30
 
-            text = None
-            if _in_window(start_min):
-                names = await _exercise_names(db, template.id)
-                text = f"Время тренировки! Сегодня <b>{template.label}</b>: {names}. Начнём?"
-            elif _in_window(pre_min):
-                text = f"Через 30 минут тренировка (<b>{template.label}</b>). Готовься 💪"
+                text = None
+                if _in_window(start_min):
+                    names = await _exercise_names(db, template.id)
+                    text = f"Время тренировки! Сегодня <b>{template.label}</b>: {names}. Начнём?"
+                elif _in_window(pre_min):
+                    text = f"Через 30 минут тренировка (<b>{template.label}</b>). Готовься 💪"
 
-            if text:
-                try:
+                if text:
                     await bot.send_message(user.tg_id, text, reply_markup=reminder_kb())
-                except Exception as exc:
-                    logger.warning("Не удалось отправить напоминание %s: %s", user.tg_id, exc)
+            except Exception as exc:
+                # Ошибка по одному пользователю не должна прерывать рассылку остальным
+                logger.warning("Напоминание пропущено для %s: %s", user.tg_id, exc)
 
 
 async def _exercise_names(db, template_id: int) -> str:
@@ -106,21 +108,21 @@ async def _weekly_report(bot: Bot) -> None:
             # Только завершившим онбординг — иначе пустой отчёт и лишний платный вызов
             if not user.profile_summary:
                 continue
-            report = await progress.weekly_report(db, user.id)
-            # Короткий вывод тренера по данным недели
-            takeaway = await llm.chat(
-                f"Данные клиента за неделю:\n{report}\n\n"
-                "Дай 1–2 предложения вывода и один конкретный совет на следующую неделю.",
-                system_prompt=user.system_prompt,
-            )
-            body = "📈 <b>Итоги недели</b>\n" + report
-            if takeaway:
-                body += "\n\n💬 " + takeaway
-            body += "\n\nНапиши текущий вес числом, чтобы я отслеживал динамику."
             try:
+                report = await progress.weekly_report(db, user.id)
+                takeaway = await llm.chat(
+                    f"Данные клиента за неделю:\n{report}\n\n"
+                    "Дай 1–2 предложения вывода и один конкретный совет на следующую неделю.",
+                    system_prompt=user.system_prompt,
+                )
+                body = "📈 <b>Итоги недели</b>\n" + report
+                if takeaway:
+                    body += "\n\n💬 " + takeaway
+                body += "\n\nНапиши текущий вес числом, чтобы я отслеживал динамику."
                 await bot.send_message(user.tg_id, body)
             except Exception as exc:
-                logger.warning("Не удалось отправить отчёт %s: %s", user.tg_id, exc)
+                # Ошибка по одному пользователю не должна прерывать рассылку остальным
+                logger.warning("Отчёт пропущен для %s: %s", user.tg_id, exc)
 
 
 def setup_scheduler(bot: Bot) -> AsyncIOScheduler:
