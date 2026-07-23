@@ -17,12 +17,14 @@ from app.core.db import async_session
 from app.core.models import Session, User
 from app.keyboards import (
     cooldown_done_kb,
+    cooldown_step_kb,
     effort_kb,
     finish_confirm_kb,
     main_menu,
     reps_kb,
     replace_scope_kb,
     warmup_done_kb,
+    warmup_step_kb,
     workout_menu,
 )
 from app.states import Workout
@@ -47,25 +49,43 @@ def _gif_path(gif: str | None) -> str | None:
     return path if os.path.exists(path) else None
 
 
-async def _send_exercise_card(target, item: dict, caption: str) -> None:
+async def _send_exercise_card(target, item: dict, caption: str, reply_markup=None) -> None:
     """Отправляет карточку упражнения с GIF-анимацией техники; если файла нет — текстом."""
     path = _gif_path(item.get("gif"))
     if path:
         try:
-            await target.answer_animation(FSInputFile(path), caption=caption)
+            await target.answer_animation(FSInputFile(path), caption=caption, reply_markup=reply_markup)
             return
         except Exception:
             pass
-    await target.answer(caption)
+    await target.answer(caption, reply_markup=reply_markup)
 
 
-async def _send_phase(target, movements: list[dict], header: str) -> None:
-    """Показывает разминку/заминку: заголовок + каждое движение с GIF и короткой техникой."""
-    await target.answer(header)
-    for m in movements:
-        tech = (m.get("technique") or "").strip()
-        caption = f"<b>{m['name']}</b>" + (f"\n{tech}" if tech else "")
-        await _send_exercise_card(target, m, caption)
+def _phase_caption(m: dict, idx: int, total: int) -> str:
+    """Подпись движения разминки/заминки: номер, название, короткая техника."""
+    tech = (m.get("technique") or "").strip()
+    head = f"<b>{m['name']}</b> ({idx + 1}/{total})"
+    return head + (f"\n{tech}" if tech else "")
+
+
+async def _show_warmup_step(target, state: FSMContext) -> None:
+    """Показывает одно движение разминки с кнопкой «Далее» (пошагово)."""
+    data = await state.get_data()
+    items = data.get("warm_items") or []
+    idx = data.get("warm_idx", 0)
+    m = items[idx]
+    caption = "🔥 " + _phase_caption(m, idx, len(items))
+    await _send_exercise_card(target, m, caption, reply_markup=warmup_step_kb(last=idx + 1 >= len(items)))
+
+
+async def _show_cooldown_step(target, state: FSMContext) -> None:
+    """Показывает одно движение заминки с кнопкой «Далее» (пошагово)."""
+    data = await state.get_data()
+    items = data.get("cool_items") or []
+    idx = data.get("cool_idx", 0)
+    m = items[idx]
+    caption = "🧘 " + _phase_caption(m, idx, len(items))
+    await _send_exercise_card(target, m, caption, reply_markup=cooldown_step_kb(last=idx + 1 >= len(items)))
 
 
 # ---------- Запуск тренировки ----------
@@ -129,7 +149,10 @@ async def _begin(target, user_tg: int, state: FSMContext) -> None:
     await state.update_data(
         session_id=session.id,
         items=main_items,
+        warm_items=warm_items,
+        warm_idx=0,
         cool_items=cool_items,
+        cool_idx=0,
         cur_item=0,
         cur_set=1,
         pending_reps=None,
@@ -138,11 +161,10 @@ async def _begin(target, user_tg: int, state: FSMContext) -> None:
         cooldown=stored_cooldown,
     )
     # Прячем главное меню на время тренировки (чтобы случайно не начать новую)
-    await target.answer("🏋️ Поехали! Начнём с разминки.", reply_markup=workout_menu())
-    # Разминка: движения каталога с GIF; если их нет — старый текст
+    await target.answer("🏋️ Поехали! Начнём с разминки — по одному движению.", reply_markup=workout_menu())
+    # Разминка пошагово: движения каталога с GIF; если их нет — старый текст
     if warm_items:
-        await _send_phase(target, warm_items, "🔥 <b>Разминка</b> — размялись и поехали:")
-        await target.answer("Как разомнёшься — жми кнопку 👇", reply_markup=warmup_done_kb())
+        await _show_warmup_step(target, state)
     else:
         warmup_msg = f"🔥 <b>Разминка</b>\n{stored_warmup}" if stored_warmup else warmup.warmup_text(groups)
         await target.answer(warmup_msg, reply_markup=warmup_done_kb())
@@ -256,12 +278,13 @@ async def choose_effort(cb: CallbackQuery, state: FSMContext) -> None:
 
 
 async def _show_cooldown(target, state: FSMContext) -> None:
-    """Заминка: движения каталога с GIF; если их нет — старый текст."""
+    """Заминка: пошагово движения каталога с GIF; если их нет — старый текст."""
     data = await state.get_data()
     cool_items = data.get("cool_items") or []
     if cool_items:
-        await _send_phase(target, cool_items, "🧘 <b>Заминка</b> — растянемся:")
-        await target.answer("Как закончишь — жми кнопку 👇", reply_markup=cooldown_done_kb())
+        await state.update_data(cool_idx=0)
+        await target.answer("🧘 Финишная прямая — заминка по одному движению.")
+        await _show_cooldown_step(target, state)
     else:
         cooldown = data.get("cooldown")
         text = f"🧘 <b>Заминка</b>\n{cooldown}" if cooldown else warmup.cooldown_text(data.get("groups", []))
@@ -347,6 +370,34 @@ async def finish_discard(cb: CallbackQuery, state: FSMContext) -> None:
 async def warmup_done(cb: CallbackQuery, state: FSMContext) -> None:
     await cb.answer()
     await _show_set(cb.message, state)
+
+
+@router.callback_query(Workout.in_progress, F.data == "wk:warm_next")
+async def warm_next(cb: CallbackQuery, state: FSMContext) -> None:
+    """Следующее движение разминки; после последнего — к основным упражнениям."""
+    await cb.answer()
+    data = await state.get_data()
+    items = data.get("warm_items") or []
+    idx = data.get("warm_idx", 0) + 1
+    if idx < len(items):
+        await state.update_data(warm_idx=idx)
+        await _show_warmup_step(cb.message, state)
+    else:
+        await _show_set(cb.message, state)
+
+
+@router.callback_query(Workout.in_progress, F.data == "wk:cool_next")
+async def cool_next(cb: CallbackQuery, state: FSMContext) -> None:
+    """Следующее движение заминки; после последнего — завершение тренировки."""
+    await cb.answer()
+    data = await state.get_data()
+    items = data.get("cool_items") or []
+    idx = data.get("cool_idx", 0) + 1
+    if idx < len(items):
+        await state.update_data(cool_idx=idx)
+        await _show_cooldown_step(cb.message, state)
+    else:
+        await _finish(cb.message, state)
 
 
 @router.callback_query(Workout.in_progress, F.data == "wk:cooldown_done")

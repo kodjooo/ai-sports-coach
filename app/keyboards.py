@@ -162,11 +162,27 @@ def time_only_kb() -> InlineKeyboardMarkup:
 
 
 def warmup_done_kb() -> InlineKeyboardMarkup:
-    """Кнопка перехода от разминки к упражнениям."""
+    """Кнопка перехода от разминки к упражнениям (для старого текстового фолбэка)."""
     return InlineKeyboardMarkup(
         inline_keyboard=[
             [InlineKeyboardButton(text="▶️ К упражнениям", callback_data="wk:warmup_done")],
         ]
+    )
+
+
+def warmup_step_kb(last: bool) -> InlineKeyboardMarkup:
+    """Пошаговая разминка: «Далее» между движениями, «К упражнениям» на последнем."""
+    text = "▶️ К упражнениям" if last else "➡️ Далее"
+    return InlineKeyboardMarkup(
+        inline_keyboard=[[InlineKeyboardButton(text=text, callback_data="wk:warm_next")]]
+    )
+
+
+def cooldown_step_kb(last: bool) -> InlineKeyboardMarkup:
+    """Пошаговая заминка: «Далее» между движениями, «Завершить» на последнем."""
+    text = "✅ Завершить тренировку" if last else "➡️ Далее"
+    return InlineKeyboardMarkup(
+        inline_keyboard=[[InlineKeyboardButton(text=text, callback_data="wk:cool_next")]]
     )
 
 
