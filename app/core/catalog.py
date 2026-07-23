@@ -139,9 +139,14 @@ def available_equipment(equipment: str | None) -> set[str]:
     text = (equipment or "").lower()
     if any(m in text for m in _ALL_EQUIP_MARKERS):
         return set(EQUIPMENT_TAGS)
+    words = re.findall(r"[a-zа-яё0-9-]+", text)  # слова (дефис сохраняем: «аб-ролик»)
     allowed: set[str] = set()
     for token, tag in _EQUIP_TOKENS:
-        if token in text:
+        if " " in token:
+            matched = token in text  # многословный токен — подстрокой
+        else:
+            matched = any(w.startswith(token) for w in words)  # по началу слова (блок≠яблоко)
+        if matched:
             allowed.add(tag)
     return allowed
 

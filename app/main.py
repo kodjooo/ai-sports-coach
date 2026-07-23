@@ -49,7 +49,9 @@ async def main() -> None:
     # FSM в Redis — состояние диалога переживает перезапуск бота
     storage = RedisStorage.from_url(settings.redis_url)
     dp = Dispatcher(storage=storage)
-    dp.message.outer_middleware(ThrottleMiddleware())  # троттлинг раньше логирования/обработки
+    _throttle = ThrottleMiddleware()  # общий счётчик на сообщения и колбэки
+    dp.message.outer_middleware(_throttle)
+    dp.callback_query.outer_middleware(_throttle)
     dp.message.outer_middleware(IncomingLogMiddleware())
     dp.include_router(get_root_router())
 

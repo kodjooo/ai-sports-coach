@@ -58,9 +58,16 @@ async def _get_drafts(state: FSMContext) -> dict:
     return data.get("meal_drafts") or {}
 
 
+_MAX_DRAFTS = 10  # не копим черновики бесконечно в Redis (если не сохранять/не отменять)
+
+
 async def _set_draft(state: FSMContext, draft_id: str, analysis: dict) -> None:
     drafts = await _get_drafts(state)
     drafts[draft_id] = analysis
+    # Оставляем только последние N (draft_id — message_id, растёт со временем → сортируем по нему)
+    if len(drafts) > _MAX_DRAFTS:
+        for old in sorted(drafts, key=lambda k: int(k) if k.isdigit() else 0)[:-_MAX_DRAFTS]:
+            drafts.pop(old, None)
     await state.update_data(meal_drafts=drafts)
 
 

@@ -1,7 +1,9 @@
 """Расчёт метрик, текстовых сводок и недельных отчётов."""
 from __future__ import annotations
 
-from datetime import date, timedelta
+from datetime import timedelta
+
+from app.utils import local_today
 
 from sqlalchemy.ext.asyncio import AsyncSession
 
@@ -65,7 +67,7 @@ async def full_stats(db: AsyncSession, user_id: int) -> str:
     """Расширенная статистика: всего, неделя, вес, рекорды."""
     total = await repo.total_done_sessions(db, user_id)
 
-    since = date.today() - timedelta(days=7)
+    since = local_today() - timedelta(days=7)
     week = await repo.sessions_in_period(db, user_id, since)
     week_done = len([s for s in week if s.status == "done"])
     # План на неделю = число тренировочных дней (активных шаблонов)
@@ -103,7 +105,7 @@ async def full_stats(db: AsyncSession, user_id: int) -> str:
 
 async def weekly_report(db: AsyncSession, user_id: int) -> str:
     """Недельный отчёт: тренировки, динамика веса."""
-    since = date.today() - timedelta(days=7)
+    since = local_today() - timedelta(days=7)
     sessions = await repo.sessions_in_period(db, user_id, since)
     done = [s for s in sessions if s.status == "done"]
     # План на неделю = число тренировочных дней (активных шаблонов)

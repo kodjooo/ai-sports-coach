@@ -148,8 +148,8 @@ async def _begin(target, user_tg: int, state: FSMContext) -> None:
     warm_items = [it for it in all_items if it["phase"] == "warmup"]
     main_items = [it for it in all_items if it["phase"] == "main"]
     cool_items = [it for it in all_items if it["phase"] == "cooldown"]
-    if not main_items:  # старые планы без фаз — считаем все основными
-        main_items = [it for it in all_items if it["phase"] != "warmup" and it["phase"] != "cooldown"] or all_items
+    if not main_items:  # старые планы без фаз — все элементы считаем основными
+        main_items = all_items
 
     groups = [it["muscle_group"] for it in main_items]
     await state.set_state(Workout.in_progress)
@@ -493,14 +493,14 @@ async def _finish_inner(target, state: FSMContext) -> None:
 
     # Пишем итог и фидбек в векторную память
     await vector.add_memory(
-        user.id, f"session-{session.id}", summary, {"type": "session_summary", "date": str(date.today())}
+        user.id, f"session-{session.id}", summary, {"type": "session_summary", "date": str(_today())}
     )
     if feedback:
         await vector.add_memory(
             user.id,
             f"feedback-{session.id}",
             feedback,
-            {"type": "coach_feedback", "date": str(date.today())},
+            {"type": "coach_feedback", "date": str(_today())},
         )
     await state.clear()
     msg = feedback or "Отличная работа!"
@@ -636,7 +636,7 @@ async def replace_apply(cb: CallbackQuery, state: FSMContext) -> None:
     items[i] = item
     await state.update_data(items=items, suggest=None)
     await vector.add_memory(
-        user.id, f"change-{cb.id}", note, {"type": "change", "date": str(date.today())}
+        user.id, f"change-{cb.id}", note, {"type": "change", "date": str(_today())}
     )
     unit = "сек" if is_time else "повт."
     await cb.message.answer(f"Готово: теперь {ex.name} — {load['sets']}×{load['reps']} {unit}.")
