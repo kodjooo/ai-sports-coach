@@ -6,8 +6,22 @@
 from __future__ import annotations
 
 import logging
+import os
+from logging.handlers import RotatingFileHandler
 
 logger = logging.getLogger("usage")
+logger.setLevel(logging.INFO)
+
+# Пишем расход в файл на volume — переживает пересборку контейнера.
+_LOG_PATH = os.environ.get("USAGE_LOG", "/app/logs/usage.log")
+try:
+    os.makedirs(os.path.dirname(_LOG_PATH), exist_ok=True)
+    if not any(isinstance(h, RotatingFileHandler) for h in logger.handlers):
+        _fh = RotatingFileHandler(_LOG_PATH, maxBytes=5_000_000, backupCount=3, encoding="utf-8")
+        _fh.setFormatter(logging.Formatter("%(asctime)s %(message)s"))
+        logger.addHandler(_fh)
+except Exception:
+    pass
 
 # Цены за 1M токенов (вход, выход). reasoning-токены тарифицируются как выход.
 _PRICES: dict[str, tuple[float, float]] = {

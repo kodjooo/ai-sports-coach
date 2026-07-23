@@ -169,10 +169,15 @@ async def act_apply(cb: CallbackQuery, state: FSMContext) -> None:
     if not action:
         await cb.answer("Действие уже неактуально")
         return
-    result = await coach_actions.apply(action, cb.from_user.id)
+    # Сразу гасим действие и кнопки, чтобы повторные нажатия (пока идёт обработка) не создавали дубли
     await state.update_data(pending_action=None)
+    try:
+        await cb.message.edit_reply_markup(reply_markup=None)
+    except Exception:
+        pass
+    await cb.answer("Применяю…")
+    result = await coach_actions.apply(action, cb.from_user.id)
     await cb.message.answer(f"✅ {result}")
-    await cb.answer()
 
 
 @router.callback_query(F.data == "act:cancel")

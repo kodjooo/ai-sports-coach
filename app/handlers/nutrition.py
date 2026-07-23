@@ -62,6 +62,10 @@ async def _set_draft(state: FSMContext, draft_id: str, analysis: dict) -> None:
     await state.update_data(meal_drafts=drafts)
 
 
+# Замок от двойного тапа: пока сохранение по draft_id идёт, повторные нажатия отбрасываем
+_saving: set[str] = set()
+
+
 async def _pop_draft(state: FSMContext, draft_id: str) -> dict | None:
     drafts = await _get_drafts(state)
     analysis = drafts.pop(draft_id, None)
@@ -96,15 +100,28 @@ async def on_photo(message: Message, state: FSMContext, bot: Bot) -> None:
 @router.callback_query(F.data.startswith("meal:save:"))
 async def meal_save(cb: CallbackQuery, state: FSMContext) -> None:
     draft_id = cb.data.split(":", 2)[2]
-    analysis = await _pop_draft(state, draft_id)
-    if analysis is None:
-        await cb.answer("Это блюдо уже сохранено или отменено", show_alert=True)
+    key = f"{cb.from_user.id}:{draft_id}"
+    if key in _saving:
+        await cb.answer("Уже сохраняю…")
         return
-    async with async_session() as db:
-        user = await repo.get_user_by_tg(db, cb.from_user.id)
-        await repo.add_meal(db, user.id, analysis, analysis.get("photo"))
-        totals = await repo.today_totals(db, user.id)
-        norm = nutrition.daily_norm(user)
+    _saving.add(key)
+    try:
+        # Сразу убираем кнопки, чтобы по карточке нельзя было тапнуть повторно
+        try:
+            await cb.message.edit_reply_markup(reply_markup=None)
+        except Exception:
+            pass
+        analysis = await _pop_draft(state, draft_id)
+        if analysis is None:
+            await cb.answer("Это блюдо уже сохранено или отменено", show_alert=True)
+            return
+        async with async_session() as db:
+            user = await repo.get_user_by_tg(db, cb.from_user.id)
+            await repo.add_meal(db, user.id, analysis, analysis.get("photo"))
+            totals = await repo.today_totals(db, user.id)
+            norm = nutrition.daily_norm(user)
+    finally:
+        _saving.discard(key)
     text = "Записал ✅"
     if norm:
         left_k = max(norm["kcal"] - totals["kcal"], 0)
@@ -115,10 +132,6 @@ async def meal_save(cb: CallbackQuery, state: FSMContext) -> None:
             f"\nСегодня: {totals['kcal']} / {norm['kcal']} ккал\n"
             f"Осталось добрать: {left_k} ккал · Б {left_p} · Ж {left_f} · У {left_c} г"
         )
-    try:
-        await cb.message.edit_reply_markup(reply_markup=None)  # убираем кнопки у карточки
-    except Exception:
-        pass
     await cb.message.answer(text)
     await cb.answer()
 
