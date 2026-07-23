@@ -65,16 +65,37 @@ TEMPLATE_VARIANTS: list[list[tuple[str, int, int]]] = [
 ]
 
 
+# Колонки модели Exercise, которые можно заполнить из каталога (лишние ключи, напр. kind, игнорируем)
+_EX_COLUMNS = {
+    "name", "muscle_group", "difficulty", "technique", "variations",
+    "environment", "equipment", "gif", "name_en", "technique_en",
+}
+
+
 async def seed_exercises(db: AsyncSession) -> None:
-    """Идемпотентно добавляет отсутствующие упражнения (по названию)."""
-    res = await db.execute(select(Exercise.name))
-    existing = {name for name in res.scalars().all()}
-    added = False
+    """Идемпотентно добавляет/дополняет упражнения каталога (по названию).
+
+    Новым — вставка; существующим без медиа — дозаполнение gif/техники/EN
+    (чтобы уже засеянные ранее записи получили GIF после обновления каталога).
+    """
+    res = await db.execute(select(Exercise))
+    existing = {ex.name: ex for ex in res.scalars().all()}
+    changed = False
     for data in EXERCISES:
-        if data["name"] not in existing:
-            db.add(Exercise(**data))
-            added = True
-    if added:
+        clean = {k: v for k, v in data.items() if k in _EX_COLUMNS}
+        ex = existing.get(clean["name"])
+        if ex is None:
+            db.add(Exercise(**clean))
+            changed = True
+        elif clean.get("gif") and not ex.gif:
+            # Дозаполняем медиа/EN у ранее засеянной записи
+            ex.gif = clean.get("gif")
+            ex.name_en = ex.name_en or clean.get("name_en")
+            ex.technique_en = ex.technique_en or clean.get("technique_en")
+            if clean.get("technique"):
+                ex.technique = clean["technique"]
+            changed = True
+    if changed:
         await db.commit()
 
 

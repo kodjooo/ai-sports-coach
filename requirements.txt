@@ -9,6 +9,9 @@ APScheduler>=3.10
 pydantic-settings>=2.2
 redis>=5.0
 aiohttp>=3.9
+# Генерация GIF-анимаций упражнений (scripts/build_exercise_gifs.py)
+Pillow>=10.0
+requests>=2.31
 
 # Тесты
 pytest>=8.0

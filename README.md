@@ -90,7 +90,13 @@ docker compose run --rm bot alembic revision -m "описание"
    ```
 3. Создать `.env` (см. раздел «Настройка»).
 4. Запустить: `docker compose up -d --build`.
-5. Данные хранятся в volumes `pg_data` и `chroma_data`.
+5. **Сгенерировать GIF-анимации упражнений** (один раз; кладутся в volume `exercise_gifs`, переживают пересборку):
+   ```bash
+   docker compose run --rm bot python scripts/build_exercise_gifs.py
+   ```
+   Скрипт качает по 2 кадра на упражнение из открытой базы free-exercise-db (public domain)
+   и склеивает зацикленный GIF (1 сек/кадр). Повторный запуск пропускает уже готовые файлы.
+6. Данные хранятся в volumes `pg_data`, `chroma_data`, `redis_data`, `usage_logs`, `exercise_gifs`.
 
 **Бэкап PostgreSQL** (пример, по cron):
 

@@ -54,6 +54,7 @@ services:
       REDIS_PORT: 6379
     volumes:
       - usage_logs:/app/logs
+      - exercise_gifs:/app/media/exercises
     depends_on:
       postgres:
         condition: service_healthy
@@ -79,3 +80,4 @@ volumes:
   chroma_data:
   redis_data:
   usage_logs:
+  exercise_gifs:

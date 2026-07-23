@@ -225,8 +225,9 @@ async def build_custom_plan(
 ) -> int:
     """Пересобирает план из структуры тренера.
 
-    workouts: [{"weekday": int, "exercises": [{"name","sets","reps","muscle_group","technique"}]}]
-    Недостающие упражнения автоматически заводятся в каталог. Возвращает число дней.
+    workouts: [{"weekday", "warmup":[{name,...}], "cooldown":[{name,...}],
+                "exercises":[{name,sets,reps,rest_sec,muscle_group,technique,gif,...}]}]
+    Разминка/заминка сохраняются как элементы плана с фазой (phase). Возвращает число дней.
     """
     # Деактивируем прежний план
     old = await db.execute(select(WorkoutTemplate).where(WorkoutTemplate.user_id == user_id))
@@ -234,34 +235,53 @@ async def build_custom_plan(
         tpl.active = False
 
     for i, w in enumerate(sorted(workouts, key=lambda x: x.get("weekday", 0))):
+        warm = w.get("warmup") or []
+        cool = w.get("cooldown") or []
+        # Обратная совместимость: если разминка/заминка пришла строкой (старый формат) —
+        # сохраняем как текст, фазовых элементов не создаём
+        warm_text = warm if isinstance(warm, str) else "\n".join(f"• {m['name']}" for m in warm)
+        cool_text = cool if isinstance(cool, str) else "\n".join(f"• {m['name']}" for m in cool)
+        if isinstance(warm, str):
+            warm = []
+        if isinstance(cool, str):
+            cool = []
         template = WorkoutTemplate(
             user_id=user_id,
             label=f"День {i + 1}",
             weekday=w.get("weekday", 0),
-            warmup=w.get("warmup"),
-            cooldown=w.get("cooldown"),
+            # Текстовая сводка — для показа плана и обратной совместимости
+            warmup=warm_text or None,
+            cooldown=cool_text or None,
         )
         db.add(template)
         await db.flush()
-        for idx, ex in enumerate(w.get("exercises", [])):
+
+        order = 0
+        for m in warm:
             exo = await find_or_create_exercise(
-                db,
-                ex.get("name", "Упражнение"),
-                ex.get("muscle_group"),
-                ex.get("technique"),
-                environment=ex.get("environment") or environment,
-                equipment=ex.get("equipment"),
+                db, m.get("name", "Разминка"), m.get("muscle_group"), m.get("technique"),
+                environment=m.get("environment") or environment, equipment=m.get("equipment"),
             )
-            db.add(
-                TemplateItem(
-                    template_id=template.id,
-                    exercise_id=exo.id,
-                    target_sets=ex.get("sets") or 3,
-                    target_reps=ex.get("reps") or 10,
-                    rest_sec=ex.get("rest_sec") or 60,
-                    order_idx=idx,
-                )
+            db.add(TemplateItem(template_id=template.id, exercise_id=exo.id,
+                                order_idx=order, phase="warmup"))
+            order += 1
+        for ex in w.get("exercises", []):
+            exo = await find_or_create_exercise(
+                db, ex.get("name", "Упражнение"), ex.get("muscle_group"), ex.get("technique"),
+                environment=ex.get("environment") or environment, equipment=ex.get("equipment"),
             )
+            db.add(TemplateItem(template_id=template.id, exercise_id=exo.id,
+                                target_sets=ex.get("sets") or 3, target_reps=ex.get("reps") or 10,
+                                rest_sec=ex.get("rest_sec") or 60, order_idx=order, phase="main"))
+            order += 1
+        for m in cool:
+            exo = await find_or_create_exercise(
+                db, m.get("name", "Заминка"), m.get("muscle_group"), m.get("technique"),
+                environment=m.get("environment") or environment, equipment=m.get("equipment"),
+            )
+            db.add(TemplateItem(template_id=template.id, exercise_id=exo.id,
+                                order_idx=order, phase="cooldown"))
+            order += 1
     await db.commit()
     return len(workouts)
 

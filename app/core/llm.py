@@ -8,7 +8,7 @@ import logging
 from openai import AsyncOpenAI
 
 from app.config import settings
-from app.core import usage
+from app.core import catalog, usage
 
 logger = logging.getLogger(__name__)
 
@@ -404,8 +404,16 @@ async def generate_plan(
 ) -> list[dict]:
     """Генерирует персональный план тренировок под профиль, пол, уровень, среду и дни.
 
-    Возвращает список workouts: [{weekday, warmup, cooldown, exercises:[{name,sets,reps,rest_sec,muscle_group,technique}]}].
+    Тренер (LLM) выбирает упражнения ТОЛЬКО из каталога-палитры (у каждого есть GIF),
+    но сам подбор — с учётом контекста (боль/травмы, пол, уровень, цели, желания).
+    Возвращает workouts: [{weekday, warmup:[name], cooldown:[name],
+    exercises:[{name,sets,reps,rest_sec}]}] — названия строго из каталога.
     """
+    main_pool = catalog.main_candidates(environment, equipment)
+    warm_pool = catalog.warmup_candidates(environment, equipment)
+    if not main_pool:
+        logger.warning("Пустая палитра каталога для среды=%s инвентарь=%s", environment, equipment)
+        return []
     try:
         resp = await usage.complete(get_client(), "generate_plan",
             model=settings.openai_model,
@@ -415,33 +423,24 @@ async def generate_plan(
                 {
                     "role": "system",
                     "content": (
-                        "Составь персональный план тренировок под клиента.\n"
+                        "Ты — персональный тренер. Составь план под клиента, ВЫБИРАЯ упражнения "
+                        "ТОЛЬКО из предложенных ниже списков (это каталог с видео-техникой). "
+                        "Названия копируй ДОСЛОВНО из списка, ничего не выдумывай и не переименовывай.\n"
                         "ЖЁСТКИЕ ПРАВИЛА:\n"
-                        "- Сложность СТРОГО под уровень клиента. Для новичка — простые, "
-                        "безопасные, регрессированные варианты; НЕ давай продвинутых движений.\n"
-                        "- Учитывай пол клиента при подборе (акценты, типичные предпочтения).\n"
-                        "- РАЗНООБРАЗИЕ: в одном дне НЕ повторяй одно и то же упражнение и не "
-                        "ставь несколько почти одинаковых (напр. 2–3 вида приседаний или 2 планки). "
-                        "Максимум 1 планка на тренировку и максимум 1 упражнение на группу-паттерн.\n"
-                        "- Баланс паттернов: ноги, тяз/задняя цепь, толчок, тяга/спина, кор.\n"
-                        "- Строго под место тренировки и доступный инвентарь (не предлагай зал/"
-                        "турник, если их нет; работай тем, что есть).\n"
-                        "- Щади травмы/ограничения.\n"
-                        f"На каждый день — РОВНО {per_day} РАЗНЫХ упражнений: подходы, повторы, "
-                        "группа мышц, техника, и ОБЯЗАТЕЛЬНО свой rest_sec для каждого — подбирай "
-                        "отдых индивидуально, НЕ ставь одинаковый: кор/лёгкая изоляция 30–45 с, "
-                        "базовые силовые/ноги 60–90 с.\n"
-                        "ВАЖНО: разминка и заминка должны соответствовать ИМЕННО упражнениям "
-                        "этого дня. Разминка (warmup) — РАСШИРЕННАЯ, 5–7 движений (общий разогрев + "
-                        "суставная + активация тех мышц/суставов, что нагружаются в упражнениях "
-                        "этого дня); заминка (cooldown) — 4–6 движений (растяжка именно "
-                        "задействованных в этот день групп + дыхание). Каждое движение — с новой "
-                        "строки, с временем/повторами и короткой техникой (1 фраза), готовый "
-                        "чек-лист по шагам, а не общая фраза.\n"
+                        "- Сложность строго под уровень; для новичка — простые безопасные движения.\n"
+                        "- Учитывай пол, возраст, вес, цели и ЖЕЛАНИЯ клиента.\n"
+                        "- Щади травмы/боли: если что-то болит — не бери упражнения на эту зону.\n"
+                        "- РАЗНООБРАЗИЕ: в дне не повторяй одинаковые движения; баланс паттернов "
+                        "(ноги, задняя цепь, толчок, тяга, кор).\n"
+                        f"- На каждый день — РОВНО {per_day} основных упражнений из списка ОСНОВНЫХ, "
+                        "у каждого свой rest_sec (кор/изоляция 30–45 с, базовые/ноги 60–90 с).\n"
+                        "- Разминка (warmup): 5–7 движений из списка РАЗМИНКИ под мышцы ИМЕННО этого дня "
+                        "(+ суставная база: шея/плечи/голеностоп). Заминка (cooldown): 4–6 движений из "
+                        "списка РАЗМИНКИ — растяжка задействованных в этот день групп.\n"
+                        "- warmup и cooldown — это МАССИВЫ названий из списка РАЗМИНКИ (дословно).\n"
                         "Верни СТРОГО JSON: {\"workouts\": [{\"weekday\": int(0=Пн..6=Вс), "
-                        "\"warmup\": str, \"cooldown\": str, \"exercises\": [{\"name\": str, "
-                        "\"sets\": int, \"reps\": int, \"rest_sec\": int, \"muscle_group\": str, "
-                        "\"technique\": str}]}]}"
+                        "\"warmup\": [str], \"cooldown\": [str], \"exercises\": "
+                        "[{\"name\": str, \"sets\": int, \"reps\": int, \"rest_sec\": int}]}]}"
                     ),
                 },
                 {
@@ -449,19 +448,66 @@ async def generate_plan(
                     "content": (
                         f"Цель: {goal or '—'}\nПол: {sex or '—'}\n"
                         f"Уровень подготовки: {level or 'новичок'}\n"
-                        f"Профиль: {profile_summary or '—'}\n"
+                        f"Профиль (учти боли/ограничения/желания): {profile_summary or '—'}\n"
                         f"Место тренировок: {environment or 'дом'}\n"
                         f"Инвентарь: {equipment or 'нет'}\n"
-                        f"Дни недели (0=Пн): {weekdays}"
+                        f"Дни недели (0=Пн): {weekdays}\n\n"
+                        f"СПИСОК ОСНОВНЫХ упражнений (выбирай отсюда):\n{catalog.names_for_prompt(main_pool)}\n\n"
+                        f"СПИСОК РАЗМИНКИ/ЗАМИНКИ (выбирай отсюда):\n{catalog.names_for_prompt(warm_pool)}"
                     ),
                 },
             ],
         )
         data = json.loads(resp.choices[0].message.content or "{}")
-        return data.get("workouts", []) or []
+        return _sanitize_plan(data.get("workouts", []) or [])
     except Exception as exc:
         logger.warning("Ошибка генерации плана: %s", exc)
         return []
+
+
+def _sanitize_plan(workouts: list[dict]) -> list[dict]:
+    """Сверяет названия с каталогом, отбрасывает неизвестные, проставляет фазы и данные каталога."""
+    clean: list[dict] = []
+    for w in workouts:
+        exercises = []
+        for ex in w.get("exercises", []):
+            hit = catalog.resolve(ex.get("name", ""))
+            if not hit:
+                continue  # LLM выдумал название вне каталога — пропускаем
+            exercises.append({
+                "name": hit["name"],
+                "muscle_group": hit["muscle_group"],
+                "technique": hit["technique"],
+                "environment": hit["environment"],
+                "equipment": hit["equipment"],
+                "gif": hit["gif"],
+                "sets": ex.get("sets") or 3,
+                "reps": ex.get("reps") or 10,
+                "rest_sec": ex.get("rest_sec") or 60,
+            })
+        if not exercises:
+            continue
+
+        def _resolve_names(names) -> list[dict]:
+            out, seen = [], set()
+            for n in (names or []):
+                hit = catalog.resolve(n if isinstance(n, str) else "")
+                if hit and hit["name"] not in seen:
+                    seen.add(hit["name"])
+                    out.append({
+                        "name": hit["name"], "muscle_group": hit["muscle_group"],
+                        "technique": hit["technique"], "environment": hit["environment"],
+                        "equipment": hit["equipment"], "gif": hit["gif"],
+                    })
+            return out
+
+        clean.append({
+            "weekday": w.get("weekday", 0),
+            "warmup": _resolve_names(w.get("warmup")),
+            "cooldown": _resolve_names(w.get("cooldown")),
+            "exercises": exercises,
+        })
+    return clean
 
 
 async def build_system_prompt(profile_summary: str | None, goal: str | None) -> str:

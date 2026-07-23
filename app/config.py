@@ -41,6 +41,9 @@ class Settings(BaseSettings):
     # Бесплатный ключ: https://fdc.nal.usda.gov/api-key-signup.html (для теста — DEMO_KEY)
     usda_api_key: str = ""
 
+    # Каталог GIF-анимаций упражнений (на Docker volume, генерируется scripts/build_exercise_gifs.py)
+    exercise_gif_dir: str = "/app/media/exercises"
+
     # Планировщик
     tz: str = "Europe/Chisinau"
     reminder_hour: int = 8

@@ -14,6 +14,7 @@ RUN pip install --no-cache-dir --upgrade pip \
 # Копируем код приложения и конфигурацию миграций
 COPY app ./app
 COPY migrations ./migrations
+COPY scripts ./scripts
 COPY alembic.ini ./alembic.ini
 
 # Запуск: применяем миграции, засеваем справочники и стартуем бота

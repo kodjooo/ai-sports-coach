@@ -2,12 +2,14 @@
 from __future__ import annotations
 
 import asyncio
+import os
 from datetime import date
 
 from aiogram import F, Router
 from aiogram.fsm.context import FSMContext
-from aiogram.types import CallbackQuery, Message
+from aiogram.types import CallbackQuery, FSInputFile, Message
 
+from app.config import settings
 from app.core import context as ctx
 from app.core import llm, progress, vector, warmup
 from app.core import repository as repo
@@ -37,6 +39,35 @@ def _is_time_based(name: str, muscle_group: str) -> bool:
     return any(k in text for k in _TIME_KEYWORDS)
 
 
+def _gif_path(gif: str | None) -> str | None:
+    """Полный путь к GIF-анимации, если файл есть на volume."""
+    if not gif:
+        return None
+    path = os.path.join(settings.exercise_gif_dir, gif)
+    return path if os.path.exists(path) else None
+
+
+async def _send_exercise_card(target, item: dict, caption: str) -> None:
+    """Отправляет карточку упражнения с GIF-анимацией техники; если файла нет — текстом."""
+    path = _gif_path(item.get("gif"))
+    if path:
+        try:
+            await target.answer_animation(FSInputFile(path), caption=caption)
+            return
+        except Exception:
+            pass
+    await target.answer(caption)
+
+
+async def _send_phase(target, movements: list[dict], header: str) -> None:
+    """Показывает разминку/заминку: заголовок + каждое движение с GIF и короткой техникой."""
+    await target.answer(header)
+    for m in movements:
+        tech = (m.get("technique") or "").strip()
+        caption = f"<b>{m['name']}</b>" + (f"\n{tech}" if tech else "")
+        await _send_exercise_card(target, m, caption)
+
+
 # ---------- Запуск тренировки ----------
 
 async def _load_items(db, template_id: int) -> list[dict]:
@@ -51,6 +82,8 @@ async def _load_items(db, template_id: int) -> list[dict]:
                 "name": ex.name if ex else "Упражнение",
                 "muscle_group": (ex.muscle_group if ex else "") or "",
                 "technique": (ex.technique if ex else "") or "Техника не описана.",
+                "gif": (ex.gif if ex else None),
+                "phase": getattr(it, "phase", None) or "main",
                 "target_sets": it.target_sets or 3,
                 "target_reps": it.target_reps or 10,
                 "rest_sec": it.rest_sec or 60,
@@ -75,8 +108,8 @@ async def _begin(target, user_tg: int, state: FSMContext) -> None:
                 await target.answer("План пуст. Нажми /start, чтобы создать план.")
                 return
             template = templates[0]  # если на сегодня нет — берём первый доступный
-        items = await _load_items(db, template.id)
-        if not items:
+        all_items = await _load_items(db, template.id)
+        if not all_items:
             await target.answer("В плане нет упражнений.")
             return
         session = await repo.create_session(db, user.id, template.id, date.today())
@@ -84,11 +117,19 @@ async def _begin(target, user_tg: int, state: FSMContext) -> None:
         stored_warmup = template.warmup
         stored_cooldown = template.cooldown
 
-    groups = [it["muscle_group"] for it in items]
+    # Разбиваем по фазам: разминка → основная часть → заминка
+    warm_items = [it for it in all_items if it["phase"] == "warmup"]
+    main_items = [it for it in all_items if it["phase"] == "main"]
+    cool_items = [it for it in all_items if it["phase"] == "cooldown"]
+    if not main_items:  # старые планы без фаз — считаем все основными
+        main_items = [it for it in all_items if it["phase"] != "warmup" and it["phase"] != "cooldown"] or all_items
+
+    groups = [it["muscle_group"] for it in main_items]
     await state.set_state(Workout.in_progress)
     await state.update_data(
         session_id=session.id,
-        items=items,
+        items=main_items,
+        cool_items=cool_items,
         cur_item=0,
         cur_set=1,
         pending_reps=None,
@@ -98,12 +139,13 @@ async def _begin(target, user_tg: int, state: FSMContext) -> None:
     )
     # Прячем главное меню на время тренировки (чтобы случайно не начать новую)
     await target.answer("🏋️ Поехали! Начнём с разминки.", reply_markup=workout_menu())
-    # Разминка (хранимая или собранная по группам мышц)
-    if stored_warmup:
-        warmup_msg = f"🔥 <b>Разминка</b>\n{stored_warmup}"
+    # Разминка: движения каталога с GIF; если их нет — старый текст
+    if warm_items:
+        await _send_phase(target, warm_items, "🔥 <b>Разминка</b> — размялись и поехали:")
+        await target.answer("Как разомнёшься — жми кнопку 👇", reply_markup=warmup_done_kb())
     else:
-        warmup_msg = warmup.warmup_text(groups)
-    await target.answer(warmup_msg, reply_markup=warmup_done_kb())
+        warmup_msg = f"🔥 <b>Разминка</b>\n{stored_warmup}" if stored_warmup else warmup.warmup_text(groups)
+        await target.answer(warmup_msg, reply_markup=warmup_done_kb())
 
 
 async def _show_set(target, state: FSMContext) -> None:
@@ -113,6 +155,14 @@ async def _show_set(target, state: FSMContext) -> None:
     item = items[i]
     is_time = item.get("is_time", False)
     unit = "сек" if is_time else "повт."
+    # На первом подходе — карточка упражнения с GIF-техникой
+    if data["cur_set"] == 1:
+        tech = (item.get("technique") or "").strip()
+        muscle = item.get("muscle_group") or ""
+        caption = f"<b>{item['name']}</b>" + (f" · {muscle}" if muscle else "")
+        if tech:
+            caption += f"\n{tech}"
+        await _send_exercise_card(target, item, caption)
     # Цель: подсказка по ощущению прошлого подхода, иначе плановая
     goal = data.get("suggest") or item["target_reps"]
     prompt = "Сколько секунд продержал?" if is_time else "Выбери число повторов:"
@@ -205,6 +255,19 @@ async def choose_effort(cb: CallbackQuery, state: FSMContext) -> None:
     await _advance(cb.message, state)
 
 
+async def _show_cooldown(target, state: FSMContext) -> None:
+    """Заминка: движения каталога с GIF; если их нет — старый текст."""
+    data = await state.get_data()
+    cool_items = data.get("cool_items") or []
+    if cool_items:
+        await _send_phase(target, cool_items, "🧘 <b>Заминка</b> — растянемся:")
+        await target.answer("Как закончишь — жми кнопку 👇", reply_markup=cooldown_done_kb())
+    else:
+        cooldown = data.get("cooldown")
+        text = f"🧘 <b>Заминка</b>\n{cooldown}" if cooldown else warmup.cooldown_text(data.get("groups", []))
+        await target.answer(text, reply_markup=cooldown_done_kb())
+
+
 async def _advance(target, state: FSMContext) -> None:
     """Переход к следующему подходу/упражнению/заминке."""
     data = await state.get_data()
@@ -225,9 +288,7 @@ async def _advance(target, state: FSMContext) -> None:
         _start_rest(target, rest)
     else:
         _cancel_rest(target.chat.id)
-        cooldown = data.get("cooldown")
-        text = f"🧘 <b>Заминка</b>\n{cooldown}" if cooldown else warmup.cooldown_text(data.get("groups", []))
-        await target.answer(text, reply_markup=cooldown_done_kb())
+        await _show_cooldown(target, state)
 
 
 @router.callback_query(Workout.in_progress, F.data == "wk:skipset")
@@ -249,9 +310,7 @@ async def skip_exercise(cb: CallbackQuery, state: FSMContext) -> None:
         await state.update_data(cur_item=i + 1, cur_set=1, pending_reps=None, suggest=None)
         await _show_set(cb.message, state)
     else:
-        cooldown = data.get("cooldown")
-        text = f"🧘 <b>Заминка</b>\n{cooldown}" if cooldown else warmup.cooldown_text(data.get("groups", []))
-        await cb.message.answer(text, reply_markup=cooldown_done_kb())
+        await _show_cooldown(cb.message, state)
 
 
 @router.callback_query(Workout.in_progress, F.data == "wk:finishask")
@@ -466,6 +525,7 @@ async def replace_apply(cb: CallbackQuery, state: FSMContext) -> None:
             "name": ex.name,
             "muscle_group": (ex.muscle_group or ""),
             "technique": (ex.technique or "Техника не описана."),
+            "gif": ex.gif,
             "is_time": is_time,
             "target_sets": load["sets"],
             "target_reps": load["reps"],

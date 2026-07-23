@@ -63,6 +63,9 @@ class Exercise(Base):
     variations: Mapped[list | None] = mapped_column(JSONB)  # ['от стены', ...]
     environment: Mapped[str | None] = mapped_column(String)  # дом/улица/зал
     equipment: Mapped[str | None] = mapped_column(String)    # инвентарь
+    gif: Mapped[str | None] = mapped_column(String)          # имя файла GIF-анимации техники
+    name_en: Mapped[str | None] = mapped_column(String)      # название на английском (для i18n)
+    technique_en: Mapped[str | None] = mapped_column(String)  # техника на английском (для i18n)
 
 
 class WorkoutTemplate(Base):
@@ -91,6 +94,7 @@ class TemplateItem(Base):
     target_reps: Mapped[int | None] = mapped_column(Integer)
     rest_sec: Mapped[int | None] = mapped_column(Integer)  # отдых между подходами, сек
     order_idx: Mapped[int | None] = mapped_column(Integer)
+    phase: Mapped[str] = mapped_column(String, default="main")  # warmup/main/cooldown
 
     template: Mapped[WorkoutTemplate] = relationship(back_populates="items")
     exercise: Mapped[Exercise] = relationship()
