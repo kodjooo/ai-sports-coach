@@ -155,10 +155,9 @@ async def _continue_after_persona(message: Message, tg_id: int, state: FSMContex
     """Спрашиваем место/инвентарь только если их ещё нет."""
     async with async_session() as db:
         user = await repo.get_user_by_tg(db, tg_id)
-        env, equip = user.environment, user.equipment
-    if not env:
-        await env_handlers.start_environment(message, state)
-    elif not equip:
+        equip = user.equipment
+    # Инвентарь берём из интервью; если не назвал — спрашиваем чеклистом (место не спрашиваем)
+    if not equip:
         await env_handlers.ask_equipment(message, state)
     else:
         from app.handlers.schedule import start_schedule

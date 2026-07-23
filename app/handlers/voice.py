@@ -37,7 +37,8 @@ async def on_voice(message: Message, state: FSMContext, bot: Bot) -> None:
             await start_handlers.handle_interview(message, state, t)
         await debounce.push(key, text, flush)
     elif current == Onboarding.equipment.state:
-        await env_handlers.handle_equipment(message, state, text)
+        # Инвентарь теперь выбирается кнопками-чеклистом
+        await message.answer("Выбери инвентарь кнопками выше и нажми «Готово» 👆")
     elif current == Onboarding.waiting_weight.state:
         await start_handlers.handle_weight(message, state, text)
     elif current == Onboarding.waiting_height.state:

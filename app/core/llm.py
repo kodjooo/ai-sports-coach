@@ -414,10 +414,11 @@ async def generate_plan(
     Возвращает workouts: [{weekday, warmup:[name], cooldown:[name],
     exercises:[{name,sets,reps,rest_sec}]}] — названия строго из каталога.
     """
-    main_pool = catalog.main_candidates(environment, equipment)
-    warm_pool = catalog.warmup_candidates(environment, equipment)
+    # Фильтруем ТОЛЬКО по доступному инвентарю (без привязки к месту)
+    main_pool = catalog.main_candidates(equipment)
+    warm_pool = catalog.warmup_candidates(equipment)
     if not main_pool:
-        logger.error("generate_plan: пустая палитра каталога (среда=%s, инвентарь=%s)", environment, equipment)
+        logger.error("generate_plan: пустая палитра каталога (инвентарь=%s)", equipment)
         return []
 
     system_content = (

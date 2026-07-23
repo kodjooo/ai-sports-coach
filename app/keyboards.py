@@ -178,6 +178,31 @@ def warmup_step_kb(last: bool) -> InlineKeyboardMarkup:
     )
 
 
+# Чеклист инвентаря (мультивыбор). Текст сохраняется в user.equipment и парсится catalog.available_equipment.
+# Порядок фиксирован — индекс используется в callback_data eq:t:<idx>.
+EQUIPMENT_OPTIONS: list[str] = [
+    "Без инвентаря",
+    "Гантели",
+    "Штанга",
+    "Гиря",
+    "Резинки",
+    "Фитбол/мяч",
+    "Турник/брусья",
+    "Скамья",
+    "Полный зал (всё оборудование)",
+]
+
+
+def equipment_kb(selected: set[int]) -> InlineKeyboardMarkup:
+    """Чеклист инвентаря: тап переключает ✅, «Готово» завершает."""
+    rows = []
+    for i, label in enumerate(EQUIPMENT_OPTIONS):
+        mark = "✅ " if i in selected else "▫️ "
+        rows.append([InlineKeyboardButton(text=mark + label, callback_data=f"eq:t:{i}")])
+    rows.append([InlineKeyboardButton(text="➡️ Готово", callback_data="eq:done")])
+    return InlineKeyboardMarkup(inline_keyboard=rows)
+
+
 def cooldown_step_kb(last: bool) -> InlineKeyboardMarkup:
     """Пошаговая заминка: «Далее» между движениями, «Завершить» на последнем."""
     text = "✅ Завершить тренировку" if last else "➡️ Далее"

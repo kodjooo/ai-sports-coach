@@ -107,25 +107,30 @@ def resolve(name: str, fuzzy: bool = False) -> dict | None:
     return best if best_score >= 0.5 else None
 
 
-def _allowed_equipment(environment: str | None, equipment: str | None) -> set[str] | None:
-    """Множество допустимого инвентаря. None = разрешено всё (зал)."""
-    if (environment or "").strip().lower() == "зал":
-        return None  # в зале доступно всё
-    allowed = {"без инвентаря"}
+# Фразы, означающие «есть полный зал / любое оборудование» → доступно всё
+_FULL_GYM_MARKERS = ("зал", "всё оборуд", "все оборуд", "любое оборуд", "полный", "тренаж")
+
+
+def available_equipment(equipment: str | None) -> set[str] | None:
+    """Множество доступного клиенту инвентаря по его словам. None = доступно всё (полный зал).
+
+    Фильтруем ТОЛЬКО по инвентарю (без привязки к «месту»): турник/штанга/коврик могут быть
+    где угодно — важно лишь, есть ли предмет у человека.
+    """
     text = (equipment or "").lower()
+    if any(m in text for m in _FULL_GYM_MARKERS):
+        return None  # есть зал/любое оборудование
+    allowed = {"без инвентаря"}  # вес тела доступен всегда
     for token, tag in _EQUIP_TOKENS:
         if token in text:
             allowed.add(tag)
     return allowed
 
 
-def _feasible(e: dict, allowed: set[str] | None, environment: str | None) -> bool:
-    # Отсекаем зальную среду, если тренируемся не в зале
-    if allowed is not None and e.get("environment") == "зал":
-        return False
-    if allowed is not None and e.get("equipment") not in allowed:
-        return False
-    return True
+def _feasible(e: dict, allowed: set[str] | None) -> bool:
+    if allowed is None:
+        return True  # полный зал — доступно всё
+    return e.get("equipment") in allowed
 
 
 def _round_robin_by_muscle(items: list[dict], limit: int) -> list[dict]:
@@ -144,25 +149,21 @@ def _round_robin_by_muscle(items: list[dict], limit: int) -> list[dict]:
     return out
 
 
-def main_candidates(
-    environment: str | None, equipment: str | None, limit: int = 130
-) -> list[dict]:
-    """Палитра основных упражнений (силовое/плиометрика/кардио) под среду и инвентарь."""
-    allowed = _allowed_equipment(environment, equipment)
+def main_candidates(equipment: str | None, limit: int = 130) -> list[dict]:
+    """Палитра основных упражнений (силовое/плиометрика/кардио) по доступному инвентарю."""
+    allowed = available_equipment(equipment)
     pool = [
         e for e in ALL
         if e.get("kind") in ("силовое", "плиометрика", "кардио")
-        and _feasible(e, allowed, environment)
+        and _feasible(e, allowed)
     ]
     return _round_robin_by_muscle(pool, limit)
 
 
-def warmup_candidates(
-    environment: str | None, equipment: str | None, zones: list[str] | None = None
-) -> list[dict]:
+def warmup_candidates(equipment: str | None, zones: list[str] | None = None) -> list[dict]:
     """Палитра разминки/заминки (растяжка) — при указании zones приоритет зонам."""
-    allowed = _allowed_equipment(environment, equipment)
-    pool = [e for e in ALL if e.get("kind") == "растяжка" and _feasible(e, allowed, environment)]
+    allowed = available_equipment(equipment)
+    pool = [e for e in ALL if e.get("kind") == "растяжка" and _feasible(e, allowed)]
     if not zones:
         return pool
     zset = {z.strip().lower() for z in zones if z.strip()}
