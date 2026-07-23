@@ -11,12 +11,15 @@ from app.config import settings
 from app.core import catalog
 
 
-def _enrich_from_catalog(m: dict) -> dict:
+def _enrich_from_catalog(m: dict, pool: list[dict] | None = None) -> dict:
     """Если движение есть в каталоге — берём канонические имя/технику/GIF/инвентарь.
 
-    Нужно, чтобы планы из чата (set_plan) не плодили мусорные упражнения без GIF в общем справочнике.
+    Нужно, чтобы планы из чата (set_plan) не плодили мусор без GIF. Если передан pool
+    (палитра по инвентарю пользователя) — сверяем ТОЛЬКО в нём, чтобы fuzzy не подтянул
+    вариант с недоступным оборудованием.
     """
-    hit = catalog.resolve(m.get("name", ""), fuzzy=True)
+    name = m.get("name", "")
+    hit = catalog.resolve_in(name, pool) if pool else catalog.resolve(name, fuzzy=True)
     if not hit:
         return m
     out = dict(m)
@@ -257,7 +260,8 @@ async def active_weekdays(db: AsyncSession, user_id: int) -> list[int]:
 
 
 async def build_custom_plan(
-    db: AsyncSession, user_id: int, workouts: list[dict], environment: str | None = None
+    db: AsyncSession, user_id: int, workouts: list[dict],
+    environment: str | None = None, equipment: str | None = None,
 ) -> int:
     """Пересобирает план из структуры тренера.
 
@@ -265,6 +269,11 @@ async def build_custom_plan(
                 "exercises":[{name,sets,reps,rest_sec,muscle_group,technique,gif,...}]}]
     Разминка/заминка сохраняются как элементы плана с фазой (phase). Возвращает число дней.
     """
+    # Палитра по инвентарю пользователя — чтобы enrich не подтянул недоступное оборудование
+    pool = None
+    if equipment is not None:
+        pool = catalog.main_candidates(equipment, limit=10_000) + catalog.warmup_candidates(equipment)
+
     # Деактивируем прежний план
     old = await db.execute(select(WorkoutTemplate).where(WorkoutTemplate.user_id == user_id))
     for tpl in old.scalars().all():
@@ -300,7 +309,7 @@ async def build_custom_plan(
 
         order = 0
         for m in warm:
-            m = _enrich_from_catalog(m)
+            m = _enrich_from_catalog(m, pool)
             exo = await find_or_create_exercise(
                 db, m.get("name", "Разминка"), m.get("muscle_group"), m.get("technique"),
                 environment=m.get("environment") or environment, equipment=m.get("equipment"),
@@ -309,7 +318,7 @@ async def build_custom_plan(
                                 order_idx=order, phase="warmup"))
             order += 1
         for ex in w.get("exercises", []):
-            ex = _enrich_from_catalog(ex)
+            ex = _enrich_from_catalog(ex, pool)
             exo = await find_or_create_exercise(
                 db, ex.get("name", "Упражнение"), ex.get("muscle_group"), ex.get("technique"),
                 environment=ex.get("environment") or environment, equipment=ex.get("equipment"),
@@ -319,7 +328,7 @@ async def build_custom_plan(
                                 rest_sec=ex.get("rest_sec") or 60, order_idx=order, phase="main"))
             order += 1
         for m in cool:
-            m = _enrich_from_catalog(m)
+            m = _enrich_from_catalog(m, pool)
             exo = await find_or_create_exercise(
                 db, m.get("name", "Заминка"), m.get("muscle_group"), m.get("technique"),
                 environment=m.get("environment") or environment, equipment=m.get("equipment"),

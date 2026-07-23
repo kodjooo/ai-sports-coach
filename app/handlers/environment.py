@@ -85,7 +85,7 @@ async def _regenerate(message: Message, tg_id: int, state: FSMContext) -> None:
         workouts = await llm.generate_plan(profile, goal, days, env, equip, sex, level, per_day)
         if workouts:
             async with async_session() as db:
-                await repo.build_custom_plan(db, uid, workouts, environment=env)
+                await repo.build_custom_plan(db, uid, workouts, environment=env, equipment=equip)
     await state.clear()
     if not workouts:
         logger.error("Не удалось пересобрать план: user=%s env=%s equip=%s", uid, env, equip)

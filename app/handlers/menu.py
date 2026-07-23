@@ -1,7 +1,9 @@
 """Меню: тренировка-триггеры, статистика, настройки (расписание/план/вес)."""
 from __future__ import annotations
 
-from datetime import date, timedelta
+from datetime import timedelta
+
+from app.utils import local_today
 
 from aiogram import F, Router
 from aiogram.filters import Command
@@ -91,15 +93,15 @@ async def move_cancel(cb: CallbackQuery) -> None:
 
 @router.callback_query(F.data == "mv:one")
 async def move_one(cb: CallbackQuery) -> None:
-    weekday = date.today().weekday()
+    weekday = local_today().weekday()
     async with async_session() as db:
         user = await repo.get_user_by_tg(db, cb.from_user.id)
         if user:
             template = await repo.get_template_for_weekday(db, user.id, weekday)
             tpl_id = template.id if template else None
-            moved = await repo.create_session(db, user.id, tpl_id, date.today(), status="moved")
+            moved = await repo.create_session(db, user.id, tpl_id, local_today(), status="moved")
             await repo.set_session_status(db, moved, "moved")
-            await repo.create_session(db, user.id, tpl_id, date.today() + timedelta(days=1))
+            await repo.create_session(db, user.id, tpl_id, local_today() + timedelta(days=1))
     await cb.message.answer("Ок, перенёс на завтра — напомню завтра. Сегодня отдыхай 🙌")
     await cb.answer()
 

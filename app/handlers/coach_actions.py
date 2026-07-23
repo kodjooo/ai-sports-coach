@@ -114,7 +114,7 @@ async def apply(action: dict, tg_id: int) -> str:
             workouts = args.get("workouts", [])
             if not workouts:
                 return "Пустой план — нечего применять."
-            n = await repo.build_custom_plan(db, user.id, workouts, environment=user.environment)
+            n = await repo.build_custom_plan(db, user.id, workouts, environment=user.environment, equipment=user.equipment)
             if args.get("hour") is not None:
                 await repo.set_train_time(db, user, int(args["hour"]), int(args.get("minute", 0)))
             return f"Готово! Собрал новый план на {n} дн. Загляни в «План недели»."

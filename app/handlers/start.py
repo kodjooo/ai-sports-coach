@@ -105,7 +105,8 @@ async def handle_interview(message: Message, state: FSMContext, text: str) -> No
         # profile_summary/goal нужны плану — сохраняем СИНХРОННО (без тяжёлого вызова).
         # «Личность тренера» (system_prompt) строим в ФОНЕ, чтобы не заставлять ждать:
         # план от неё не зависит, она влияет только на тон чата.
-        w, h = result.get("weight_kg"), result.get("height_cm")
+        from app.utils import valid_weight
+        w, h = valid_weight(result.get("weight_kg")), result.get("height_cm")
         async with async_session() as db:
             user = await repo.get_user_by_tg(db, message.from_user.id)
             if w:

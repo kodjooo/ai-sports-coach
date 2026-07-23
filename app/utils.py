@@ -10,6 +10,14 @@ from aiogram.types import Message
 from app.core import llm
 
 
+def local_today():
+    """Сегодняшняя дата в часовом поясе бота (не UTC контейнера)."""
+    from datetime import datetime
+    from zoneinfo import ZoneInfo
+    from app.config import settings
+    return datetime.now(ZoneInfo(settings.tz)).date()
+
+
 # Разумный диапазон веса тела (кг) — отсекаем опечатки/случайные числа
 WEIGHT_MIN, WEIGHT_MAX = 30.0, 300.0
 

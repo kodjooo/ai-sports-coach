@@ -126,7 +126,7 @@ async def _apply_time(message: Message, tg_id: int, state: FSMContext, hour: int
         workouts = await llm.generate_plan(profile, goal, days, env, equip, sex, level, per_day)
         if workouts:
             async with async_session() as db:
-                await repo.build_custom_plan(db, uid, workouts, environment=env)
+                await repo.build_custom_plan(db, uid, workouts, environment=env, equipment=equip)
 
     if not workouts:
         # Не подменяем тихо старым планом: сообщаем и просим повторить (детали — в логах)
