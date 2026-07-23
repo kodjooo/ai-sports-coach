@@ -21,6 +21,7 @@ from app.keyboards import (
     reps_kb,
     replace_scope_kb,
     warmup_done_kb,
+    workout_menu,
 )
 from app.states import Workout
 from app.utils import typing
@@ -95,7 +96,9 @@ async def _begin(target, user_tg: int, state: FSMContext) -> None:
         warmup=stored_warmup or warmup.warmup_text(groups),
         cooldown=stored_cooldown,
     )
-    # Начинаем с разминки (хранимая или собранная по группам мышц)
+    # Прячем главное меню на время тренировки (чтобы случайно не начать новую)
+    await target.answer("🏋️ Поехали! Начнём с разминки.", reply_markup=workout_menu())
+    # Разминка (хранимая или собранная по группам мышц)
     if stored_warmup:
         warmup_msg = f"🔥 <b>Разминка</b>\n{stored_warmup}"
     else:
@@ -122,7 +125,18 @@ async def _show_set(target, state: FSMContext) -> None:
 
 @router.message(F.text == "▶️ Тренировка")
 async def start_from_menu(message: Message, state: FSMContext) -> None:
+    if await state.get_state() in (Workout.in_progress.state, Workout.manual_reps.state):
+        await message.answer("Тренировка уже идёт. Заверши её кнопкой «🏁 Завершить тренировку».")
+        return
     await _begin(message, message.from_user.id, state)
+
+
+@router.message(Workout.in_progress, F.text == "🏁 Завершить тренировку")
+@router.message(Workout.manual_reps, F.text == "🏁 Завершить тренировку")
+async def finish_from_menu(message: Message, state: FSMContext) -> None:
+    _cancel_rest(message.chat.id)
+    await state.set_state(Workout.in_progress)
+    await message.answer("Завершить тренировку?", reply_markup=finish_confirm_kb())
 
 
 @router.callback_query(F.data == "wk:start")
@@ -270,26 +284,6 @@ async def finish_discard(cb: CallbackQuery, state: FSMContext) -> None:
     await cb.answer()
 
 
-@router.callback_query(Workout.in_progress, F.data == "wk:warmup_info")
-async def warmup_info(cb: CallbackQuery, state: FSMContext) -> None:
-    await cb.answer()
-    data = await state.get_data()
-    async with typing(cb.message):
-        text = await llm.explain_routine(data.get("warmup", ""), "разминку")
-    if text:
-        await cb.message.answer(text)
-
-
-@router.callback_query(Workout.in_progress, F.data == "wk:cooldown_info")
-async def cooldown_info(cb: CallbackQuery, state: FSMContext) -> None:
-    await cb.answer()
-    data = await state.get_data()
-    async with typing(cb.message):
-        text = await llm.explain_routine(data.get("cooldown", ""), "заминку")
-    if text:
-        await cb.message.answer(text)
-
-
 @router.callback_query(Workout.in_progress, F.data == "wk:warmup_done")
 async def warmup_done(cb: CallbackQuery, state: FSMContext) -> None:
     await cb.answer()
@@ -368,7 +362,7 @@ async def _finish(target, state: FSMContext) -> None:
     msg = feedback or "Отличная работа!"
     if burned:
         msg += f"\n\n🔥 Потрачено ~{burned} ккал за тренировку."
-    await target.answer(msg)
+    await target.answer(msg, reply_markup=main_menu())
 
 
 # ---------- Техника и замена ----------

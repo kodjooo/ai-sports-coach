@@ -68,7 +68,8 @@ async def full_stats(db: AsyncSession, user_id: int) -> str:
     since = date.today() - timedelta(days=7)
     week = await repo.sessions_in_period(db, user_id, since)
     week_done = len([s for s in week if s.status == "done"])
-    week_planned = len(week)
+    # План на неделю = число тренировочных дней (активных шаблонов)
+    week_planned = len(await repo.list_templates(db, user_id))
 
     weight = await repo.current_weight(db, user_id)
     dw = await repo.weight_change(db, user_id, days=30)
@@ -105,8 +106,8 @@ async def weekly_report(db: AsyncSession, user_id: int) -> str:
     since = date.today() - timedelta(days=7)
     sessions = await repo.sessions_in_period(db, user_id, since)
     done = [s for s in sessions if s.status == "done"]
-    # Знаменатель — без перенесённых (moved), чтобы не раздувался
-    planned = len([s for s in sessions if s.status != "moved"])
+    # План на неделю = число тренировочных дней (активных шаблонов)
+    planned = len(await repo.list_templates(db, user_id))
     dw = await repo.weight_change(db, user_id, days=7)
 
     parts = [f"🏋️ Тренировок: {len(done)} из {planned}."]

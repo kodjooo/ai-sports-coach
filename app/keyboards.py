@@ -32,6 +32,7 @@ def settings_menu() -> InlineKeyboardMarkup:
             [InlineKeyboardButton(text="🍽 Цель по питанию", callback_data="set:ngoal")],
             [InlineKeyboardButton(text="📋 План недели", callback_data="set:plan")],
             [InlineKeyboardButton(text="⚖️ Записать вес", callback_data="set:weight")],
+            [InlineKeyboardButton(text="ℹ️ Что я умею", callback_data="set:help")],
             [InlineKeyboardButton(text="♻️ Сбросить историю", callback_data="set:reset")],
         ]
     )
@@ -160,10 +161,9 @@ def time_only_kb() -> InlineKeyboardMarkup:
 
 
 def warmup_done_kb() -> InlineKeyboardMarkup:
-    """Кнопки разминки: подробное объяснение и переход к упражнениям."""
+    """Кнопка перехода от разминки к упражнениям."""
     return InlineKeyboardMarkup(
         inline_keyboard=[
-            [InlineKeyboardButton(text="❓ Как делать разминку", callback_data="wk:warmup_info")],
             [InlineKeyboardButton(text="▶️ К упражнениям", callback_data="wk:warmup_done")],
         ]
     )
@@ -182,12 +182,20 @@ def confirm_action_kb() -> InlineKeyboardMarkup:
 
 
 def cooldown_done_kb() -> InlineKeyboardMarkup:
-    """Кнопки заминки: подробное объяснение и завершение."""
+    """Кнопка завершения после заминки."""
     return InlineKeyboardMarkup(
         inline_keyboard=[
-            [InlineKeyboardButton(text="❓ Как делать заминку", callback_data="wk:cooldown_info")],
             [InlineKeyboardButton(text="✅ Завершить тренировку", callback_data="wk:cooldown_done")],
         ]
+    )
+
+
+def workout_menu() -> ReplyKeyboardMarkup:
+    """Нижнее меню во время тренировки — только завершение (чтобы не начать новую)."""
+    return ReplyKeyboardMarkup(
+        keyboard=[[KeyboardButton(text="🏁 Завершить тренировку")]],
+        resize_keyboard=True,
+        is_persistent=True,
     )
 
 
@@ -233,7 +241,6 @@ def reps_kb(target: int | None = None, is_time: bool = False) -> InlineKeyboardM
             InlineKeyboardButton(text="⏭⏭ Упражнение", callback_data="wk:skipex"),
         ]
     )
-    rows.append([InlineKeyboardButton(text="🏁 Завершить тренировку", callback_data="wk:finishask")])
     return InlineKeyboardMarkup(inline_keyboard=rows)
 
 
