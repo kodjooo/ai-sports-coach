@@ -49,9 +49,37 @@ def _norm(name: str) -> str:
 BY_NAME: dict[str, dict] = {_norm(e["name"]): e for e in ALL}
 
 
-def resolve(name: str) -> dict | None:
-    """Находит упражнение каталога по названию (точно или по нормализованному виду)."""
-    return BY_NAME.get(_norm(name))
+def _tokens(name: str) -> set[str]:
+    return set(_norm(name).split())
+
+
+# Токены названий каталога — для нечёткого поиска
+_TOKENS_BY_NAME: list[tuple[set[str], dict]] = [(_tokens(e["name"]), e) for e in ALL]
+
+
+def resolve(name: str, fuzzy: bool = False) -> dict | None:
+    """Находит упражнение каталога по названию.
+
+    Сначала — точное совпадение по нормализованному виду. При fuzzy=True и промахе —
+    ближайшее по пересечению слов (если модель чуть переиначила название).
+    """
+    exact = BY_NAME.get(_norm(name))
+    if exact or not fuzzy:
+        return exact
+    want = _tokens(name)
+    if not want:
+        return None
+    best, best_score = None, 0.0
+    for toks, e in _TOKENS_BY_NAME:
+        if not toks:
+            continue
+        inter = len(want & toks)
+        if not inter:
+            continue
+        score = inter / len(want | toks)  # коэффициент Жаккара
+        if score > best_score:
+            best, best_score = e, score
+    return best if best_score >= 0.5 else None
 
 
 def _allowed_equipment(environment: str | None, equipment: str | None) -> set[str] | None:

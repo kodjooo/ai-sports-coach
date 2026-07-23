@@ -371,12 +371,17 @@ INTERVIEW_SYSTEM = (
     "отреагируй на ответ («Понял», «Классно», «Ок, спасибо»), при необходимости "
     "мягко подбодри — и только потом задай следующий вопрос. Не будь сухим "
     "опросником.\n"
-    "Нужно собрать: цель тренировок, текущий статус (опыт, ограничения/травмы), "
-    "что нравится и что не нравится, предпочтения. Задавай немного вопросов — "
-    "можно объединять близкие темы в один вопрос. Спрашивай только если важного "
-    "реально не хватает. Про вес, рост, место тренировок, дни недели и время НЕ "
-    "спрашивай — это система уточнит отдельно. НО если клиент сам упомянул вес, "
-    "рост, где тренируется или какой инвентарь — извлеки это в поля ниже.\n"
+    "Нужно собрать МИНИМУМ: цель тренировок, опыт/уровень, ограничения или травмы, "
+    "и явные предпочтения (что нравится/не нравится). Задавай НЕ БОЛЕЕ 1–2 уточняющих "
+    "вопросов ВСЕГО и объединяй близкие темы в один вопрос. Как только этого набора "
+    "достаточно — сразу done=true, не растягивай знакомство.\n"
+    "ВАЖНО: НЕ переспрашивай то, что клиент уже сказал или что очевидно из его слов. "
+    "Если клиент назвал, что ему что-то не нравится (например упражнение) — просто прими "
+    "к сведению, НЕ выясняй детали и НЕ задавай встречных вопросов про это. Не превращай "
+    "разговор в длинный опрос — лучше меньше вопросов.\n"
+    "Про вес, рост, место тренировок, дни недели и время НЕ спрашивай — это система "
+    "уточнит отдельно кнопками. НО если клиент сам упомянул вес, рост, где тренируется "
+    "или какой инвентарь — извлеки это в поля ниже.\n"
     "Верни СТРОГО JSON без markdown со схемой: "
     '{"done": bool, "reply": str, "goal": str|null, "profile_summary": str|null, '
     '"weight_kg": number|null, "height_cm": number|null, "age": number|null, '
@@ -412,57 +417,70 @@ async def generate_plan(
     main_pool = catalog.main_candidates(environment, equipment)
     warm_pool = catalog.warmup_candidates(environment, equipment)
     if not main_pool:
-        logger.warning("Пустая палитра каталога для среды=%s инвентарь=%s", environment, equipment)
+        logger.error("generate_plan: пустая палитра каталога (среда=%s, инвентарь=%s)", environment, equipment)
         return []
-    try:
-        resp = await usage.complete(get_client(), "generate_plan",
-            model=settings.openai_model,
-            reasoning_effort=settings.openai_reasoning_effort_onboarding,
-            response_format={"type": "json_object"},
-            messages=[
-                {
-                    "role": "system",
-                    "content": (
-                        "Ты — персональный тренер. Составь план под клиента, ВЫБИРАЯ упражнения "
-                        "ТОЛЬКО из предложенных ниже списков (это каталог с видео-техникой). "
-                        "Названия копируй ДОСЛОВНО из списка, ничего не выдумывай и не переименовывай.\n"
-                        "ЖЁСТКИЕ ПРАВИЛА:\n"
-                        "- Сложность строго под уровень; для новичка — простые безопасные движения.\n"
-                        "- Учитывай пол, возраст, вес, цели и ЖЕЛАНИЯ клиента.\n"
-                        "- Щади травмы/боли: если что-то болит — не бери упражнения на эту зону.\n"
-                        "- РАЗНООБРАЗИЕ: в дне не повторяй одинаковые движения; баланс паттернов "
-                        "(ноги, задняя цепь, толчок, тяга, кор).\n"
-                        f"- На каждый день — РОВНО {per_day} основных упражнений из списка ОСНОВНЫХ, "
-                        "у каждого свой rest_sec (кор/изоляция 30–45 с, базовые/ноги 60–90 с).\n"
-                        "- Разминка (warmup): 5–7 движений из списка РАЗМИНКИ под мышцы ИМЕННО этого дня "
-                        "(+ суставная база: шея/плечи/голеностоп). Заминка (cooldown): 4–6 движений из "
-                        "списка РАЗМИНКИ — растяжка задействованных в этот день групп.\n"
-                        "- warmup и cooldown — это МАССИВЫ названий из списка РАЗМИНКИ (дословно).\n"
-                        "Верни СТРОГО JSON: {\"workouts\": [{\"weekday\": int(0=Пн..6=Вс), "
-                        "\"warmup\": [str], \"cooldown\": [str], \"exercises\": "
-                        "[{\"name\": str, \"sets\": int, \"reps\": int, \"rest_sec\": int}]}]}"
-                    ),
-                },
-                {
-                    "role": "user",
-                    "content": (
-                        f"Цель: {goal or '—'}\nПол: {sex or '—'}\n"
-                        f"Уровень подготовки: {level or 'новичок'}\n"
-                        f"Профиль (учти боли/ограничения/желания): {profile_summary or '—'}\n"
-                        f"Место тренировок: {environment or 'дом'}\n"
-                        f"Инвентарь: {equipment or 'нет'}\n"
-                        f"Дни недели (0=Пн): {weekdays}\n\n"
-                        f"СПИСОК ОСНОВНЫХ упражнений (выбирай отсюда):\n{catalog.names_for_prompt(main_pool)}\n\n"
-                        f"СПИСОК РАЗМИНКИ/ЗАМИНКИ (выбирай отсюда):\n{catalog.names_for_prompt(warm_pool)}"
-                    ),
-                },
-            ],
-        )
-        data = json.loads(resp.choices[0].message.content or "{}")
-        return _sanitize_plan(data.get("workouts", []) or [])
-    except Exception as exc:
-        logger.warning("Ошибка генерации плана: %s", exc)
-        return []
+
+    system_content = (
+        "Ты — персональный тренер. Составь план под клиента, ВЫБИРАЯ упражнения "
+        "ТОЛЬКО из предложенных ниже списков (это каталог с видео-техникой). "
+        "Названия копируй ДОСЛОВНО из списка (без изменений, без добавления скобок/пояснений), "
+        "ничего не выдумывай и не переименовывай.\n"
+        "ЖЁСТКИЕ ПРАВИЛА:\n"
+        "- Сложность строго под уровень; для новичка — простые безопасные движения.\n"
+        "- Учитывай пол, возраст, вес, цели и ЖЕЛАНИЯ клиента.\n"
+        "- Щади травмы/боли: если что-то болит — не бери упражнения на эту зону.\n"
+        "- РАЗНООБРАЗИЕ: в дне не повторяй одинаковые движения; баланс паттернов "
+        "(ноги, задняя цепь, толчок, тяга, кор).\n"
+        f"- На каждый день — РОВНО {per_day} основных упражнений из списка ОСНОВНЫХ, "
+        "у каждого свой rest_sec (кор/изоляция 30–45 с, базовые/ноги 60–90 с).\n"
+        "- Разминка (warmup): 5–7 движений из списка РАЗМИНКИ под мышцы ИМЕННО этого дня "
+        "(+ суставная база: шея/плечи/голеностоп). Заминка (cooldown): 4–6 движений из "
+        "списка РАЗМИНКИ — растяжка задействованных в этот день групп.\n"
+        "- warmup и cooldown — это МАССИВЫ названий из списка РАЗМИНКИ (дословно).\n"
+        "Верни СТРОГО JSON: {\"workouts\": [{\"weekday\": int(0=Пн..6=Вс), "
+        "\"warmup\": [str], \"cooldown\": [str], \"exercises\": "
+        "[{\"name\": str, \"sets\": int, \"reps\": int, \"rest_sec\": int}]}]}"
+    )
+    user_content = (
+        f"Цель: {goal or '—'}\nПол: {sex or '—'}\n"
+        f"Уровень подготовки: {level or 'новичок'}\n"
+        f"Профиль (учти боли/ограничения/желания): {profile_summary or '—'}\n"
+        f"Место тренировок: {environment or 'дом'}\n"
+        f"Инвентарь: {equipment or 'нет'}\n"
+        f"Дни недели (0=Пн): {weekdays}\n\n"
+        f"СПИСОК ОСНОВНЫХ упражнений (выбирай отсюда):\n{catalog.names_for_prompt(main_pool)}\n\n"
+        f"СПИСОК РАЗМИНКИ/ЗАМИНКИ (выбирай отсюда):\n{catalog.names_for_prompt(warm_pool)}"
+    )
+
+    # До 2 попыток: LLM изредка возвращает названия вне каталога — тогда план пуст, пробуем ещё раз
+    last_raw: list = []
+    for attempt in range(2):
+        try:
+            resp = await usage.complete(get_client(), "generate_plan",
+                model=settings.openai_model,
+                reasoning_effort=settings.openai_reasoning_effort_onboarding,
+                response_format={"type": "json_object"},
+                messages=[
+                    {"role": "system", "content": system_content},
+                    {"role": "user", "content": user_content},
+                ],
+            )
+            data = json.loads(resp.choices[0].message.content or "{}")
+            last_raw = data.get("workouts", []) or []
+            plan = _sanitize_plan(last_raw)
+            if plan:
+                return plan
+            logger.warning("generate_plan: попытка %d дала пустой план после сверки с каталогом", attempt + 1)
+        except Exception as exc:
+            logger.warning("generate_plan: ошибка на попытке %d: %s", attempt + 1, exc)
+
+    # Обе попытки провалились — не подменяем тихо, отдаём пусто (вызывающий покажет ошибку и залогирует)
+    raw_names = [e.get("name") for w in last_raw for e in w.get("exercises", [])][:12]
+    logger.error(
+        "generate_plan: не удалось собрать план из каталога (среда=%s, инвентарь=%s). Имена от модели: %s",
+        environment, equipment, raw_names,
+    )
+    return []
 
 
 def _sanitize_plan(workouts: list[dict]) -> list[dict]:
@@ -471,7 +489,7 @@ def _sanitize_plan(workouts: list[dict]) -> list[dict]:
     for w in workouts:
         exercises = []
         for ex in w.get("exercises", []):
-            hit = catalog.resolve(ex.get("name", ""))
+            hit = catalog.resolve(ex.get("name", ""), fuzzy=True)
             if not hit:
                 continue  # LLM выдумал название вне каталога — пропускаем
             exercises.append({
@@ -491,7 +509,7 @@ def _sanitize_plan(workouts: list[dict]) -> list[dict]:
         def _resolve_names(names) -> list[dict]:
             out, seen = [], set()
             for n in (names or []):
-                hit = catalog.resolve(n if isinstance(n, str) else "")
+                hit = catalog.resolve(n if isinstance(n, str) else "", fuzzy=True)
                 if hit and hit["name"] not in seen:
                     seen.add(hit["name"])
                     out.append({

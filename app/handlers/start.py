@@ -25,7 +25,7 @@ from app.utils import parse_weight, typing
 router = Router()
 
 # Максимум уточняющих вопросов, чтобы интервью не длилось бесконечно
-MAX_CLARIFICATIONS = 4
+MAX_CLARIFICATIONS = 2
 
 INTRO = (
     "Привет! Я твой виртуальный тренер 💪 Веду тренировки и считаю питание.\n\n"

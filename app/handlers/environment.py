@@ -1,6 +1,8 @@
 """Сбор места тренировок и инвентаря. Используется в онбординге и настройках."""
 from __future__ import annotations
 
+import logging
+
 from aiogram import F, Router
 from aiogram.fsm.context import FSMContext
 from aiogram.types import CallbackQuery, Message
@@ -10,6 +12,8 @@ from app.core.db import async_session
 from app.core import repository as repo
 from app.keyboards import env_kb, main_menu
 from app.states import Onboarding
+
+logger = logging.getLogger(__name__)
 from app.utils import typing
 
 router = Router()
@@ -76,8 +80,15 @@ async def _regenerate(message: Message, tg_id: int, state: FSMContext) -> None:
             )
         days = days or [0, 2, 4]
         workouts = await llm.generate_plan(profile, goal, days, env, equip, sex, level, per_day)
-        async with async_session() as db:
-            if workouts:
+        if workouts:
+            async with async_session() as db:
                 await repo.build_custom_plan(db, uid, workouts, environment=env)
     await state.clear()
+    if not workouts:
+        logger.error("Не удалось пересобрать план: user=%s env=%s equip=%s", uid, env, equip)
+        await message.answer(
+            "Не получилось пересобрать программу 😕 Попробуй ещё раз или напиши мне в чат.",
+            reply_markup=main_menu(),
+        )
+        return
     await message.answer("Готово! Пересобрал программу под новые настройки 💪", reply_markup=main_menu())

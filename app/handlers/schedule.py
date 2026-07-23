@@ -1,6 +1,7 @@
 """Настройка расписания: частота → дни → время. Используется в онбординге и настройках."""
 from __future__ import annotations
 
+import logging
 import re
 
 from aiogram import F, Router
@@ -10,10 +11,11 @@ from aiogram.types import CallbackQuery, Message
 from app.core import llm
 from app.core.db import async_session
 from app.core import repository as repo
-from app.core.seed import create_templates
 from app.keyboards import WEEKDAYS_SHORT, days_kb, freq_kb, main_menu, time_kb, time_only_kb
 from app.states import Onboarding
 from app.utils import typing
+
+logger = logging.getLogger(__name__)
 
 router = Router()
 
@@ -120,13 +122,20 @@ async def _apply_time(message: Message, tg_id: int, state: FSMContext, hour: int
                 user.profile_summary, user.goal, user.environment, user.equipment,
                 user.sex, user.level, user.exercises_per_day or 4, user.id,
             )
-        # Генерируем план под профиль/пол/уровень/среду; при сбое — базовые шаблоны
+        # Генерируем персональный план строго из каталога (с GIF)
         workouts = await llm.generate_plan(profile, goal, days, env, equip, sex, level, per_day)
-        async with async_session() as db:
-            if workouts:
+        if workouts:
+            async with async_session() as db:
                 await repo.build_custom_plan(db, uid, workouts, environment=env)
-            else:
-                await create_templates(db, uid, days)
+
+    if not workouts:
+        # Не подменяем тихо старым планом: сообщаем и просим повторить (детали — в логах)
+        logger.error("Не удалось сгенерировать план: user=%s env=%s equip=%s", uid, env, equip)
+        await message.answer(
+            "Не получилось собрать программу с первого раза 😕 Попробуй ещё раз чуть позже "
+            "или напиши мне в чат — соберу вручную."
+        )
+        return
 
     schedule_line = f"дни {_days_str(days)}, время {hour:02d}:{minute:02d}"
     if from_settings:
