@@ -469,6 +469,13 @@ async def generate_plan(
             last_raw = data.get("workouts", []) or []
             plan = _sanitize_plan(last_raw)
             if plan:
+                names = [e["name"] for e in plan[0].get("exercises", [])]
+                logger.info(
+                    "[PLAN] собран за попытку %d: дней=%d, палитра=%d/%d, день1 основные=%s, "
+                    "разминка=%d, заминка=%d",
+                    attempt + 1, len(plan), len(main_pool), len(warm_pool), names,
+                    len(plan[0].get("warmup", [])), len(plan[0].get("cooldown", [])),
+                )
                 return plan
             logger.warning("generate_plan: попытка %d дала пустой план после сверки с каталогом", attempt + 1)
         except Exception as exc:

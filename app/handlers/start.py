@@ -1,6 +1,9 @@
 """Онбординг: LLM-интервью → персональный промпт тренера, обязательный вес."""
 from __future__ import annotations
 
+import asyncio
+import logging
+
 from aiogram import F, Router
 from aiogram.filters import Command, CommandStart
 from aiogram.fsm.context import FSMContext
@@ -23,9 +26,12 @@ from app.states import Onboarding
 from app.utils import parse_weight, typing
 
 router = Router()
+logger = logging.getLogger(__name__)
 
-# Максимум уточняющих вопросов, чтобы интервью не длилось бесконечно
-MAX_CLARIFICATIONS = 2
+# Максимум уточняющих вопросов, чтобы интервью не длилось бесконечно.
+# Держим достаточно высоким: задача — не резать уточнения (это снижает качество),
+# а не переспрашивать уже сказанное (это решается промптом интервью).
+MAX_CLARIFICATIONS = 4
 
 INTRO = (
     "Привет! Я твой виртуальный тренер 💪 Веду тренировки и считаю питание.\n\n"
@@ -84,19 +90,21 @@ async def handle_interview(message: Message, state: FSMContext, text: str) -> No
     reply = result.get("reply") or "Понял."
     history.append({"role": "assistant", "content": reply})
 
+    # Лог для анализа онбординга: сколько уточнений, что извлекли, завершилось ли
+    extracted = {k: result.get(k) for k in
+                 ("weight_kg", "height_cm", "age", "sex", "level", "environment", "equipment")
+                 if result.get(k) is not None}
+    logger.info("[ONBOARDING] шаг интервью: уточнений=%d done=%s извлечено=%s",
+                clarifications, result.get("done"), extracted)
+
     if result.get("done"):
-        # Первое сообщение — подтверждение, что всё понял
         await message.answer(reply)
-        # Второе — что готовим программу (генерация может занять время)
-        await message.answer("Отлично! Составлю программу под тебя — ещё пара уточнений 👇")
-        async with typing(message):
-            system_prompt = await llm.build_system_prompt(
-                result.get("profile_summary"), result.get("goal")
-            )
+        # profile_summary/goal нужны плану — сохраняем СИНХРОННО (без тяжёлого вызова).
+        # «Личность тренера» (system_prompt) строим в ФОНЕ, чтобы не заставлять ждать:
+        # план от неё не зависит, она влияет только на тон чата.
+        w, h = result.get("weight_kg"), result.get("height_cm")
         async with async_session() as db:
             user = await repo.get_user_by_tg(db, message.from_user.id)
-            # Сохраняем то, что клиент сам назвал в интервью (чтобы не переспрашивать)
-            w, h = result.get("weight_kg"), result.get("height_cm")
             if w:
                 user.weight_kg = w
             if h:
@@ -112,19 +120,35 @@ async def handle_interview(message: Message, state: FSMContext, text: str) -> No
             if result.get("equipment"):
                 user.equipment = result["equipment"]
             await repo.save_personalization(
-                db,
-                user,
-                system_prompt=system_prompt,
-                profile_summary=result.get("profile_summary"),
-                goal=result.get("goal"),
+                db, user, system_prompt=None,
+                profile_summary=result.get("profile_summary"), goal=result.get("goal"),
             )
             if w:
                 await repo.log_weight(db, user.id, float(w))
-        # Дальше — только недостающие шаги
+        # Персона — в фоне (не блокирует онбординг)
+        asyncio.create_task(
+            _build_persona_bg(message.from_user.id, result.get("profile_summary"), result.get("goal"))
+        )
+        await message.answer("Отлично! Ещё пара быстрых вопросов 👇")
         await _continue_after_persona(message, message.from_user.id, state)
     else:
         await state.update_data(history=history, clarifications=clarifications + 1)
         await message.answer(reply)
+
+
+async def _build_persona_bg(tg_id: int, profile_summary: str | None, goal: str | None) -> None:
+    """Фоновое построение «личности тренера» — не блокирует онбординг."""
+    try:
+        system_prompt = await llm.build_system_prompt(profile_summary, goal)
+        async with async_session() as db:
+            user = await repo.get_user_by_tg(db, tg_id)
+            if user:
+                await repo.save_personalization(
+                    db, user, system_prompt=system_prompt, profile_summary=None, goal=None
+                )
+        logger.info("[ONBOARDING] персона тренера готова (tg_id=%s)", tg_id)
+    except Exception as exc:
+        logger.error("[ONBOARDING] не удалось построить персону (tg_id=%s): %s", tg_id, exc)
 
 
 async def _continue_after_persona(message: Message, tg_id: int, state: FSMContext) -> None:
