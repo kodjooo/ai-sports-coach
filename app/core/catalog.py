@@ -57,6 +57,31 @@ def _tokens(name: str) -> set[str]:
 _TOKENS_BY_NAME: list[tuple[set[str], dict]] = [(_tokens(e["name"]), e) for e in ALL]
 
 
+def resolve_in(name: str, pool: list[dict], fuzzy: bool = True) -> dict | None:
+    """Находит упражнение по названию ТОЛЬКО среди pool (отфильтрованной палитры).
+
+    Нужно, чтобы fuzzy-сопоставление не подтягивало вариант с инвентарём, которого нет
+    у клиента (напр. «Ягодичный мостик» → «...со штангой»).
+    """
+    by_name = {_norm(e["name"]): e for e in pool}
+    exact = by_name.get(_norm(name))
+    if exact or not fuzzy:
+        return exact
+    want = _tokens(name)
+    if not want:
+        return None
+    best, best_score = None, 0.0
+    for e in pool:
+        toks = _tokens(e["name"])
+        inter = len(want & toks)
+        if not inter:
+            continue
+        score = inter / len(want | toks)
+        if score > best_score:
+            best, best_score = e, score
+    return best if best_score >= 0.5 else None
+
+
 def resolve(name: str, fuzzy: bool = False) -> dict | None:
     """Находит упражнение каталога по названию.
 
@@ -149,5 +174,5 @@ def warmup_candidates(
 
 
 def names_for_prompt(items: list[dict]) -> str:
-    """Компактный список для промпта: «Название — зона»."""
-    return "\n".join(f"- {e['name']} ({e['muscle_group']})" for e in items)
+    """Компактный список для промпта: «Название (зона; инвентарь)»."""
+    return "\n".join(f"- {e['name']} ({e['muscle_group']}; {e['equipment']})" for e in items)

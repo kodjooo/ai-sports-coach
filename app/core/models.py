@@ -66,6 +66,7 @@ class Exercise(Base):
     gif: Mapped[str | None] = mapped_column(String)          # имя файла GIF-анимации техники
     name_en: Mapped[str | None] = mapped_column(String)      # название на английском (для i18n)
     technique_en: Mapped[str | None] = mapped_column(String)  # техника на английском (для i18n)
+    howto: Mapped[str | None] = mapped_column(String)        # «как правильно» + типичные ошибки (для кнопки)
 
 
 class WorkoutTemplate(Base):

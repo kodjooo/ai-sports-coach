@@ -102,6 +102,7 @@ async def _load_items(db, template_id: int) -> list[dict]:
                 "name": ex.name if ex else "Упражнение",
                 "muscle_group": (ex.muscle_group if ex else "") or "",
                 "technique": (ex.technique if ex else "") or "Техника не описана.",
+                "howto": (ex.howto if ex else None),
                 "gif": (ex.gif if ex else None),
                 "phase": getattr(it, "phase", None) or "main",
                 "target_sets": it.target_sets or 3,
@@ -177,22 +178,27 @@ async def _show_set(target, state: FSMContext) -> None:
     item = items[i]
     is_time = item.get("is_time", False)
     unit = "сек" if is_time else "повт."
-    # На первом подходе — карточка упражнения с GIF-техникой
-    if data["cur_set"] == 1:
-        tech = (item.get("technique") or "").strip()
-        muscle = item.get("muscle_group") or ""
-        caption = f"<b>{item['name']}</b>" + (f" · {muscle}" if muscle else "")
-        if tech:
-            caption += f"\n{tech}"
-        await _send_exercise_card(target, item, caption)
     # Цель: подсказка по ощущению прошлого подхода, иначе плановая
     goal = data.get("suggest") or item["target_reps"]
     prompt = "Сколько секунд продержал?" if is_time else "Выбери число повторов:"
-    text = (
+    set_line = (
         f"<b>{item['name']}</b> — сет {data['cur_set']} из {item['target_sets']} "
         f"(цель ~{goal} {unit})\n{prompt}"
     )
-    await target.answer(text, reply_markup=reps_kb(target=goal, is_time=is_time))
+    kb = reps_kb(target=goal, is_time=is_time)
+    if data["cur_set"] == 1:
+        # Первый подход — единая карточка: GIF + название · группа + техника + строка сета + кнопки
+        tech = (item.get("technique") or "").strip()
+        muscle = item.get("muscle_group") or ""
+        head = f"<b>{item['name']}</b>" + (f" · {muscle}" if muscle else "")
+        caption = head + (f"\n{tech}" if tech else "")
+        caption += (
+            f"\n\nСет {data['cur_set']} из {item['target_sets']} (цель ~{goal} {unit})\n{prompt}"
+        )
+        await _send_exercise_card(target, item, caption, reply_markup=kb)
+    else:
+        # Последующие подходы — только строка сета с кнопками (без гифки и описания)
+        await target.answer(set_line, reply_markup=kb)
 
 
 @router.message(F.text == "▶️ Тренировка")
@@ -482,10 +488,13 @@ async def show_howto(cb: CallbackQuery, state: FSMContext) -> None:
     await cb.answer()
     data = await state.get_data()
     item = data["items"][data["cur_item"]]
-    async with typing(cb.message):
-        detailed = await llm.exercise_howto(item["name"], item.get("is_time", False))
-    text = detailed or item["technique"]
-    await cb.message.answer(f"<b>Техника — {item['name']}</b>\n{text}")
+    # Готовое описание из каталога (быстро, без затрат). LLM — только фолбэк, если поля нет.
+    text = (item.get("howto") or "").strip()
+    if not text:
+        async with typing(cb.message):
+            text = await llm.exercise_howto(item["name"], item.get("is_time", False))
+        text = text or item.get("technique") or "Техника не описана."
+    await cb.message.answer(f"<b>Как правильно — {item['name']}</b>\n{text}")
 
 
 @router.callback_query(Workout.in_progress, F.data == "wk:replace")

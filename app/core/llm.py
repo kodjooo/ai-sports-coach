@@ -428,6 +428,8 @@ async def generate_plan(
         "ЖЁСТКИЕ ПРАВИЛА:\n"
         "- Сложность строго под уровень; для новичка — простые безопасные движения.\n"
         "- Учитывай пол, возраст, вес, цели и ЖЕЛАНИЯ клиента.\n"
+        "- ИНВЕНТАРЬ: у каждого упражнения в скобках указан нужный инвентарь. Список уже "
+        "отфильтрован под клиента, но всё равно перепроверяй по скобкам и не бери то, чего у него нет.\n"
         "- Щади травмы/боли: если что-то болит — не бери упражнения на эту зону.\n"
         "- РАЗНООБРАЗИЕ: в дне не повторяй одинаковые движения; баланс паттернов "
         "(ноги, задняя цепь, толчок, тяга, кор).\n"
@@ -467,7 +469,7 @@ async def generate_plan(
             )
             data = json.loads(resp.choices[0].message.content or "{}")
             last_raw = data.get("workouts", []) or []
-            plan = _sanitize_plan(last_raw)
+            plan = _sanitize_plan(last_raw, main_pool, warm_pool)
             if plan:
                 names = [e["name"] for e in plan[0].get("exercises", [])]
                 logger.info(
@@ -490,13 +492,17 @@ async def generate_plan(
     return []
 
 
-def _sanitize_plan(workouts: list[dict]) -> list[dict]:
-    """Сверяет названия с каталогом, отбрасывает неизвестные, проставляет фазы и данные каталога."""
+def _sanitize_plan(workouts: list[dict], main_pool: list[dict], warm_pool: list[dict]) -> list[dict]:
+    """Сверяет названия с ПАЛИТРОЙ (не всем каталогом), отбрасывает неизвестные, проставляет фазы.
+
+    Сверка идёт только среди отфильтрованных под клиента упражнений — чтобы fuzzy не подтянул
+    вариант с недоступным инвентарём.
+    """
     clean: list[dict] = []
     for w in workouts:
         exercises = []
         for ex in w.get("exercises", []):
-            hit = catalog.resolve(ex.get("name", ""), fuzzy=True)
+            hit = catalog.resolve_in(ex.get("name", ""), main_pool)
             if not hit:
                 continue  # LLM выдумал название вне каталога — пропускаем
             exercises.append({
@@ -516,7 +522,7 @@ def _sanitize_plan(workouts: list[dict]) -> list[dict]:
         def _resolve_names(names) -> list[dict]:
             out, seen = [], set()
             for n in (names or []):
-                hit = catalog.resolve(n if isinstance(n, str) else "", fuzzy=True)
+                hit = catalog.resolve_in(n if isinstance(n, str) else "", warm_pool)
                 if hit and hit["name"] not in seen:
                     seen.add(hit["name"])
                     out.append({
