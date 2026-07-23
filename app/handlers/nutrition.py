@@ -5,6 +5,8 @@
 """
 from __future__ import annotations
 
+import base64
+
 from aiogram import Bot, F, Router
 from aiogram.fsm.context import FSMContext
 from aiogram.types import CallbackQuery, InlineKeyboardButton, InlineKeyboardMarkup, Message
@@ -77,7 +79,9 @@ async def _pop_draft(state: FSMContext, draft_id: str) -> dict | None:
 async def on_photo(message: Message, state: FSMContext, bot: Bot) -> None:
     file_id = message.photo[-1].file_id
     file = await bot.get_file(file_id)
-    image_url = f"https://api.telegram.org/file/bot{bot.token}/{file.file_path}"
+    # Скачиваем фото и передаём в OpenAI как data:base64 — НЕ светим токен бота в URL
+    buf = await bot.download_file(file.file_path)
+    image_url = "data:image/jpeg;base64," + base64.b64encode(buf.read()).decode()
 
     async with typing(message):
         async with async_session() as db:

@@ -63,6 +63,12 @@ async def reset_user(db: AsyncSession, user: User) -> None:
 
     await db.execute(delete(ChatMessage).where(ChatMessage.user_id == user.id))
     await db.execute(delete(WeightLog).where(WeightLog.user_id == user.id))
+    # Сначала ингредиенты (FK meal_items.meal_id без каскада), потом сами блюда
+    meal_ids = (
+        await db.execute(select(Meal.id).where(Meal.user_id == user.id))
+    ).scalars().all()
+    if meal_ids:
+        await db.execute(delete(MealItem).where(MealItem.meal_id.in_(meal_ids)))
     await db.execute(delete(Meal).where(Meal.user_id == user.id))
 
     # Обнуляем профиль (строка пользователя остаётся, tg_id сохраняется)

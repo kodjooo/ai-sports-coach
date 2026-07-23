@@ -93,12 +93,15 @@ async def handle_chat(message: Message, state: FSMContext, text: str) -> None:
             await message.answer(f"Записал вес — {weight:g} кг ⚖️")
             return
 
-        # Одинокое число (ответ на недельный вопрос о весе) → запись веса
-        if re.fullmatch(r"\d{2,3}([.,]\d)?\s*(кг|kg)?", text):
+        # Одинокое число → запись веса, только если это правдоподобный вес (30–300 кг).
+        # Иначе (напр. «15») пропускаем в обычный чат, чтобы не сломать норму калорий.
+        m_w = re.fullmatch(r"\d{2,3}([.,]\d)?\s*(кг|kg)?", text)
+        if m_w:
             weight = float(re.sub(r"[^\d.,]", "", text).replace(",", "."))
-            await repo.log_weight(db, user.id, weight)
-            await message.answer(f"Записал вес — {weight:g} кг ⚖️")
-            return
+            if 30 <= weight <= 300:
+                await repo.log_weight(db, user.id, weight)
+                await message.answer(f"Записал вес — {weight:g} кг ⚖️")
+                return
 
         # Собираем контекст
         facts = await progress.build_facts(db, user.id)

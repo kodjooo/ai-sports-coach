@@ -10,6 +10,7 @@ from apscheduler.triggers.cron import CronTrigger
 from sqlalchemy import select
 
 from app.config import settings
+from app.core import llm
 from app.core import progress
 from app.core import repository as repo
 from app.core.db import async_session
@@ -19,12 +20,16 @@ from app.keyboards import reminder_kb
 logger = logging.getLogger(__name__)
 
 
-def _now_hm() -> tuple[int, int]:
-    """Текущее время в часовом поясе бота (часы, минуты, округлённые до 5)."""
+def _tick_window_start() -> int:
+    """Начало текущего 5-минутного окна в минутах от полуночи (в часовом поясе бота).
+
+    Сравниваем время тренировки с окном [start, start+5), а не на точное равенство —
+    иначе напоминание не сработает при времени, не кратном 5 (напр. 07:33).
+    """
     from zoneinfo import ZoneInfo
 
     now = datetime.now(ZoneInfo(settings.tz))
-    return now.hour, (now.minute // 5) * 5
+    return (now.hour * 60 + now.minute) // 5 * 5
 
 
 async def _training_today(db, user, today):
@@ -49,7 +54,11 @@ async def _training_today(db, user, today):
 
 async def _tick(bot: Bot) -> None:
     """Раз в 5 минут проверяем, кому пора напомнить о тренировке."""
-    hour, minute = _now_hm()
+    tick0 = _tick_window_start()  # начало текущего 5-мин окна, минут от полуночи
+
+    def _in_window(minutes_of_day: int) -> bool:
+        return tick0 <= minutes_of_day < tick0 + 5
+
     today = date.today()
     async with async_session() as db:
         res = await db.execute(select(User))
@@ -61,14 +70,14 @@ async def _tick(bot: Bot) -> None:
             if not train_today or template is None:
                 continue
 
-            start_dt = datetime(2000, 1, 1, user.train_hour, user.train_minute or 0)
-            pre_dt = start_dt - timedelta(minutes=30)
+            start_min = user.train_hour * 60 + (user.train_minute or 0)
+            pre_min = start_min - 30
 
             text = None
-            if (hour, minute) == (start_dt.hour, start_dt.minute):
+            if _in_window(start_min):
                 names = await _exercise_names(db, template.id)
                 text = f"Время тренировки! Сегодня <b>{template.label}</b>: {names}. Начнём?"
-            elif (hour, minute) == (pre_dt.hour, pre_dt.minute):
+            elif _in_window(pre_min):
                 text = f"Через 30 минут тренировка (<b>{template.label}</b>). Готовься 💪"
 
             if text:
@@ -94,6 +103,9 @@ async def _weekly_report(bot: Bot) -> None:
         res = await db.execute(select(User))
         users = list(res.scalars().all())
         for user in users:
+            # Только завершившим онбординг — иначе пустой отчёт и лишний платный вызов
+            if not user.profile_summary:
+                continue
             report = await progress.weekly_report(db, user.id)
             # Короткий вывод тренера по данным недели
             takeaway = await llm.chat(
