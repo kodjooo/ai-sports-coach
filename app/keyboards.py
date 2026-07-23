@@ -32,6 +32,7 @@ def settings_menu() -> InlineKeyboardMarkup:
             [InlineKeyboardButton(text="🍽 Цель по питанию", callback_data="set:ngoal")],
             [InlineKeyboardButton(text="📋 План недели", callback_data="set:plan")],
             [InlineKeyboardButton(text="⚖️ Записать вес", callback_data="set:weight")],
+            [InlineKeyboardButton(text="🔄 Обновить профиль", callback_data="set:profile")],
             [InlineKeyboardButton(text="ℹ️ Что я умею", callback_data="set:help")],
             [InlineKeyboardButton(text="♻️ Сбросить историю", callback_data="set:reset")],
         ]

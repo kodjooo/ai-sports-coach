@@ -18,8 +18,8 @@ class Settings(BaseSettings):
     openai_transcribe_model: str = "whisper-1"
     # Режим рассуждений для reasoning-моделей (gpt-5): minimal|low|medium|high
     openai_reasoning_effort: str = "low"
-    # Более качественный режим для онбординга (генерация персонального промпта)
-    openai_reasoning_effort_onboarding: str = "medium"
+    # Режим для онбординга/генерации плана (low экономит reasoning-токены при том же качестве)
+    openai_reasoning_effort_onboarding: str = "low"
 
     # PostgreSQL
     postgres_user: str = "coach"

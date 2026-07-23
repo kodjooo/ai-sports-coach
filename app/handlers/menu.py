@@ -37,8 +37,7 @@ HELP_TEXT = (
     "• Могу по твоему подтверждению менять план, нагрузку, время, записывать еду/вес.\n\n"
     "📊 <b>Статистика</b> — тренировки, вес, рекорды, потраченные калории; раз в неделю — итоги.\n\n"
     "⚙️ <b>Настройки</b> — дни/время, место и инвентарь, уровень, число упражнений, "
-    "цель по питанию, вес, сброс истории.\n\n"
-    "Команды: /start, /profile (пересобрать профиль), /menu, /help."
+    "цель по питанию, вес, обновить профиль, сброс истории."
 )
 
 
@@ -51,6 +50,16 @@ async def cmd_help(message: Message) -> None:
 async def settings_help(cb: CallbackQuery) -> None:
     await cb.message.answer(HELP_TEXT)
     await cb.answer()
+
+
+@router.callback_query(F.data == "set:profile")
+async def settings_profile(cb: CallbackQuery, state: FSMContext) -> None:
+    from app.handlers.start import _start_interview
+
+    await cb.answer()
+    await state.clear()
+    await cb.message.answer("Обновим профиль. Расскажи, что изменилось или чего хочешь теперь.")
+    await _start_interview(cb.message, state)
 
 
 @router.message(Command("menu"))
