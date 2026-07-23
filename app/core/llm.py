@@ -19,7 +19,8 @@ def get_client() -> AsyncOpenAI:
     """Ленивая инициализация клиента OpenAI (ключ нужен только при вызове)."""
     global _client
     if _client is None:
-        _client = AsyncOpenAI(api_key=settings.openai_api_key)
+        # timeout — чтобы зависший запрос не крутил «печатает…» вечно; ретраи ограничены
+        _client = AsyncOpenAI(api_key=settings.openai_api_key, timeout=90.0, max_retries=2)
     return _client
 
 

@@ -8,7 +8,10 @@
 from __future__ import annotations
 
 import asyncio
+import logging
 from typing import Awaitable, Callable
+
+logger = logging.getLogger(__name__)
 
 DELAY = 3.0  # сколько ждём новых сообщений перед обработкой
 
@@ -33,4 +36,8 @@ async def _run(key: str, flush: Callable[[str], Awaitable[None]]) -> None:
     texts = _buffers.pop(key, [])
     _tasks.pop(key, None)
     if texts:
-        await flush("\n".join(texts))
+        # flush выполняется вне пайплайна aiogram — ловим ошибки сами, иначе они теряются молча
+        try:
+            await flush("\n".join(texts))
+        except Exception:
+            logger.exception("Ошибка обработки склеенных сообщений (key=%s)", key)

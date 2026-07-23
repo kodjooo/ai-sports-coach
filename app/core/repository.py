@@ -8,6 +8,24 @@ from sqlalchemy import delete, func, select
 from sqlalchemy.ext.asyncio import AsyncSession
 
 from app.config import settings
+from app.core import catalog
+
+
+def _enrich_from_catalog(m: dict) -> dict:
+    """Если движение есть в каталоге — берём канонические имя/технику/GIF/инвентарь.
+
+    Нужно, чтобы планы из чата (set_plan) не плодили мусорные упражнения без GIF в общем справочнике.
+    """
+    hit = catalog.resolve(m.get("name", ""), fuzzy=True)
+    if not hit:
+        return m
+    out = dict(m)
+    out.update({
+        "name": hit["name"], "muscle_group": hit["muscle_group"],
+        "technique": hit["technique"], "gif": hit["gif"],
+        "environment": hit["environment"], "equipment": hit["equipment"],
+    })
+    return out
 
 
 def _local_day_start(days_ago: int = 0) -> datetime:
@@ -162,7 +180,19 @@ async def set_chat_summary(db: AsyncSession, user_id: int, summary: str) -> None
 # ---------- Исполнители действий тренера ----------
 
 async def find_exercise_by_name(db: AsyncSession, name: str) -> Exercise | None:
-    res = await db.execute(select(Exercise).where(Exercise.name.ilike(f"%{name}%")).limit(1))
+    name = (name or "").strip()
+    if not name:
+        return None
+    # Сначала точное совпадение (без учёта регистра)
+    exact = await db.execute(select(Exercise).where(func.lower(Exercise.name) == name.lower()).limit(1))
+    hit = exact.scalar_one_or_none()
+    if hit:
+        return hit
+    # Затем подстрочное — с экранированием спецсимволов LIKE (%, _, \), чтобы имя из LLM не матчило лишнее
+    esc = name.replace("\\", "\\\\").replace("%", "\\%").replace("_", "\\_")
+    res = await db.execute(
+        select(Exercise).where(Exercise.name.ilike(f"%{esc}%", escape="\\")).limit(1)
+    )
     return res.scalar_one_or_none()
 
 
@@ -264,6 +294,7 @@ async def build_custom_plan(
 
         order = 0
         for m in warm:
+            m = _enrich_from_catalog(m)
             exo = await find_or_create_exercise(
                 db, m.get("name", "Разминка"), m.get("muscle_group"), m.get("technique"),
                 environment=m.get("environment") or environment, equipment=m.get("equipment"),
@@ -272,6 +303,7 @@ async def build_custom_plan(
                                 order_idx=order, phase="warmup"))
             order += 1
         for ex in w.get("exercises", []):
+            ex = _enrich_from_catalog(ex)
             exo = await find_or_create_exercise(
                 db, ex.get("name", "Упражнение"), ex.get("muscle_group"), ex.get("technique"),
                 environment=ex.get("environment") or environment, equipment=ex.get("equipment"),
@@ -281,6 +313,7 @@ async def build_custom_plan(
                                 rest_sec=ex.get("rest_sec") or 60, order_idx=order, phase="main"))
             order += 1
         for m in cool:
+            m = _enrich_from_catalog(m)
             exo = await find_or_create_exercise(
                 db, m.get("name", "Заминка"), m.get("muscle_group"), m.get("technique"),
                 environment=m.get("environment") or environment, equipment=m.get("equipment"),

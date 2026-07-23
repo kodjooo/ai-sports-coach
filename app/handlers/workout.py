@@ -219,8 +219,12 @@ async def finish_from_menu(message: Message, state: FSMContext) -> None:
 
 @router.callback_query(F.data == "wk:start")
 async def start_from_reminder(cb: CallbackQuery, state: FSMContext) -> None:
-    await _begin(cb.message, cb.from_user.id, state)
+    # Та же страховка, что и при старте из меню: не начинаем вторую тренировку поверх идущей
+    if await state.get_state() in (Workout.in_progress.state, Workout.manual_reps.state):
+        await cb.answer("Тренировка уже идёт", show_alert=True)
+        return
     await cb.answer()
+    await _begin(cb.message, cb.from_user.id, state)
 
 
 # ---------- Ввод повторов и ощущения ----------
@@ -264,6 +268,8 @@ async def choose_effort(cb: CallbackQuery, state: FSMContext) -> None:
     if reps is None:
         await cb.answer("Сначала выбери число")
         return
+    # Сразу «съедаем» результат — повторный тап по ощущению не запишет второй подход
+    await state.update_data(pending_reps=None)
 
     item = data["items"][data["cur_item"]]
     async with async_session() as db:
@@ -443,9 +449,25 @@ async def _rest_timer(message, seconds: int) -> None:
 
 # ---------- Завершение и фидбек ----------
 
+# Чаты, для которых завершение уже идёт — от двойного тапа (двойные платные LLM-вызовы, двойная прогрессия)
+_finishing: set[int] = set()
+
+
 async def _finish(target, state: FSMContext) -> None:
+    if target.chat.id in _finishing:
+        return
+    _finishing.add(target.chat.id)
+    try:
+        await _finish_inner(target, state)
+    finally:
+        _finishing.discard(target.chat.id)
+
+
+async def _finish_inner(target, state: FSMContext) -> None:
     _cancel_rest(target.chat.id)
     data = await state.get_data()
+    if not data.get("session_id"):
+        return  # уже завершено/сброшено
     await target.answer("Тренировка завершена! Считаю итоги…")
     async with typing(target), async_session() as db:
         session = await db.get(Session, data["session_id"])

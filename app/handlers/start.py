@@ -28,6 +28,9 @@ from app.utils import parse_weight, typing
 router = Router()
 logger = logging.getLogger(__name__)
 
+# Ссылки на фоновые задачи (персона тренера), чтобы их не собрал GC
+_bg_tasks: set = set()
+
 # Максимум уточняющих вопросов, чтобы интервью не длилось бесконечно.
 # Держим достаточно высоким: задача — не резать уточнения (это снижает качество),
 # а не переспрашивать уже сказанное (это решается промптом интервью).
@@ -125,10 +128,12 @@ async def handle_interview(message: Message, state: FSMContext, text: str) -> No
             )
             if w:
                 await repo.log_weight(db, user.id, float(w))
-        # Персона — в фоне (не блокирует онбординг)
-        asyncio.create_task(
+        # Персона — в фоне (не блокирует онбординг). Держим ссылку, иначе задачу может собрать GC.
+        task = asyncio.create_task(
             _build_persona_bg(message.from_user.id, result.get("profile_summary"), result.get("goal"))
         )
+        _bg_tasks.add(task)
+        task.add_done_callback(_bg_tasks.discard)
         await message.answer("Отлично! Ещё пара быстрых вопросов 👇")
         await _continue_after_persona(message, message.from_user.id, state)
     else:

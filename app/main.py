@@ -17,7 +17,7 @@ from app.config import settings
 from app.core.db import async_session
 from app.core.seed import seed_exercises
 from app.handlers import get_root_router
-from app.middlewares import IncomingLogMiddleware, OutgoingLogMiddleware
+from app.middlewares import IncomingLogMiddleware, OutgoingLogMiddleware, ThrottleMiddleware
 from app.scheduler.reminders import setup_scheduler
 
 logging.basicConfig(level=logging.INFO)
@@ -49,6 +49,7 @@ async def main() -> None:
     # FSM в Redis — состояние диалога переживает перезапуск бота
     storage = RedisStorage.from_url(settings.redis_url)
     dp = Dispatcher(storage=storage)
+    dp.message.outer_middleware(ThrottleMiddleware())  # троттлинг раньше логирования/обработки
     dp.message.outer_middleware(IncomingLogMiddleware())
     dp.include_router(get_root_router())
 
@@ -60,6 +61,15 @@ async def main() -> None:
         ):
             return True
         logger.exception("Необработанная ошибка: %s", event.exception)
+        # Сообщаем пользователю, чтобы бот не «молчал» при сбое хендлера
+        msg = getattr(event.update, "message", None) or getattr(
+            getattr(event.update, "callback_query", None), "message", None
+        )
+        if msg is not None:
+            try:
+                await msg.answer("Ой, что-то пошло не так 😕 Попробуй ещё раз или напиши иначе.")
+            except Exception:
+                pass
         return True
 
     scheduler = setup_scheduler(bot)

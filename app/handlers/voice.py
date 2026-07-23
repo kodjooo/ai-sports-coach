@@ -20,6 +20,10 @@ router = Router()
 async def on_voice(message: Message, state: FSMContext, bot: Bot) -> None:
     """Скачиваем голос, распознаём и передаём текст в нужный обработчик."""
     voice = message.voice or message.audio
+    # Лимит длительности — защита от дорогой транскрипции длинных аудио
+    if (getattr(voice, "duration", 0) or 0) > 300:
+        await message.answer("Голосовое длинновато 🙂 Пришли покороче (до 5 минут) или напиши текстом.")
+        return
     async with typing(message):
         buf = await bot.download(voice.file_id)
         text = await llm.transcribe(buf.read(), filename="voice.ogg")
