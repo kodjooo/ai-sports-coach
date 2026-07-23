@@ -539,14 +539,22 @@ async def replace_start(cb: CallbackQuery, state: FSMContext) -> None:
         from app.core.models import Exercise
 
         user = await repo.get_user_by_tg(db, cb.from_user.id)
-        env = (user.environment if user else None)
+        equip = (user.equipment if user else None)
         res = await db.execute(select(Exercise).where(Exercise.id != cur_ex_id))
         others = list(res.scalars().all())
 
-    # Фильтр по среде пользователя (не предлагать зал/улицу без них)
-    if env and env != "микс":
-        suitable = [ex for ex in others if not ex.environment or ex.environment == env]
-        others = suitable or others
+    # Фильтр по ДОСТУПНОМУ ОБОРУДОВАНИЮ (единая ось): предлагаем только выполнимое.
+    from app.core import catalog
+    avail = catalog.available_equipment(equip)
+
+    def feasible(ex) -> bool:
+        hit = catalog.resolve(ex.name)
+        if not hit:
+            return True  # нет в каталоге — не отсекаем (напр. кастомные)
+        return set(hit.get("equipment_req") or []).issubset(avail)
+
+    suitable = [ex for ex in others if feasible(ex)]
+    others = suitable or others
 
     # Сначала — упражнения на ту же группу мышц (равнозначная замена)
     def same_group(ex) -> bool:

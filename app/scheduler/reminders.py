@@ -86,6 +86,7 @@ async def _tick(bot: Bot) -> None:
                     await bot.send_message(user.tg_id, text, reply_markup=reminder_kb())
             except Exception as exc:
                 # Ошибка по одному пользователю не должна прерывать рассылку остальным
+                await db.rollback()  # снимаем возможное failed-состояние сессии
                 logger.warning("Напоминание пропущено для %s: %s", user.tg_id, exc)
 
 
@@ -109,6 +110,7 @@ async def _weekly_report(bot: Bot) -> None:
             if not user.profile_summary:
                 continue
             try:
+                await db.rollback()  # чистое состояние сессии перед пользователем
                 report = await progress.weekly_report(db, user.id)
                 takeaway = await llm.chat(
                     f"Данные клиента за неделю:\n{report}\n\n"

@@ -95,6 +95,7 @@ async def reset_user(db: AsyncSession, user: User) -> None:
     # Обнуляем профиль (строка пользователя остаётся, tg_id сохраняется)
     user.goal = None
     user.weight_kg = None
+    user.height_cm = None
     user.system_prompt = None
     user.profile_summary = None
     user.train_hour = None
@@ -269,23 +270,27 @@ async def build_custom_plan(
                 "exercises":[{name,sets,reps,rest_sec,muscle_group,technique,gif,...}]}]
     Разминка/заминка сохраняются как элементы плана с фазой (phase). Возвращает число дней.
     """
-    # Палитра по инвентарю пользователя — чтобы enrich не подтянул недоступное оборудование
-    pool = None
-    if equipment is not None:
-        pool = catalog.main_candidates(equipment, limit=10_000) + catalog.warmup_candidates(equipment)
+    # Палитра по инвентарю — чтобы enrich не подтянул недоступное (пусто = только вес тела)
+    pool = catalog.main_candidates(equipment or "", limit=10_000) + catalog.warmup_candidates(equipment or "")
 
-    # Деактивируем прежний план
+    # Оставляем только валидные дни (0..6, без дублей). Если валидных нет — НЕ трогаем старый план.
+    valid: list[dict] = []
+    seen: set[int] = set()
+    for w in sorted(workouts, key=lambda x: x.get("weekday", 0)):
+        wd = w.get("weekday", 0)
+        if isinstance(wd, int) and 0 <= wd <= 6 and wd not in seen:
+            seen.add(wd)
+            valid.append(w)
+    if not valid:
+        return 0
+
+    # Деактивируем прежний план только когда есть чем заменить
     old = await db.execute(select(WorkoutTemplate).where(WorkoutTemplate.user_id == user_id))
     for tpl in old.scalars().all():
         tpl.active = False
 
-    used_weekdays: set[int] = set()
-    for i, w in enumerate(sorted(workouts, key=lambda x: x.get("weekday", 0))):
-        # Валидация дня недели: только 0..6 и без дублей (иначе get_template_for_weekday упадёт)
+    for i, w in enumerate(valid):
         wd = w.get("weekday", 0)
-        if not isinstance(wd, int) or not (0 <= wd <= 6) or wd in used_weekdays:
-            continue
-        used_weekdays.add(wd)
         warm = w.get("warmup") or []
         cool = w.get("cooldown") or []
         # Обратная совместимость: если разминка/заминка пришла строкой (старый формат) —
@@ -337,7 +342,7 @@ async def build_custom_plan(
                                 order_idx=order, phase="cooldown"))
             order += 1
     await db.commit()
-    return len(workouts)
+    return len(valid)
 
 
 async def _active_items_by_exercise(db: AsyncSession, user_id: int, exercise_id: int) -> list[TemplateItem]:

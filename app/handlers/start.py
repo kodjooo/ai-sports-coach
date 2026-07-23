@@ -159,15 +159,21 @@ async def _build_persona_bg(tg_id: int, profile_summary: str | None, goal: str |
 
 async def _continue_after_persona(message: Message, tg_id: int, state: FSMContext) -> None:
     """Спрашиваем место/инвентарь только если их ещё нет."""
+    from app.core import catalog
     async with async_session() as db:
         user = await repo.get_user_by_tg(db, tg_id)
         equip = user.equipment
-    # Инвентарь берём из интервью; если не назвал — спрашиваем чеклистом (место не спрашиваем)
-    if not equip:
+    # Инвентарь берём из интервью; если не назвал ИЛИ текст не распознан в оборудование —
+    # спрашиваем чеклистом (место не спрашиваем). Иначе идём собирать остальной профиль.
+    no_kit = bool(equip) and any(
+        w in equip.lower() for w in ("нет", "без инвентар", "ничего", "только вес", "вес тела")
+    )
+    recognized = bool(equip) and (no_kit or bool(catalog.available_equipment(equip)))
+    if not recognized:
         await env_handlers.ask_equipment(message, state)
     else:
-        from app.handlers.schedule import start_schedule
-        await start_schedule(message, state)
+        # ВАЖНО: собрать остальной профиль (уровень/вес/рост/пол/возраст/…), а не прыгать сразу к расписанию
+        await _ask_next_profile(message, tg_id, state)
 
 
 @router.message(Onboarding.interview, F.text)

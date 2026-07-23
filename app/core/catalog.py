@@ -39,7 +39,6 @@ _EQUIP_TOKENS: list[tuple[str, str]] = [
     ("степ", "тумба"),
     ("trx", "TRX/петли"),
     ("петл", "TRX/петли"),
-    ("кольц", "TRX/петли"),
     ("канат", "канат"),
     ("сани", "сани"),
     ("салазк", "сани"),
@@ -194,8 +193,11 @@ def warmup_candidates(equipment: str | None, zones: list[str] | None = None) -> 
 
 
 def names_for_prompt(items: list[dict]) -> str:
-    """Компактный список для промпта: «Название (зона; нужное оборудование)»."""
+    """Компактный список для промпта: «Название (зона; оборудование; сложность N/5)»."""
     def eq(e: dict) -> str:
         r = e.get("equipment_req") or []
         return ", ".join(r) if r else "без инвентаря"
-    return "\n".join(f"- {e['name']} ({e['muscle_group']}; {eq(e)})" for e in items)
+    return "\n".join(
+        f"- {e['name']} ({e['muscle_group']}; {eq(e)}; сложность {e.get('difficulty', 3)}/5)"
+        for e in items
+    )

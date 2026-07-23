@@ -84,7 +84,7 @@
   "name": "Растяжка приводящих мышц (партнёрская)",
   "muscle_group": "приводящие бедра",
   "difficulty": 3,
-  "equipment": "без инвентаря",
+  "equipment": "партнёр",
   "technique": "Лягте на спину, поднимите ноги к потолку, партнёр держит ваши стопы или лодыжки, разведите ноги максимально широко. Пытайтесь свести ноги вместе в течение 10 и более секунд, преодолевая сопротивление партнёра, затем расслабьтесь, пока партнёр аккуратно разводит ноги дальше для растяжки.",
   "variations": [],
   "environment": "везде",
@@ -93,7 +93,9 @@
   "technique_en": "Lie on your back with your feet raised towards the ceiling. Have your partner hold your feet or ankles. Abduct your legs as far as you can. This will be your starting position. Attempt to squeeze your legs together for 10 or more seconds, while your partner prevents you from doing so. Now, relax the muscles in your legs as your partner pushes your feet apart, stretching as far as is comfortable for you. Be sure to let your partner know when the stretch is adequate to prevent overstretching or injury.",
   "kind": "растяжка",
   "howto": "Лягте на спину, поднимите прямые ноги к потолку, партнёр держит стопы или лодыжки и разводит ноги настолько широко, насколько комфортно без боли. Напрягите приводящие мышцы, пытаясь свести ноги вместе против сопротивления партнёра в течение 10 и более секунд, дыша ровно. Затем полностью расслабьтесь, и партнёр аккуратно, без рывков, разводит ноги немного дальше для растяжки. Частая ошибка — слишком резкое разведение партнёром или доведение до острой боли: движения должны быть плавными, а амплитуда — комфортной. Обязательно давайте партнёру обратную связь голосом.",
-  "equipment_req": []
+  "equipment_req": [
+   "партнёр"
+  ]
  },
  {
   "name": "Продвинутая мельница с гирей",
@@ -116,7 +118,7 @@
   "name": "Велосипед на полу",
   "muscle_group": "пресс",
   "difficulty": 2,
-  "equipment": "без инвентаря",
+  "equipment": "тренажёр",
   "technique": "Лягте на спину, прижав поясницу к полу, руки за головой, приподнимите плечи в положение скручивания и подтяните колени перпендикулярно полу. На выдохе тянитесь правым локтем к левому колену, одновременно выпрямляя правую ногу, как при езде на велосипеде, затем меняйте стороны поочерёдно.",
   "variations": [],
   "environment": "везде",
@@ -125,7 +127,9 @@
   "technique_en": "Lie flat on the floor with your lower back pressed to the ground. For this exercise, you will need to put your hands beside your head. Be careful however to not strain with the neck as you perform it. Now lift your shoulders into the crunch position. Bring knees up to where they are perpendicular to the floor, with your lower legs parallel to the floor. This will be your starting position. Now simultaneously, slowly go through a cycle pedal motion kicking forward with the right leg and bringing in the knee of the left leg. Bring your right elbow close to your left knee by crunching to the side, as you breathe out. Go back to the initial position as you breathe in. Crunch to the opposite side as you cycle your legs and bring closer your left elbow to your right knee and exhale. Continue alternating in this manner until all of the recommended repetitions for each side have been completed.",
   "kind": "силовое",
   "howto": "Лягте на спину, прижмите поясницу к полу, руки за головой, приподнимите плечи и подтяните колени перпендикулярно полу. На выдохе тянитесь правым локтем к левому колену, одновременно выпрямляя правую ногу по низкой траектории, затем плавно меняйте стороны, имитируя езду на велосипеде. Локоть должен тянуться к колену за счёт скручивания корпуса, а не за счёт тяги рукой по шее. Частая ошибка — отрыв поясницы от пола и потеря контакта, что снимает нагрузку с пресса: держите нижнюю часть спины прижатой. Не торопитесь — медленный темп с полной амплитудой эффективнее быстрого и рваного.",
-  "equipment_req": []
+  "equipment_req": [
+   "тренажёр"
+  ]
  },
  {
   "name": "Растяжка квадрицепса стоя на четвереньках",
@@ -446,7 +450,7 @@
   "name": "Тренажёр для имитации атласского камня",
   "muscle_group": "поясница",
   "difficulty": 3,
-  "equipment": "тренажёр",
+  "equipment": "спецснаряд",
   "technique": "Загрузите нужный вес на гриф-имитатор, обхватите его руками, стоя над ним и сгибаясь в тазобедренных суставах. Потяните вес вверх мимо колен, разгибая бёдра, затем «положите» его на бёдра, прижав к груди, и завершите разгибанием бёдер и коленей, поднимая вес максимально высоко.",
   "variations": [],
   "environment": "везде",
@@ -456,14 +460,14 @@
   "kind": "силовое",
   "howto": "Загрузите нужный вес, обхватите гриф-имитатор руками, стоя над ним с согнутыми в тазобедренных суставах ногами и прямой спиной. Потяните вес вверх мимо колен, разгибая бёдра, затем «положите» его на бёдра, прижав ближе к груди, и завершите движение разгибанием бёдер и коленей, поднимая вес максимально высоко. Спина остаётся нейтральной на всех фазах, особенно в начальной тяге с пола. Частая ошибка — округление поясницы при отрыве веса от пола: начинайте тягу ногами и бёдрами, а не спиной. Не форсируйте финальный подброс без контроля над весом.",
   "equipment_req": [
-   "тренажёр"
+   "спецснаряд"
   ]
  },
  {
   "name": "Подъём атласских камней",
   "muscle_group": "поясница",
   "difficulty": 4,
-  "equipment": "без инвентаря",
+  "equipment": "спецснаряд",
   "technique": "Обхватите камень руками между стоп, наклонившись и просунув пальцы под низ камня. Тяните камень к себе, отталкиваясь пятками, а когда он минует колени — «положите» его на бёдра, присев назад. Затем поднимите камень высоко на грудь, смените хват и встаньте, разгибая бёдра, чтобы забросить камень на платформу.",
   "variations": [],
   "environment": "везде",
@@ -472,7 +476,9 @@
   "technique_en": "Begin with the atlas stone between your feet. Bend at the hips to wrap your arms vertically around the Atlas Stone, attempting to get your fingers underneath the stone. Many stones will have a small flat portion on the bottom, which will make the stone easier to hold. Pulling the stone into your torso, drive through the back half of your feet to pull the stone from the ground. As the stone passes the knees, lap it by sitting backward, pulling the stone on top of your thighs. Sit low, getting the stone high onto your chest as you change your grip to reach over the stone. Stand, driving through with your hips. Close distance to the loading platform, and lean back, extending the hips to get the stone as high as possible.",
   "kind": "силовое",
   "howto": "Обхватите камень руками между стоп, наклонившись с прямой спиной и просунув пальцы под низ камня. Тяните камень к себе, отталкиваясь пятками, и когда он минует колени — «положите» его на бёдра, слегка присев назад для смены хвата. Затем поднимите камень высоко на грудь и встаньте, разгибая бёдра, чтобы забросить его на платформу. Частая ошибка — попытка поднять камень одной спиной без включения ног и бёдер: начинайте движение с толчка пятками. Держите камень максимально близко к телу на всех фазах подъёма.",
-  "equipment_req": []
+  "equipment_req": [
+   "спецснаряд"
+  ]
  },
  {
   "name": "Становая тяга с толстым грифом",
@@ -1171,7 +1177,7 @@
   "name": "Растяжка груди руками за головой (партнёрская)",
   "muscle_group": "грудь",
   "difficulty": 4,
-  "equipment": "без инвентаря",
+  "equipment": "партнёр",
   "technique": "Сядьте прямо, партнёр сзади. Заведите руки за голову, отводя локти назад максимально далеко, партнёр удерживает ваши локти — это исходное положение. Пытайтесь свести локти вперёд в течение 10 и более секунд, преодолевая сопротивление партнёра, затем расслабьтесь, позволяя партнёру аккуратно отвести локти дальше назад для растяжки.",
   "variations": [],
   "environment": "везде",
@@ -1180,7 +1186,9 @@
   "technique_en": "Sit upright on the floor with your partner behind you. Place your hands behind your hand, and push your elbows back as far as you can. Your partner should hold your elbows. This will be your starting position. Gently attempt to pull your elbows forward with your hands still behind your head for 10 or more seconds. Your partner should prevent your elbows from moving. Now, relax your muscles and have your partner gently pull the elbows back as far as it comfortable for you. Be sure to let your partner know when the stretch is adequate to prevent overstretching or injury.",
   "kind": "растяжка",
   "howto": "Сядьте прямо, партнёр располагается сзади. Заведите руки за голову, отводя локти назад максимально далеко без боли, партнёр аккуратно удерживает ваши локти — это исходное положение. Пытайтесь свести локти вперёд в течение 10 и более секунд, преодолевая сопротивление партнёра, дыша ровно. Затем полностью расслабьтесь, позволяя партнёру плавно, без рывков, отвести локти немного дальше назад для растяжки груди. Частая ошибка — слишком резкое или сильное отведение локтей партнёром: движения должны быть плавными и основанными на обратной связи от вас.",
-  "equipment_req": []
+  "equipment_req": [
+   "партнёр"
+  ]
  },
  {
   "name": "Отжимания от скамьи на трицепс",
@@ -1479,7 +1487,7 @@
   "name": "Езда на велосипеде",
   "muscle_group": "квадрицепс",
   "difficulty": 2,
-  "equipment": "без инвентаря",
+  "equipment": "тренажёр",
   "technique": "Сядьте на велосипед, отрегулировав седло под свой рост, и начинайте педалировать в комфортном темпе.",
   "variations": [],
   "environment": "везде",
@@ -1488,7 +1496,9 @@
   "technique_en": "To begin, seat yourself on the bike and adjust the seat to your height.",
   "kind": "кардио",
   "howto": "Держите спину слегка наклонённой вперёд, руки чуть согнуты в локтях, взгляд направлен вперёд по маршруту. Крутите педали плавно, полным круговым движением, а не рывками, дыхание держите ровным и синхронным с темпом. Частая ошибка новичков — сутулость и напряжение плеч: периодически расслабляйте плечи и держите корпус собранным. Вторая ошибка — слишком низкое седло, из-за чего колени работают в неполную амплитуду; отрегулируйте высоту так, чтобы нога почти полностью выпрямлялась в нижней точке.",
-  "equipment_req": []
+  "equipment_req": [
+   "тренажёр"
+  ]
  },
  {
   "name": "Велотренажёр",
@@ -2000,7 +2010,7 @@
   "name": "Разведение рук стоя «железный крест» на блоках",
   "muscle_group": "грудь",
   "difficulty": 2,
-  "equipment": "блок/трос",
+  "equipment": "кольца",
   "technique": "Установите блоки в верхнее положение и встаньте между ними, руки разведены в стороны в форме буквы «Т». Не сгибая локти, сведите руки вниз к бокам, задержитесь в пиковом сокращении и вернитесь в исходное положение.",
   "variations": [],
   "environment": "зал",
@@ -2010,7 +2020,7 @@
   "kind": "силовое",
   "howto": "Установите блоки вверху, встаньте между ними, руки разведены в стороны в форме буквы «Т». Не сгибая локти, сведите руки вниз к бокам, задержитесь в пиковом сокращении и вернитесь в исходное положение. Выдыхайте на сведении. Частая ошибка — сгибание локтей для облегчения движения; держите руки прямыми, изолируя работу дельтовидных и грудных мышц.",
   "equipment_req": [
-   "блок/трос"
+   "кольца"
   ]
  },
  {
@@ -2393,7 +2403,7 @@
   "name": "Становая тяга с автомобилем",
   "muscle_group": "квадрицепс",
   "difficulty": 3,
-  "equipment": "сани",
+  "equipment": "спецснаряд",
   "technique": "Встаньте между рукоятками рамы, стопы на ширине бёдер, наклонитесь и возьмитесь за рукоятки, сделайте вдох, опустите таз и согните колени. Толкаясь пятками, поднимите вес вверх, сводя лопатки и подавая таз вперёд, затем опустите вес обратно, сгибаясь в тазобедренных суставах.",
   "variations": [],
   "environment": "везде",
@@ -2403,7 +2413,7 @@
   "kind": "силовое",
   "howto": "Встаньте между рукоятками рамы, стопы на ширине бёдер, наклонитесь и возьмитесь за рукоятки, сделайте вдох, опустите таз и согните колени. Толкаясь пятками, поднимите вес вверх, сводя лопатки и подавая таз вперёд, затем опустите вес обратно, сгибаясь в тазобедренных суставах. Выдыхайте на подъёме. Частая ошибка — округление спины при старте тяги; фиксируйте прогиб в пояснице перед каждым повторением.",
   "equipment_req": [
-   "сани"
+   "спецснаряд"
   ]
  },
  {
@@ -3025,7 +3035,7 @@
   "name": "Колесо Конана",
   "muscle_group": "квадрицепс",
   "difficulty": 3,
-  "equipment": "гиря",
+  "equipment": "спецснаряд",
   "technique": "Возьмите груз хватом цурхер, прижав его в локтевом сгибе, стараясь не нагружать предплечья. Поднимите вес и, сохраняя прямую осанку, идите короткими быстрыми шагами по кругу, глядя вперёд и в сторону поворота, не задерживая дыхание, пока не завершите один или несколько полных оборотов.",
   "variations": [],
   "environment": "везде",
@@ -3035,7 +3045,7 @@
   "kind": "силовое",
   "howto": "Возьмите груз хватом цурхер — прижмите его в сгибе локтей к плечам, не нагружая предплечья и запястья. Выпрямитесь, сохраняя прямую осанку и напряжённый корпус, и идите короткими быстрыми шагами по кругу, глядя вперёд и слегка в сторону поворота. Дышите ровно, не задерживая дыхание на всей дистанции. Частая ошибка — сутулость и наклон корпуса вперёд под весом; держите грудь раскрытой и взгляд перед собой, чтобы избежать перегрузки поясницы.",
   "equipment_req": [
-   "гиря"
+   "спецснаряд"
   ]
  },
  {
@@ -5262,7 +5272,7 @@
   "name": "Растяжка бицепса бедра лёжа с ремнём",
   "muscle_group": "задняя поверхность бедра",
   "difficulty": 2,
-  "equipment": "без инвентаря",
+  "equipment": "кольца",
   "technique": "Лягте на спину, поднимите одну ногу так, чтобы бедро было под углом 90 градусов, вторая нога лежит на полу. Накиньте ремень или ленту на стопу — это исходное положение. Потяните за ремень, создавая натяжение в икре и задней поверхности бедра, удержите растяжку 10–30 секунд и повторите на другой ноге.",
   "variations": [],
   "environment": "везде",
@@ -5271,7 +5281,9 @@
   "technique_en": "Lie on your back with one leg extended above you, with the hip at ninety degrees. Keep the other leg flat on the floor. Loop a belt, band, or rope over the ball of your foot. This will be your starting position. Pull on the belt to create tension in the calves and hamstrings. Hold this stretch for 10-30 seconds, and repeat with the other leg.",
   "kind": "растяжка",
   "howto": "Лёжа на спине с поднятой ногой под углом 90 градусов, накиньте ремень на стопу и потяните его на себя, создавая натяжение в задней поверхности бедра и икре. Держите растяжку 10–30 секунд, дыша ровно, не задерживая дыхание от дискомфорта. Частая ошибка — сгибание колена рабочей ноги для облегчения растяжки: держите ногу прямой и тяните ремень постепенно, без резких рывков.",
-  "equipment_req": []
+  "equipment_req": [
+   "кольца"
+  ]
  },
  {
   "name": "Отжимания в стойке на руках у стены",
@@ -5885,7 +5897,7 @@
   "name": "Плиометрические отжимания на возвышении со ступенек",
   "muscle_group": "грудь",
   "difficulty": 2,
-  "equipment": "без инвентаря",
+  "equipment": "тумба",
   "technique": "Разместите две толстые платформы по бокам от плеч, поставьте стопы на невысокий бокс так, чтобы принять положение отжимания на возвышении с руками чуть внутри платформ — это исходное положение. Согните руки, опуская корпус, затем резко оттолкнитесь от пола, перенося руки на платформы и сгибая локти при приземлении для амортизации, после чего верните руки обратно на пол в исходное положение.",
   "variations": [],
   "environment": "везде",
@@ -5894,13 +5906,15 @@
   "technique_en": "For this drill you will need a box about 12 inches high, and two thick mats or aerobics steps. Place the steps just outside of your shoulders, and place your feet on top of the box so that you are in an incline pushup position, your hands just inside the steps. This will be your starting position. Begin by bending at the elbows to lower your body, quickly reversing position to push your body off of the ground. As you leave the ground, move your hands onto the steps, bending your elbows to absorb the impact. Repeat the motion to return to the starting position.",
   "kind": "плиометрика",
   "howto": "Держите тело прямой линией от головы до пяток, руки при толчке разгибайте резко и полностью, а при приземлении на платформы сразу сгибайте локти для амортизации. Дышите ровно: выдох на толчке, вдох при опускании. Частая ошибка новичков — прогиб в пояснице и провисание таза, из-за чего страдает поясница: держите пресс и ягодицы напряжёнными. Вторая ошибка — жёсткое приземление без амортизации локтями, что травмирует запястья и плечи, поэтому начинайте с невысокой платформы.",
-  "equipment_req": []
+  "equipment_req": [
+   "тумба"
+  ]
  },
  {
   "name": "Отжимания на возвышении средним хватом",
   "muscle_group": "грудь",
   "difficulty": 2,
-  "equipment": "без инвентаря",
+  "equipment": "тумба",
   "technique": "Встаньте лицом к перекладине тренажёра Смита или устойчивой платформе подходящей высоты, поставьте ладони на ширине плеч, отставьте стопы назад с прямым телом и руками — это исходное положение. Сгибая руки, опустите грудь к грифу, затем разогните локти, возвращаясь в исходное положение.",
   "variations": [],
   "environment": "везде",
@@ -5909,13 +5923,15 @@
   "technique_en": "Stand facing a Smith machine bar or sturdy elevated platform at an appropriate height. Place your hands on the bar, with your hands about shoulder width apart. Position your feet back from the bar with arms and body straight. This will be your starting position. Keeping your body straight, lower your chest to the bar by bending the arms. Return to the starting position by extending the elbows, pressing yourself back up.",
   "kind": "силовое",
   "howto": "Тело держите прямой линией без прогиба в пояснице, ладони строго под плечами, локти двигаются под углом около 45 градусов к корпусу. На опускании делайте вдох, на выжимании — выдох. Новички часто разводят локти в стороны на 90 градусов, перегружая плечевые суставы, и опускают только голову, а не грудь целиком — контролируйте полную амплитуду до касания грифа грудью.",
-  "equipment_req": []
+  "equipment_req": [
+   "тумба"
+  ]
  },
  {
   "name": "Отжимания на возвышении обратным хватом",
   "muscle_group": "грудь",
   "difficulty": 2,
-  "equipment": "без инвентаря",
+  "equipment": "тумба",
   "technique": "Встаньте лицом к перекладине тренажёра Смита или устойчивой платформе, положите ладони на гриф развёрнутыми вверх на ширине плеч, отставьте стопы назад с прямым телом и руками — это исходное положение. Сгибая руки, опустите грудь к грифу, затем разогните локти, отжимаясь обратно в исходное положение.",
   "variations": [],
   "environment": "везде",
@@ -5924,13 +5940,15 @@
   "technique_en": "Stand facing a Smith machine bar or sturdy elevated platform at an appropriate height. Place your hands on the bar palms up, with your hands about shoulder width apart. Position your feet back from the bar with arms and body straight. This will be your starting position. Keeping your body straight, lower your chest to the bar by bending the arms. Return to the starting position by extending the elbows, pressing yourself back up.",
   "kind": "силовое",
   "howto": "Разверните ладони вверх, локти прижимайте ближе к корпусу, тело сохраняйте прямым от плеч до стоп. Опускание — на вдохе, подъём — на выдохе, темп подконтрольный. Типичная ошибка — вращение в запястье из-за неудобного хвата: подберите высоту грифа под свою гибкость. Также следите, чтобы таз не проваливался вниз, включайте пресс на протяжении всего движения.",
-  "equipment_req": []
+  "equipment_req": [
+   "тумба"
+  ]
  },
  {
   "name": "Отжимания на возвышении широким хватом",
   "muscle_group": "грудь",
   "difficulty": 2,
-  "equipment": "без инвентаря",
+  "equipment": "тумба",
   "technique": "Встаньте лицом к перекладине тренажёра Смита или устойчивой платформе, поставьте ладони шире плеч, отставьте стопы назад так, чтобы руки были перпендикулярны корпусу — это исходное положение. Сгибая руки, опустите грудь к грифу, затем разогните локти, возвращаясь в исходное положение.",
   "variations": [],
   "environment": "везде",
@@ -5939,7 +5957,9 @@
   "technique_en": "Stand facing a Smith machine bar or sturdy elevated platform at an appropriate height. Place your hands on the bar, with your hands wider than shoulder width. Position your feet back from the bar with arms and body straight. Your arms should be perpendicular to the body. This will be your starting position. Keeping your body straight, lower your chest to the bar by bending the arms. Return to the starting position by extending the elbows, pressing yourself back up.",
   "kind": "силовое",
   "howto": "Поставьте ладони шире плеч, локти уходят в стороны под углом ближе к 90 градусам, корпус остаётся прямым без прогиба в пояснице. Опускайтесь на вдохе до касания грудью грифа, выжимайте на выдохе. Ошибка новичков — слишком широкая постановка рук, перегружающая плечи: не превышайте комфортную ширину. Не забывайте полностью разгибать локти вверху, но без жёсткого блока.",
-  "equipment_req": []
+  "equipment_req": [
+   "тумба"
+  ]
  },
  {
   "name": "Растяжка приводящих мышц бедра (среднего уровня)",
@@ -6030,7 +6050,7 @@
   "name": "Железный крест",
   "muscle_group": "плечи",
   "difficulty": 3,
-  "equipment": "TRX/петли",
+  "equipment": "кольца",
   "technique": "Упражнение выполняется на гимнастических кольцах с разведёнными в стороны прямыми руками, удерживая вес тела в статике. Выполняется опытными атлетами с хорошей силовой базой в верхней части тела.",
   "variations": [],
   "environment": "дом/зал",
@@ -6040,14 +6060,14 @@
   "kind": "силовое",
   "howto": "Руки удерживаются прямыми и разведёнными строго в стороны на уровне плеч, тело неподвижно и вертикально, дыхание спокойное и поверхностное во время удержания. Это элемент высочайшей сложности, требующий многолетней силовой подготовки плеч, груди и корпуса. Главная ошибка новичков — попытка выполнить упражнение без достаточной базы, что ведёт к травмам плечевых суставов: осваивайте его только под контролем тренера через промежуточные прогрессии.",
   "equipment_req": [
-   "TRX/петли"
+   "кольца"
   ]
  },
  {
   "name": "Растяжка \"железный крест\"",
   "muscle_group": "квадрицепс",
   "difficulty": 3,
-  "equipment": "без инвентаря",
+  "equipment": "кольца",
   "technique": "Лягте на живот, разведите руки в стороны ладонями вниз. Согните одну ногу в колене и заведите её через тело к противоположной руке, стараясь коснуться пола, затем верните ногу назад и сразу повторите другой ногой. Продолжайте чередовать 10-20 повторений.",
   "variations": [],
   "environment": "везде",
@@ -6056,7 +6076,9 @@
   "technique_en": "Lie face down on the floor, with your arms extended out to your side, palms pressed to the floor. This will be your starting position. To begin, flex one knee and bring that leg across the back of your body, attempting to touch it to the ground near the opposite hand. Promptly return the leg to the starting postion, and quickly repeat with the other leg. Continue alternating for 10-20 repetitions.",
   "kind": "растяжка",
   "howto": "Лягте на живот, руки разведены в стороны ладонями вниз для устойчивости, ногу заводите через тело плавно, стараясь достать до противоположной руки. Дышите ровно, не задерживая вдох в конечной точке. Ошибка новичков — резкие рывковые движения ногой, повышающие риск растяжения: двигайтесь медленно и подконтрольно. Также следите, чтобы плечи оставались прижатыми к полу.",
-  "equipment_req": []
+  "equipment_req": [
+   "кольца"
+  ]
  },
  {
   "name": "Изометрическое сжатие грудных мышц",
@@ -6238,7 +6260,7 @@
   "name": "Заброс кеги на платформу (стронгмен)",
   "muscle_group": "поясница",
   "difficulty": 3,
-  "equipment": "гиря, тумба",
+  "equipment": "спецснаряд",
   "technique": "Расставьте кеги на расстоянии 10-15 метров от платформы для загрузки. Наклоните ближнюю кегу, возьмитесь за противоположный край дна, поднимите к груди и как можно выше, затем как можно быстрее переместитесь к платформе и забросьте её, разгибая тазобедренные, коленные и голеностопные суставы. Вернитесь за следующей кегой и повторите до завершения подхода.",
   "variations": [],
   "environment": "везде",
@@ -6248,8 +6270,7 @@
   "kind": "силовое",
   "howto": "Наклоните кегу, возьмитесь за дно, поднимайте её к груди мощным разгибанием ног, спины и бёдер, затем забрасывайте на платформу тем же разгибательным движением. Дышите: вдох перед подъёмом, мощный выдох на забросе. Частая ошибка новичков — подъём за счёт округлённой спины: держите спину прямой и работайте ногами. Двигайтесь между кегами быстро, но контролируя технику каждого подъёма.",
   "equipment_req": [
-   "гиря",
-   "тумба"
+   "спецснаряд"
   ]
  },
  {
@@ -6511,7 +6532,7 @@
   "name": "Выход силой на кольцах с махом (кипинг)",
   "muscle_group": "широчайшие",
   "difficulty": 3,
-  "equipment": "турник",
+  "equipment": "кольца",
   "technique": "Возьмитесь за кольца ложным хватом. Сделайте мах ногами назад, затем резко верните их вперёд-вверх, одновременно подтягиваясь руками и переходя в положение над кольцами с локтями назад. Завершите движение, разгибая руки в отжимание, и аккуратно опуститесь вниз.",
   "variations": [],
   "environment": "везде",
@@ -6521,7 +6542,7 @@
   "kind": "силовое",
   "howto": "Возьмитесь за кольца ложным хватом, сделайте мах ногами назад, затем резко верните их вперёд-вверх, синхронно подтягиваясь руками к положению над кольцами с локтями назад. Дышите свободно, задерживая дыхание кратко в момент перехода. Частая ошибка новичков — попытка выполнить переход одной силой рук без использования маха: тренируйте технику маха отдельно перед связкой с подтягиванием. Завершайте движение плавным разгибанием рук в отжимание, а не резким рывком.",
   "equipment_req": [
-   "турник"
+   "кольца"
   ]
  },
  {
@@ -6867,7 +6888,7 @@
   "name": "Растяжка задней поверхности бедра с поднятой ногой",
   "muscle_group": "задняя поверхность бедра",
   "difficulty": 2,
-  "equipment": "без инвентаря",
+  "equipment": "кольца",
   "technique": "Лягте на спину, одну ногу согните, поставив стопу на пол для стабилизации спины. Поднимите другую ногу вверх, стараясь выпрямить колено стопой к потолку, затем медленно подтяните ногу к себе насколько возможно, и смените сторону.",
   "variations": [],
   "environment": "везде",
@@ -6876,7 +6897,9 @@
   "technique_en": "Lie flat on your back, bend one knee, and put that foot flat on the floor to stabilize your spine. Extend the other leg in the air. If you're tight, you wont be able to straighten it. That's okay. Extend the knee so that the sole of the lifted foot faces the ceiling (or as close as you can get it). Slowly straighten the legs as much as possible and then pull the leg toward your nose. Switch sides.",
   "kind": "растяжка",
   "howto": "Лёжа на спине с одной согнутой ногой для стабилизации спины, поднимите другую ногу вверх, стараясь выпрямить колено, затем медленно подтяните её к себе руками насколько возможно. Дышите глубоко, усиливая растяжение на выдохе. Частая ошибка новичков — сгибание колена поднятой ноги, снижающее эффективность растяжки: старайтесь держать ногу максимально прямой. Не отрывайте таз от пола во время подтягивания.",
-  "equipment_req": []
+  "equipment_req": [
+   "кольца"
+  ]
  },
  {
   "name": "Разгибание ног в тренажёре",
@@ -7114,7 +7137,7 @@
   "name": "Подъём бревна (стронгмен)",
   "muscle_group": "плечи",
   "difficulty": 3,
-  "equipment": "штанга",
+  "equipment": "спецснаряд",
   "technique": "Встаньте перед бревном, возьмитесь за рукоятки и забросьте его на грудь, разгибая бёдра и колени. Откиньте голову назад, создавая упор на груди, слегка присядьте и, используя импульс, разгибайте руки, выжимая бревно над головой, толкая голову вперёд на каждом повторении. Контролируйте опускание бревна на землю.",
   "variations": [],
   "environment": "везде",
@@ -7124,7 +7147,7 @@
   "kind": "силовое",
   "howto": "Возьмитесь за рукоятки и забросьте бревно на грудь разгибанием бёдер и колен, откиньте голову назад, создавая упор, слегка присядьте и, используя импульс, выжимайте бревно над головой, толкая голову вперёд. Вдох перед забросом, мощный выдох на жиме. Частая ошибка новичков — попытка выжать бревно без использования импульса ног: тренируйте связку присед-жим как единое движение. Опускайте бревно на землю контролируемо, а не бросайте резко.",
   "equipment_req": [
-   "штанга"
+   "спецснаряд"
   ]
  },
  {
@@ -7281,7 +7304,7 @@
   "name": "Растяжка приводящих мышц с помощью партнёра лёжа",
   "muscle_group": "приводящие бедра",
   "difficulty": 4,
-  "equipment": "без инвентаря",
+  "equipment": "партнёр",
   "technique": "Лягте на спину, согните колени, соедините стопы подошвами вместе, партнёр держит ваши колени. Попытайтесь свести колени вместе, пока партнёр удерживает их неподвижно, затем через 10-20 секунд расслабьтесь, позволяя партнёру мягко надавить на колени к полу, сообщая о достаточности растяжения.",
   "variations": [],
   "environment": "везде",
@@ -7290,7 +7313,9 @@
   "technique_en": "Lie on your back with your knees bent and the soles of the feet pressed together. Have your partner hold your knees. This will be your starting position. Attempt to squeeze your knees together, while your partner prevents any movement from occurring. After 10-20 seconds, relax your muscles as your partner gently pushes your knees towards the floor. Be sure to inform your helper when the stretch is adequate to prevent injury or overstretching.",
   "kind": "растяжка",
   "howto": "Лягте на спину, согните колени, соедините стопы подошвами вместе, попытайтесь свести колени вместе, пока партнёр удерживает их неподвижно 10-20 секунд, затем расслабьтесь, позволяя партнёру мягко надавить на колени к полу. Дышите глубоко на протяжении растяжки. Частая ошибка новичков — резкое давление партнёра без обратной связи: партнёр должен действовать плавно, ориентируясь на ваши ощущения. Сообщайте партнёру о достаточности растяжения, не терпя боль.",
-  "equipment_req": []
+  "equipment_req": [
+   "партнёр"
+  ]
  },
  {
   "name": "Сгибание рук на бицепс лёжа на блоке",
@@ -7385,7 +7410,7 @@
   "name": "Лёжа скручивание бедра с партнёром (PNF-растяжка)",
   "muscle_group": "отводящие бедра",
   "difficulty": 4,
-  "equipment": "без инвентаря",
+  "equipment": "партнёр",
   "technique": "Лягте на спину, вытяните ноги, затем согните одну ногу и заведите её поперёк тела, стараясь коснуться коленом пола — партнёр удерживает плечо и фиксирует согнутую ногу. Попытайтесь оторвать колено от пола, преодолевая сопротивление партнёра в течение 10-20 секунд, затем расслабьтесь, позволяя партнёру мягко надавить на колено к полу. Повторите на другую сторону.",
   "variations": [],
   "environment": "везде",
@@ -7394,7 +7419,9 @@
   "technique_en": "Lie on your back with your legs extended. Cross one leg over your body with the knee bent, attempting to touch the knee to the ground. Your partner should kneel beside you, holding your shoulder down with one hand and controlling the crossed leg with the other. this will be your starting position. Attempt to raise the bent knee off of the ground as your partner prevents any actual movement. After 10-20 seconds, relax the leg as your partner gently presses the knee towards the floor. Repeat with the other side.",
   "kind": "растяжка",
   "howto": "Лягте на спину, согните одну ногу и заведите её поперёк тела к полу, партнёр фиксирует плечо и колено. Напрягите мышцы, пытаясь оторвать колено от пола против сопротивления партнёра 10-20 секунд, затем расслабьтесь и позвольте партнёру мягко углубить растяжку. Частая ошибка — резкое давление партнёра сразу после напряжения; дайте мышце 2-3 секунды на расслабление. Дышите ровно и не задерживайте дыхание во время фазы сопротивления.",
-  "equipment_req": []
+  "equipment_req": [
+   "партнёр"
+  ]
  },
  {
   "name": "Разгибание рук с гантелями лёжа (французский жим лёжа)",
@@ -7452,7 +7479,7 @@
   "name": "Растяжка ягодиц лёжа с партнёром",
   "muscle_group": "ягодицы",
   "difficulty": 4,
-  "equipment": "без инвентаря",
+  "equipment": "партнёр",
   "technique": "Лягте на спину, партнёр стоит на коленях рядом. Согните одну ногу в бедре и разверните её так, чтобы стопа была над противоположным бедром, а партнёр удерживает колено и лодыжку. Попытайтесь толкнуть ногу к партнёру, преодолевая его сопротивление 10-20 секунд, затем расслабьтесь, позволяя партнёру мягко подтянуть ногу к груди.",
   "variations": [],
   "environment": "везде",
@@ -7461,13 +7488,15 @@
   "technique_en": "Lie on your back with your partner kneeling beside you. Flex the hip of one leg, raising it off of the floor. Rotate the leg so the foot is over the opposite hip, the lower leg perpendicular to your body. Your partner should hold the knee and ankle in place. This will be your starting position. Attempt to push your leg towards your partner, who should be preventing any actual movement of the leg. After 10-20 seconds, completely relax as your partner gently pushes the ankle and knee towards your chest. Be sure to inform your helper when the stretch is adequate to prevent injury or overstretching.",
   "kind": "растяжка",
   "howto": "Лягте на спину, согните одну ногу в бедре, разверните стопу над противоположным бедром, партнёр фиксирует колено и лодыжку. Толкайте ногу к партнёру, преодолевая сопротивление 10-20 секунд, затем расслабьтесь, позволяя партнёру мягко подтянуть ногу к груди. Частая ошибка — резкое усиление растяжки сразу после напряжения мышцы; дайте паузу перед углублением. Держите поясницу прижатой к полу, чтобы не перегружать её.",
-  "equipment_req": []
+  "equipment_req": [
+   "партнёр"
+  ]
  },
  {
   "name": "Растяжка задней поверхности бедра лёжа с партнёром",
   "muscle_group": "задняя поверхность бедра",
   "difficulty": 4,
-  "equipment": "без инвентаря",
+  "equipment": "партнёр",
   "technique": "Лягте на спину, вытяните ноги, партнёр стоит на коленях рядом. Поднимите одну ногу к потолку, партнёр удерживает лодыжку. Напрягите заднюю поверхность бедра, пытаясь согнуть колено против сопротивления партнёра 10-20 секунд, затем расслабьтесь, позволяя партнёру мягко подтянуть ногу к голове.",
   "variations": [],
   "environment": "везде",
@@ -7476,7 +7505,9 @@
   "technique_en": "Lie on your back with your legs extended. Your partner should be kneeling beside you. Raise one leg up towards the ceiling and have your partner hold the ankle. Your partner can use their shoulder to brace your leg if necessary. This will be your starting position. With your partner holding your leg in place, attempt to flex the knee, contracting the hamstrings for 10-20 seconds. Then relax your leg, allowing your partner to gently push the leg towards your head. Be sure to inform your helper when the stretch is adequate to prevent injury or overstretching. Switch sides once complete.",
   "kind": "растяжка",
   "howto": "Лягте на спину, поднимите одну ногу к потолку, партнёр удерживает лодыжку. Напрягите заднюю поверхность бедра, пытаясь согнуть колено против сопротивления партнёра 10-20 секунд, затем расслабьтесь и дайте партнёру мягко подтянуть ногу к голове. Частая ошибка — сгибание колена рабочей ноги во время растяжки, что снижает эффективность; держите ногу прямой. Вторая нога должна оставаться расслабленной и лежать на полу.",
-  "equipment_req": []
+  "equipment_req": [
+   "партнёр"
+  ]
  },
  {
   "name": "Подъём штанги на бицепс лёжа на высокой скамье",
@@ -7552,7 +7583,7 @@
   "name": "Растяжка квадрицепса лёжа на животе с партнёром",
   "muscle_group": "квадрицепс",
   "difficulty": 4,
-  "equipment": "без инвентаря",
+  "equipment": "партнёр",
   "technique": "Лягте на живот, партнёр стоит на коленях рядом. Согните одну ногу в колене, стараясь коснуться стопой ягодиц, партнёр удерживает колено и лодыжку. Попытайтесь разогнуть колено против сопротивления партнёра 10-20 секунд, затем расслабьтесь, позволяя партнёру мягко подтянуть стопу к ягодицам.",
   "variations": [],
   "environment": "везде",
@@ -7561,7 +7592,9 @@
   "technique_en": "Lay face down on the floor with your partner kneeling beside you. Flex one knee and raise that leg off the ground, attempting to touch your glutes with your foot. Your partner should hold the knee and ankle. This will be your starting position. Attempt to extend your knee while your partner prevents any actual movement. After 10-20 seconds, relax your muscles as your partner gently pushes the foot towards your glutes, further stretching the quadriceps and hip flexors. After 10-20 seconds, switch sides.",
   "kind": "растяжка",
   "howto": "Лягте на живот, согните одну ногу, стараясь коснуться стопой ягодиц, партнёр фиксирует колено и лодыжку. Попытайтесь разогнуть колено против сопротивления партнёра 10-20 секунд, затем расслабьтесь, позволяя партнёру мягко подтянуть стопу к ягодицам. Частая ошибка — прогиб поясницы во время растяжки; держите таз прижатым к полу. Не форсируйте амплитуду через боль — растяжение должно быть комфортным.",
-  "equipment_req": []
+  "equipment_req": [
+   "партнёр"
+  ]
  },
  {
   "name": "Разведение рук с гантелями назад лёжа на скамье",
@@ -7888,7 +7921,7 @@
   "name": "Мышечный подъём на кольцах (масл-ап)",
   "muscle_group": "широчайшие",
   "difficulty": 3,
-  "equipment": "турник",
+  "equipment": "кольца",
   "technique": "Возьмитесь за кольца ложным хватом и подтянитесь, опуская локти вниз к корпусу. В верхней точке подтягивания перекатите плечи вперёд, подводя кольца к подмышкам, а локти отправляя назад, затем разогните руки в локтях, завершая выход в упор. Опускайтесь вниз подконтрольно.",
   "variations": [],
   "environment": "везде",
@@ -7898,7 +7931,7 @@
   "kind": "силовое",
   "howto": "Возьмитесь за кольца ложным хватом и подтянитесь, опуская локти вниз к корпусу. В верхней точке перекатите плечи вперёд, подводя кольца к подмышкам, локти отправляя назад, затем разогните руки, завершая выход в упор, опускайтесь подконтрольно. Частая ошибка — попытка выполнить движение как обычное подтягивание без переката плеч; тренируйте переход отдельно на низких кольцах. Не спешите с весом тела на кольцах — сначала отработайте технику ложного хвата.",
   "equipment_req": [
-   "турник"
+   "кольца"
   ]
  },
  {
@@ -8735,7 +8768,7 @@
   "name": "Растяжка широчайшей над головой с партнёром",
   "muscle_group": "широчайшие",
   "difficulty": 4,
-  "equipment": "без инвентаря",
+  "equipment": "партнёр",
   "technique": "Сядьте прямо, партнёр стоит сзади. Поднимите руку вверх и согните локоть, стараясь коснуться рукой спины, партнёр удерживает трицепс и запястье. Попытайтесь прижать плечо к боку против сопротивления партнёра 10-20 секунд, затем расслабьтесь, позволяя партнёру усилить растяжку.",
   "variations": [],
   "environment": "везде",
@@ -8744,7 +8777,9 @@
   "technique_en": "Sit upright on the floor with your partner behind you. Raise one arm straight up, and flex the elbow, attempting to touch your hand to your back. Your parner should hold your tricep and wrist. This will be your starting position. Attempt to pull your upper arm to your side as your partner prevents you from doing actually doing so. After 10-20 seconds, relax the arm and allow your partner to further stretch the lat by applying gentle pressure to the tricep. Hold for 10-20 seconds, and then switch sides.",
   "kind": "растяжка",
   "howto": "Сядьте прямо, партнёр стоит сзади. Поднимите руку вверх и согните локоть, стараясь коснуться рукой спины, партнёр удерживает трицепс и запястье. Попытайтесь прижать плечо к боку против сопротивления партнёра 10-20 секунд, затем расслабьтесь, позволяя партнёру усилить растяжку. Частая ошибка — резкое усиление давления партнёром сразу после напряжения; дайте паузу на расслабление мышцы. Держите спину прямой, не сутультесь во время выполнения.",
-  "equipment_req": []
+  "equipment_req": [
+   "партнёр"
+  ]
  },
  {
   "name": "Бросок медбола об пол из-за головы",
@@ -8799,7 +8834,7 @@
   "name": "Растяжка трицепса над головой с партнёром",
   "muscle_group": "трицепс",
   "difficulty": 4,
-  "equipment": "без инвентаря",
+  "equipment": "партнёр",
   "technique": "Сядьте прямо, партнёр стоит сзади. Поднимите руку вверх и согните локоть, стараясь коснуться рукой спины, партнёр удерживает локоть и запястье. Попытайтесь выпрямить руку вверх против сопротивления партнёра 10-20 секунд, затем расслабьтесь, позволяя партнёру усилить растяжку трицепса.",
   "variations": [],
   "environment": "везде",
@@ -8808,7 +8843,9 @@
   "technique_en": "Sit upright on the floor with your partner behind you. Raise one arm straight up, and flex the elbow, attempting to touch your hand to your back. Your parner should hold your elbow and wrist. This will be your starting position. Attempt to extend the arm straight into the air as your partner prevents you from doing actually doing so. After 10-20 seconds, relax the arm and allow your partner to further stretch the tricep by applying gentle pressure to the wrist. Hold for 10-20 seconds, and then switch sides.",
   "kind": "растяжка",
   "howto": "Сядьте прямо с ровной спиной, поднимите руку вверх и согните локоть так, чтобы кисть тянулась к лопаткам, партнёр аккуратно фиксирует локоть и запястье. Напрягите трицепс, пытаясь выпрямить руку против удержания партнёра 10-20 секунд, затем расслабьтесь и позвольте плавно углубить растяжку. Ошибка новичков — резкие рывки партнёра: усиление должно быть медленным и без боли, дышите спокойно на протяжении всего удержания.",
-  "equipment_req": []
+  "equipment_req": [
+   "партнёр"
+  ]
  },
  {
   "name": "Жим на блоке против скручивания (Pallof press)",
@@ -9087,7 +9124,7 @@
   "name": "Скольжения на пятке для бицепса бедра",
   "muscle_group": "задняя поверхность бедра",
   "difficulty": 2,
-  "equipment": "без инвентаря",
+  "equipment": "кольца",
   "technique": "Лягте на спину на скользкой поверхности, положив полотенце под пятку одной ноги. Сгибайте эту ногу, подтягивая пятку скользящим движением к себе, а затем разгибайте колено, возвращаясь в исходное положение.",
   "variations": [],
   "environment": "везде",
@@ -9096,7 +9133,9 @@
   "technique_en": "For this movement a wooden floor or similar is needed. Lay on your back with your legs extended. Place a gym towel or a light weight underneath your heel. This will be your starting position. Begin the movement by flexing the knee, keeping your other leg straight. Continue bringing the heel closer to you, sliding it on the floor. At full knee flexion, reverse the movement to return to the starting position.",
   "kind": "силовое",
   "howto": "Лягте на спину на скользкой поверхности, положите полотенце под пятку рабочей ноги, вторая нога согнута для опоры. Сгибайте рабочую ногу, подтягивая пятку скользящим движением к себе, затем медленно разгибайте колено обратно. Ошибка новичков — провисание таза во время движения: держите ягодицы и пресс напряжёнными, чтобы таз оставался приподнятым и стабильным.",
-  "equipment_req": []
+  "equipment_req": [
+   "кольца"
+  ]
  },
  {
   "name": "Плие-приседания с гантелей",
@@ -10051,7 +10090,7 @@
   "name": "Отжимания на кольцах",
   "muscle_group": "трицепс",
   "difficulty": 3,
-  "equipment": "турник",
+  "equipment": "кольца",
   "technique": "Возьмитесь за кольца и запрыгните в исходное положение с полностью выпрямленными руками. Согните локти и опуститесь, пока плечи не окажутся ниже уровня локтей, избегая раскачивания, затем разогните руки обратно в исходное положение.",
   "variations": [],
   "environment": "везде",
@@ -10061,7 +10100,7 @@
   "kind": "силовое",
   "howto": "Возьмитесь за кольца и запрыгните в исходное положение с полностью выпрямленными руками, стабилизируя кольца мышцами кора. Согните локти и опуститесь, пока плечи не окажутся ниже уровня локтей, избегая раскачивания, затем разогните руки обратно. Частая ошибка новичков — нестабильные кольца из-за слабого контроля корпуса: держите пресс и плечи напряжёнными на протяжении всего движения.",
   "equipment_req": [
-   "турник"
+   "кольца"
   ]
  },
  {
@@ -10365,7 +10404,7 @@
   "name": "Сгибание ног сидя с резиновой лентой",
   "muscle_group": "задняя поверхность бедра",
   "difficulty": 2,
-  "equipment": "резинки, скамья",
+  "equipment": "кольца",
   "technique": "Закрепите ленту у пола и сядьте на скамью, зафиксировав петлю за лодыжками, ноги выпрямлены. Сгибайте колени, подтягивая стопы к скамье, задержитесь в конечной точке и медленно вернитесь в исходное положение.",
   "variations": [],
   "environment": "везде",
@@ -10375,8 +10414,7 @@
   "kind": "силовое",
   "howto": "Закрепите ленту у пола, сядьте на скамью с прямыми ногами, петля зафиксирована за лодыжками. Сгибайте колени, подтягивая стопы к скамье, задержитесь в конечной точке и медленно вернитесь обратно, дыша ровно. Частая ошибка новичков — рывковое выполнение движения; работайте медленно и подконтрольно как в фазе сгибания, так и разгибания. Держите бёдра и таз неподвижными, чтобы нагрузка шла именно на заднюю поверхность бедра.",
   "equipment_req": [
-   "резинки",
-   "скамья"
+   "кольца"
   ]
  },
  {
@@ -10473,7 +10511,7 @@
   "name": "Растяжка бицепса сидя с партнёром",
   "muscle_group": "бицепс",
   "difficulty": 4,
-  "equipment": "без инвентаря",
+  "equipment": "партнёр",
   "technique": "Сидя с согнутыми коленями, вытяните руки прямо назад, партнёр удерживает ваши запястья. Попытайтесь согнуть локти, преодолевая сопротивление партнёра 10-20 секунд, затем расслабьтесь, пока партнёр аккуратно растягивает бицепсы, потянув запястья вверх.",
   "variations": [],
   "environment": "везде",
@@ -10482,7 +10520,9 @@
   "technique_en": "Sit on the floor with your knees bent and your partner standing behind you. Extend your arms straight behind you with your palms facing each other. Your partner will hold your wrists for you. This will be the starting position. Attempt to flex your elbows, while your partner prevents any actual movement. After 10-20 seconds, relax your arms while your partner gently pulls your wrists up to stretch your biceps. Be sure to let your partner know when the stretch is appropriate to prevent injury or overstretching.",
   "kind": "растяжка",
   "howto": "Сидя с согнутыми коленями, вытяните руки прямо назад, партнёр удерживает ваши запястья. Попытайтесь согнуть локти, преодолевая сопротивление партнёра 10-20 секунд, затем расслабьтесь, пока партнёр аккуратно тянет запястья вверх, растягивая бицепсы. Частая ошибка — слишком резкое растягивающее усилие партнёра сразу после напряжения; давление должно нарастать плавно. Дышите свободно, не задерживая дыхание во время сопротивления.",
-  "equipment_req": []
+  "equipment_req": [
+   "партнёр"
+  ]
  },
  {
   "name": "Тяга нижнего блока к поясу сидя",
@@ -10661,7 +10701,7 @@
   "name": "Растяжка задней поверхности бедра сидя на полу",
   "muscle_group": "задняя поверхность бедра",
   "difficulty": 2,
-  "equipment": "без инвентаря",
+  "equipment": "кольца",
   "technique": "Сидя на коврике, вытяните одну ногу вперёд, вторую согните, прижав стопу к внутренней стороне бедра прямой ноги. Наклонитесь вперёд от бёдер, тянитесь к стопе до ощущения растяжения задней поверхности бедра, удержите 15 секунд и повторите на другую сторону.",
   "variations": [],
   "environment": "везде",
@@ -10670,13 +10710,15 @@
   "technique_en": "Sit on a mat with your right leg extended in front of you and your left leg bent with your foot against your right inner thigh. Lean forward from your hips and reach for your ankle until you feel a stretch in your hamstring. Hold for 15 seconds, then repeat for your other side.",
   "kind": "растяжка",
   "howto": "Сидя на коврике, вытяните одну ногу вперёд, вторую согните, прижав стопу к внутренней стороне бедра прямой ноги. Наклонитесь вперёд от бёдер, а не от поясницы, тянитесь к стопе до ощущения растяжения задней поверхности бедра, удержите 15 секунд и повторите на другую сторону. Частая ошибка новичков — округление спины при наклоне вместо наклона от тазобедренного сустава; держите спину прямой. Не тяните носок на себя слишком резко — это может вызвать судорогу.",
-  "equipment_req": []
+  "equipment_req": [
+   "кольца"
+  ]
  },
  {
   "name": "Растяжка передней дельты сидя с партнёром",
   "muscle_group": "плечи",
   "difficulty": 4,
-  "equipment": "без инвентаря",
+  "equipment": "партнёр",
   "technique": "Сидя с согнутыми ногами, вытяните руки в стороны ладонями вниз, партнёр удерживает ваши запястья сзади. Попытайтесь вывести руки вперёд, преодолевая сопротивление партнёра 10-20 секунд, затем расслабьтесь, пока партнёр аккуратно усиливает растяжку плеч и груди.",
   "variations": [],
   "environment": "везде",
@@ -10685,13 +10727,15 @@
   "technique_en": "Sit upright on the floor with your legs bent, your partner standing behind you. Stick your arms straight out to your sides, with your palms facing the ground. Attempt to move them as far behind you as possible, as your assistant holds your wrists. This will be your starting position. Keeping your elbows straight, attempt to move your arms to the front, with your partner gently restraining you to prevent any actual movement for 10-20 seconds. Now, relax your muscles and allow your partner to gently increase the stretch on the shoulders and chest. Hold for 10 to 20 seconds.",
   "kind": "растяжка",
   "howto": "Сидя с согнутыми ногами, вытяните руки в стороны ладонями вниз, партнёр удерживает ваши запястья сзади. Попытайтесь вывести руки вперёд, преодолевая сопротивление партнёра 10-20 секунд, затем расслабьтесь, пока партнёр аккуратно усиливает растяжку плеч и груди. Частая ошибка — слишком резкое усиление растяжки партнёром сразу после напряжения; давление должно нарастать плавно и постепенно. Сообщайте партнёру об уровне комфорта, чтобы избежать перерастяжения сустава.",
-  "equipment_req": []
+  "equipment_req": [
+   "партнёр"
+  ]
  },
  {
   "name": "Растяжка ягодиц сидя с партнёром",
   "muscle_group": "ягодицы",
   "difficulty": 4,
-  "equipment": "без инвентаря",
+  "equipment": "партнёр",
   "technique": "Сидя с согнутыми коленями, закиньте одну лодыжку на противоположное колено и наклонитесь вперёд, партнёр упирается руками в ваши плечи сзади. Попытайтесь отклонить корпус назад, преодолевая сопротивление партнёра 10-20 секунд, затем расслабьтесь, пока партнёр усиливает растяжку, аккуратно наклоняя вас вперёд.",
   "variations": [],
   "environment": "везде",
@@ -10700,7 +10744,9 @@
   "technique_en": "In a seated position with your knees bent, cross one ankle over the opposite knee. Your partner will stand behind you. Now, lean forward as your partner braces your shoulders with their hands. This will be your starting position. Attempt to push your torso back for 10-20 seconds, as your partner prevents any actual movement of your torso. Now relax your muscles as your partner increases the stretch by gently pushing your torso forward for 10-20 seconds.",
   "kind": "растяжка",
   "howto": "Сидя с согнутыми коленями, закиньте одну лодыжку на противоположное колено и наклонитесь вперёд, партнёр упирается руками в ваши плечи сзади. Попытайтесь отклонить корпус назад, преодолевая сопротивление партнёра 10-20 секунд, затем расслабьтесь, пока партнёр усиливает растяжку, аккуратно наклоняя вас вперёд. Частая ошибка новичков — задержка дыхания во время сопротивления; дышите ровно на всех этапах. Партнёр должен увеличивать давление плавно, ориентируясь на ощущения выполняющего упражнение.",
-  "equipment_req": []
+  "equipment_req": [
+   "партнёр"
+  ]
  },
  {
   "name": "Наклоны со штангой на плечах сидя на ящике",
@@ -10724,7 +10770,7 @@
   "name": "Растяжка задней поверхности бедра сидя с партнёром",
   "muscle_group": "задняя поверхность бедра",
   "difficulty": 4,
-  "equipment": "без инвентаря",
+  "equipment": "партнёр",
   "technique": "Сидя с вытянутыми ногами, наклонитесь вперёд, партнёр упирается руками в ваши плечи сзади. Попытайтесь отклонить корпус назад, преодолевая сопротивление партнёра 10-20 секунд, затем расслабьтесь, пока партнёр усиливает растяжку, аккуратно наклоняя вас вперёд.",
   "variations": [],
   "environment": "везде",
@@ -10733,13 +10779,15 @@
   "technique_en": "In a seated position with your legs extended, have your partner stand behind you. Now, lean forward as your partner braces your shoulders with their hands. This will be your starting position. Attempt to push your torso back for 10-20 seconds, as your partner prevents any actual movement of your torso. Now relax your muscles as your partner increases the stretch by gently pushing your torso forward for 10-20 seconds.",
   "kind": "растяжка",
   "howto": "Сидя с вытянутыми ногами, наклонитесь вперёд, партнёр упирается руками в ваши плечи сзади. Попытайтесь отклониться корпусом назад, преодолевая сопротивление партнёра 10-20 секунд, затем расслабьтесь, пока партнёр усиливает растяжку, аккуратно наклоняя вас вперёд. Частая ошибка — резкое надавливание партнёра без предварительного расслабления; переходите к усилению растяжки постепенно. Держите колени выпрямленными, но не переразгибайте их.",
-  "equipment_req": []
+  "equipment_req": [
+   "партнёр"
+  ]
  },
  {
   "name": "Растяжка бедра и голени сидя с петлёй",
   "muscle_group": "задняя поверхность бедра",
   "difficulty": 3,
-  "equipment": "резинки",
+  "equipment": "кольца",
   "technique": "Наденьте петлю из ремня, верёвки или ленты на стопу и сядьте с вытянутыми ногами. Слегка наклонившись вперёд, потяните петлю на себя, чтобы носок пошёл на вас, удержите 10-20 секунд и повторите на другую ногу.",
   "variations": [],
   "environment": "везде",
@@ -10749,7 +10797,7 @@
   "kind": "растяжка",
   "howto": "Наденьте петлю из ремня, верёвки или ленты на стопу и сядьте с вытянутыми ногами. Слегка наклонившись вперёд, потяните петлю на себя, чтобы носок пошёл на вас, удержите 10-20 секунд и повторите на другую ногу. Частая ошибка новичков — слишком сильное натяжение петли, вызывающее резкую боль; тяните плавно до ощущения умеренного растяжения. Держите колено прямым, но не напряжённым до предела.",
   "equipment_req": [
-   "резинки"
+   "кольца"
   ]
  },
  {
@@ -11598,7 +11646,7 @@
   "name": "Удары кувалдой по покрышке",
   "muscle_group": "пресс",
   "difficulty": 2,
-  "equipment": "без инвентаря",
+  "equipment": "спецснаряд",
   "technique": "Встаньте перед покрышкой в стойке с ногами врозь, возьмите кувалду хватом одна рука снизу, другая ближе к бойку. При замахе скользящая рука движется к бойку, при ударе — обратно вниз к нижней руке; бейте по покрышке с полной силой, контролируя отскок, и повторяйте с другой стороны.",
   "variations": [],
   "environment": "везде",
@@ -11607,7 +11655,9 @@
   "technique_en": "You will need a tire and a sledgehammer for this exercise. Stand in front of the tire about two feet away from it with a staggered stance. Grip the sledgehammer. If you are right handed, your left hand should be at the bottom of the handle, and your right hand should be choking up closer to the head. As you bring the sledge up, your right hand slides toward the head; as you swing down, your right hand will slide down to join your left hand. Slam it down as hard as you can against the tire. Control the bounce of the hammer off of the tire. Repeat on the other side.",
   "kind": "плиометрика",
   "howto": "Встаньте перед покрышкой в стойке с ногами врозь, возьмите кувалду хватом одна рука снизу, другая ближе к бойку. При замахе скользящая рука движется к бойку, при ударе — обратно вниз к нижней руке; бейте по покрышке с полной силой, контролируя отскок, и повторяйте с другой стороны. Частая ошибка — удар только руками без включения корпуса и ног; вкладывайте в удар вращение бёдер и корпуса. Следите за траекторией отскока кувалды, чтобы избежать травмы.",
-  "equipment_req": []
+  "equipment_req": [
+   "спецснаряд"
+  ]
  },
  {
   "name": "Жим на плечи в смите на наклонной скамье",
@@ -12737,7 +12787,7 @@
   "name": "Растяжка бицепса бедра и икры стоя с петлёй",
   "muscle_group": "задняя поверхность бедра",
   "difficulty": 2,
-  "equipment": "резинки",
+  "equipment": "кольца",
   "technique": "Оберните ремень или ленту вокруг стопы выставленной вперёд ноги, заднюю ногу согните, переднюю держите прямой. Приподнимите носок передней стопы, наклонитесь вперёд и потяните ремнём носок на себя, удерживая растяжение 10-20 секунд.",
   "variations": [],
   "environment": "везде",
@@ -12747,7 +12797,7 @@
   "kind": "растяжка",
   "howto": "Оберните ремень или ленту вокруг стопы выставленной вперёд ноги, заднюю ногу согните, переднюю держите прямой. Приподнимите носок передней стопы, наклонитесь вперёд и потяните ремнём носок на себя, удерживая растяжение 10-20 секунд. Частая ошибка — округление спины при наклоне, держите её прямой, наклоняясь от тазобедренного сустава. Не тяните ремень слишком резко, увеличивайте натяжение постепенно.",
   "equipment_req": [
-   "резинки"
+   "кольца"
   ]
  },
  {
@@ -13636,7 +13686,7 @@
   "name": "Переворот покрышки",
   "muscle_group": "квадрицепс",
   "difficulty": 3,
-  "equipment": "сани",
+  "equipment": "спецснаряд",
   "technique": "Возьмитесь за нижний край покрышки, отставив ноги назад, и упритесь в неё грудью. Разгибая бёдра, колени и голеностоп, поднимите покрышку вверх, а когда она достигнет угла 45 градусов, шагните вперёд, толкните её коленом и переставьте хват выше, чтобы завершить переворот.",
   "variations": [],
   "environment": "везде",
@@ -13646,7 +13696,7 @@
   "kind": "силовое",
   "howto": "Возьмитесь за нижний край покрышки, отставив ноги назад и упираясь грудью в неё, разгибайте бёдра, колени и голеностоп единым усилием. Когда покрышка достигнет угла 45 градусов, шагните вперёд и завершите переворот толчком колена. Дышите с усилием на подъёме. Частая ошибка — попытка поднять покрышку только руками и спиной без включения ног; используйте ноги как основной источник силы, спину держите прямой.",
   "equipment_req": [
-   "сани"
+   "спецснаряд"
   ]
  },
  {
@@ -14508,7 +14558,7 @@
   "name": "Ходьба с ярмом",
   "muscle_group": "квадрицепс",
   "difficulty": 3,
-  "equipment": "сани",
+  "equipment": "спецснаряд",
   "technique": "Разместите ярмо на верхней части спины и, глядя вперёд с прогнутой спиной, поднимите его, отталкиваясь пятками от пола. Идите быстрым коротким шагом, придерживая боковые стойки ярма для устойчивости, на заданную дистанцию.",
   "variations": [],
   "environment": "везде",
@@ -14518,7 +14568,7 @@
   "kind": "силовое",
   "howto": "Ярмо размещено на верхней части спины, спина прогнута, взгляд направлен вперёд. Идите быстрым коротким шагом, отталкиваясь пятками, придерживая боковые стойки для устойчивости. Дыхание ровное, синхронизировано с шагом. Частая ошибка — округление спины под весом ярма; держите корпус в напряжении и грудь развёрнутой на всей дистанции.",
   "equipment_req": [
-   "сани"
+   "спецснаряд"
   ]
  },
  {
