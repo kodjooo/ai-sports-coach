@@ -522,13 +522,11 @@ async def show_howto(cb: CallbackQuery, state: FSMContext) -> None:
     await cb.answer()
     data = await state.get_data()
     item = data["items"][data["cur_item"]]
-    # Готовое описание из каталога (быстро, без затрат). LLM — только фолбэк, если поля нет.
+    # Готовый разбор из каталога (ошибки + легче/тяжелее), быстро и без затрат.
     text = (item.get("howto") or "").strip()
     if not text:
-        async with typing(cb.message):
-            text = await llm.exercise_howto(item["name"], item.get("is_time", False))
-        text = text or item.get("technique") or "Техника не описана."
-    await cb.message.answer(f"<b>Как правильно — {item['name']}</b>\n{text}")
+        text = (item.get("technique") or "Нет подсказок по этому упражнению.").strip()
+    await cb.message.answer(f"<b>Ошибки и варианты — {item['name']}</b>\n{text}")
 
 
 @router.callback_query(Workout.in_progress, F.data == "wk:replace")

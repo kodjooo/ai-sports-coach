@@ -286,7 +286,7 @@ def reps_kb(target: int | None = None, is_time: bool = False) -> InlineKeyboardM
         rows.append([other_btn])
     rows.append(
         [
-            InlineKeyboardButton(text="❓ Как правильно?", callback_data="wk:howto"),
+            InlineKeyboardButton(text="⚠️ Ошибки и варианты", callback_data="wk:howto"),
             InlineKeyboardButton(text="🔄 Заменить", callback_data="wk:replace"),
         ]
     )

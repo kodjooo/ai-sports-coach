@@ -96,7 +96,8 @@ async def seed_exercises(db: AsyncSession) -> None:
                 if clean.get("technique"):
                     ex.technique = clean["technique"]
                 changed = True
-            if clean.get("howto") and not ex.howto:
+            # howto теперь = «ошибки + легче/тяжелее»; обновляем, если контент в каталоге изменился
+            if clean.get("howto") and ex.howto != clean["howto"]:
                 ex.howto = clean["howto"]
                 changed = True
     if changed:
