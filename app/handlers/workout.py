@@ -483,8 +483,14 @@ async def _finish_inner(target, state: FSMContext) -> None:
         summary = await progress.format_session_summary(db, session)
         # Прогрессия плана на следующий раз по ощущениям
         await repo.apply_progression(db, user.id, session.id)
-        # Оценка потраченных калорий
-        burned = await llm.estimate_burn(summary, float(user.weight_kg) if user.weight_kg else None, user.sex)
+        # Оценка калорий — по ФАКТУ. Нет записанных подходов (закончил на разминке) → 0 ккал.
+        logged = await repo.session_set_logs(db, session.id)
+        if logged:
+            burned = await llm.estimate_burn(
+                summary, float(user.weight_kg) if user.weight_kg else None, user.sex
+            )
+        else:
+            burned = 0
         session.kcal_burned = burned
         await db.commit()
         facts, memory = await ctx.build_context(db, user.id, summary)

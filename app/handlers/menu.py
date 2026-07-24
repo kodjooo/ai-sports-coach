@@ -129,9 +129,12 @@ async def _render_plan(user_id: int) -> str:
             items = await repo.list_template_items(db, tpl.id)
             rows = []
             for it in items:
+                if getattr(it, "phase", "main") != "main":
+                    continue  # разминка/заминка показываются отдельными разделами (текстом)
                 ex = await repo.get_exercise(db, it.exercise_id)
                 rest = f", отдых {it.rest_sec} сек" if it.rest_sec else ""
-                rows.append(f"{ex.name if ex else '?'} {it.target_sets}×{it.target_reps}{rest}")
+                sr = f" {it.target_sets}×{it.target_reps}" if it.target_sets and it.target_reps else ""
+                rows.append(f"{ex.name if ex else '?'}{sr}{rest}")
             block = [f"\n<b>{tpl.label}</b> ({day}):"]
             if tpl.warmup:
                 block.append(f"\n🔥 <b>Разминка</b>\n{tpl.warmup}")

@@ -278,7 +278,12 @@ def reps_kb(target: int | None = None, is_time: bool = False) -> InlineKeyboardM
         ]
     # Разбиваем на строки по 4 кнопки
     rows = [row[i : i + 4] for i in range(0, len(row), 4)]
-    rows.append([InlineKeyboardButton(text="✏️ Другое число", callback_data="wk:manual")])
+    other_btn = InlineKeyboardButton(text="✏️ Другое", callback_data="wk:manual")
+    # Компактно: подсаживаем «Другое» к последнему ряду цифр, если там есть место (<4)
+    if rows and len(rows[-1]) < 4:
+        rows[-1].append(other_btn)
+    else:
+        rows.append([other_btn])
     rows.append(
         [
             InlineKeyboardButton(text="❓ Как правильно?", callback_data="wk:howto"),
