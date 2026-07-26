@@ -486,7 +486,7 @@ async def generate_plan(
             )
             data = json.loads(resp.choices[0].message.content or "{}")
             last_raw = data.get("workouts", []) or []
-            plan = _sanitize_plan(last_raw, main_pool, warm_pool)
+            plan = _sanitize_plan(last_raw, main_pool, warm_pool, per_day=per_day)
             if plan:
                 names = [e["name"] for e in plan[0].get("exercises", [])]
                 logger.info(
@@ -512,11 +512,17 @@ async def generate_plan(
     return []
 
 
-def _sanitize_plan(workouts: list[dict], main_pool: list[dict], warm_pool: list[dict]) -> list[dict]:
+def _sanitize_plan(workouts: list[dict], main_pool: list[dict], warm_pool: list[dict],
+                   per_day: int = 0) -> list[dict]:
     """Сверяет названия с ПАЛИТРОЙ (не всем каталогом), отбрасывает неизвестные, проставляет фазы.
 
     Сверка идёт только среди отфильтрованных под клиента упражнений — чтобы fuzzy не подтянул
     вариант с недоступным инвентарём.
+
+    Если per_day>0, дни, где модель вернула меньше упражнений (часть названий не распозналась),
+    добиваются до per_day — НО только упражнениями из мышечных групп, которые модель уже
+    сама выбрала где-то в этом плане. Так мы не втащим нагрузку на проблемную зону
+    (напр. квадрицепс при боли в колене), если модель её осознанно не использовала.
     """
     clean: list[dict] = []
     for w in workouts:
@@ -558,6 +564,32 @@ def _sanitize_plan(workouts: list[dict], main_pool: list[dict], warm_pool: list[
             "cooldown": _resolve_names(w.get("cooldown")),
             "exercises": exercises,
         })
+
+    # Добивка недобитых дней до per_day — только из групп, одобренных моделью в этом плане.
+    if per_day and clean:
+        approved_groups = {e["muscle_group"] for d in clean for e in d["exercises"]}
+        # Кандидаты на добивку: упражнения палитры из одобренных групп.
+        fill_pool = [e for e in main_pool if e.get("muscle_group") in approved_groups]
+        for day in clean:
+            have = {e["name"] for e in day["exercises"]}
+            if len(day["exercises"]) >= per_day:
+                continue
+            # Сначала группы, которых сегодня ещё нет (разнообразие), потом остальные.
+            day_groups = {e["muscle_group"] for e in day["exercises"]}
+            ranked = sorted(
+                (e for e in fill_pool if e["name"] not in have),
+                key=lambda e: (e.get("muscle_group") in day_groups, e["name"]),
+            )
+            for e in ranked:
+                if len(day["exercises"]) >= per_day:
+                    break
+                day["exercises"].append({
+                    "name": e["name"], "muscle_group": e["muscle_group"],
+                    "technique": e["technique"], "environment": e["environment"],
+                    "equipment": e["equipment"], "gif": e["gif"],
+                    "sets": 3, "reps": 12, "rest_sec": 60,
+                })
+                have.add(e["name"])
     return clean
 
 
