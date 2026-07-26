@@ -412,6 +412,7 @@ async def generate_plan(
     sex: str | None = None,
     level: str | None = None,
     per_day: int = 4,
+    model: str | None = None,
 ) -> list[dict]:
     """Генерирует персональный план тренировок под профиль, пол, уровень, среду и дни.
 
@@ -477,7 +478,7 @@ async def generate_plan(
     for attempt in range(2):
         try:
             resp = await usage.complete(client, "generate_plan",
-                model=settings.openai_model_plan,
+                model=model or settings.openai_model_plan,
                 reasoning_effort=settings.openai_reasoning_effort_plan,
                 response_format={"type": "json_object"},
                 messages=[
