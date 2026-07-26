@@ -179,13 +179,16 @@ _LEVEL_MAX_DIFF = {"новичок": 3, "средний": 4, "продвинут
 def main_candidates(equipment: str | None, level: str | None = None, limit: int = 130) -> list[dict]:
     """Палитра основных упражнений по доступному инвентарю и УРОВНЮ (сложность ≤ потолка уровня)."""
     allowed = available_equipment(equipment)
-    max_diff = _LEVEL_MAX_DIFF.get((level or "").strip().lower(), 5)
+    lvl = (level or "").strip().lower()
+    max_diff = _LEVEL_MAX_DIFF.get(lvl, 5)
+    # Новичку не даём плиометрику (прыжки/ударная нагрузка — травмоопасно, особенно при боли в суставах)
+    kinds = ("силовое", "кардио") if lvl == "новичок" else ("силовое", "плиометрика", "кардио")
     def _solo(e: dict) -> bool:  # без партнёра (одиночке в зале партнёра нет)
         n = e.get("name", "").lower()
         return "партн" not in n and "partner" not in n
     pool = [
         e for e in ALL
-        if e.get("kind") in ("силовое", "плиометрика", "кардио")
+        if e.get("kind") in kinds
         and (e.get("difficulty") or 3) <= max_diff
         and _solo(e)
         and _feasible(e, allowed)
@@ -194,7 +197,7 @@ def main_candidates(equipment: str | None, level: str | None = None, limit: int 
     if len(pool) < 20 and max_diff < 5:
         pool = [
             e for e in ALL
-            if e.get("kind") in ("силовое", "плиометрика", "кардио")
+            if e.get("kind") in kinds
             and (e.get("difficulty") or 3) <= max_diff + 1
             and _feasible(e, allowed)
         ]
