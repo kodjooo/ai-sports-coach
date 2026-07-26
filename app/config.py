@@ -22,9 +22,10 @@ class Settings(BaseSettings):
     openai_reasoning_effort: str = "low"
     # Режим для онбординга (low экономит reasoning-токены при том же качестве)
     openai_reasoning_effort_onboarding: str = "low"
-    # Режим для генерации плана: medium — редкая операция раз на пользователя, зато модель
-    # точнее следует формату (ровно per_day упражнений, все дни, дословные названия из палитры)
-    openai_reasoning_effort_plan: str = "medium"
+    # Режим для генерации плана: low. Надёжность формата (все дни, ровно per_day) держит код
+    # (_sanitize_plan), а не reasoning — прямое сравнение low vs medium показало, что medium
+    # выигрыша по балансу не даёт, но стоит дороже/медленнее. Держим low ради экономии.
+    openai_reasoning_effort_plan: str = "low"
 
     # PostgreSQL
     postgres_user: str = "coach"
