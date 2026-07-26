@@ -550,11 +550,31 @@ async def _finish_inner(target, state: FSMContext) -> None:
         summary = await progress.format_session_summary(db, session)
         # Прогрессия плана на следующий раз по ощущениям
         await repo.apply_progression(db, user.id, session.id)
-        # Оценка калорий — по ФАКТУ. Нет записанных подходов (закончил на разминке) → 0 ккал.
+
+        # Оценка калорий — по ФАКТУ, с учётом ВСЕХ фаз (разминка + основная + заминка) и длительности.
         logged = await repo.session_set_logs(db, session.id)
-        if logged:
+        warm_items = data.get("warm_items") or []
+        cool_items = data.get("cool_items") or []
+        phase = data.get("phase_now")
+        warm_done = len(warm_items) if phase in ("main", "cooldown") else (
+            data.get("warm_idx", 0) + 1 if phase == "warmup" else 0
+        )
+        cool_done = (data.get("cool_idx", 0) + 1) if phase == "cooldown" else 0
+        dur_min = None
+        if session.started_at and session.finished_at:
+            dur_min = max(1, round((session.finished_at - session.started_at).total_seconds() / 60))
+        extra = []
+        if warm_done:
+            extra.append(f"разминка: {warm_done} движений")
+        if cool_done:
+            extra.append(f"заминка: {cool_done} движений (растяжка)")
+        if dur_min:
+            extra.append(f"общая длительность ~{dur_min} мин")
+        burn_summary = summary + (" | " + "; ".join(extra) if extra else "")
+        # Активность была, если сделаны подходы ИЛИ хотя бы разминка
+        if logged or warm_done:
             burned = await llm.estimate_burn(
-                summary, float(user.weight_kg) if user.weight_kg else None, user.sex
+                burn_summary, float(user.weight_kg) if user.weight_kg else None, user.sex
             )
         else:
             burned = 0
