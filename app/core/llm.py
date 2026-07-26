@@ -477,7 +477,7 @@ async def generate_plan(
         try:
             resp = await usage.complete(client, "generate_plan",
                 model=settings.openai_model_plan,
-                reasoning_effort=settings.openai_reasoning_effort_onboarding,
+                reasoning_effort=settings.openai_reasoning_effort_plan,
                 response_format={"type": "json_object"},
                 messages=[
                     {"role": "system", "content": system_content},
@@ -486,7 +486,8 @@ async def generate_plan(
             )
             data = json.loads(resp.choices[0].message.content or "{}")
             last_raw = data.get("workouts", []) or []
-            plan = _sanitize_plan(last_raw, main_pool, warm_pool, per_day=per_day)
+            plan = _sanitize_plan(last_raw, main_pool, warm_pool, per_day=per_day,
+                                  weekdays=weekdays)
             if plan:
                 names = [e["name"] for e in plan[0].get("exercises", [])]
                 logger.info(
@@ -513,7 +514,7 @@ async def generate_plan(
 
 
 def _sanitize_plan(workouts: list[dict], main_pool: list[dict], warm_pool: list[dict],
-                   per_day: int = 0) -> list[dict]:
+                   per_day: int = 0, weekdays: list[int] | None = None) -> list[dict]:
     """Сверяет названия с ПАЛИТРОЙ (не всем каталогом), отбрасывает неизвестные, проставляет фазы.
 
     Сверка идёт только среди отфильтрованных под клиента упражнений — чтобы fuzzy не подтянул
@@ -565,16 +566,25 @@ def _sanitize_plan(workouts: list[dict], main_pool: list[dict], warm_pool: list[
             "exercises": exercises,
         })
 
-    # Добивка недобитых дней до per_day — только из групп, одобренных моделью в этом плане.
+    # Гарантия всех запрошенных дней: модель (особенно на low reasoning) иногда возвращает
+    # день с названиями вне палитры — он выпадал целиком, и в плане становилось меньше дней.
+    # Восстанавливаем недостающие weekday пустыми каркасами, дальше их добьёт backfill.
+    if weekdays:
+        present = {d["weekday"] for d in clean}
+        for wd in weekdays:
+            if wd not in present:
+                clean.append({"weekday": wd, "warmup": [], "cooldown": [], "exercises": []})
+        clean.sort(key=lambda d: weekdays.index(d["weekday"]) if d["weekday"] in weekdays else 99)
+
+    # Добивка дней до per_day — только из групп, одобренных моделью в этом плане (не втащим
+    # нагрузку на проблемную зону). Если план пуст совсем — добивать не из чего, вернём как есть.
     if per_day and clean:
         approved_groups = {e["muscle_group"] for d in clean for e in d["exercises"]}
-        # Кандидаты на добивку: упражнения палитры из одобренных групп.
         fill_pool = [e for e in main_pool if e.get("muscle_group") in approved_groups]
+        # Разминка/заминка для восстановленных дней — берём из уже заполненного дня.
+        donor = next((d for d in clean if d["warmup"] or d["cooldown"]), None)
         for day in clean:
             have = {e["name"] for e in day["exercises"]}
-            if len(day["exercises"]) >= per_day:
-                continue
-            # Сначала группы, которых сегодня ещё нет (разнообразие), потом остальные.
             day_groups = {e["muscle_group"] for e in day["exercises"]}
             ranked = sorted(
                 (e for e in fill_pool if e["name"] not in have),
@@ -590,6 +600,10 @@ def _sanitize_plan(workouts: list[dict], main_pool: list[dict], warm_pool: list[
                     "sets": 3, "reps": 12, "rest_sec": 60,
                 })
                 have.add(e["name"])
+            if not day["warmup"] and donor:
+                day["warmup"] = list(donor["warmup"])
+            if not day["cooldown"] and donor:
+                day["cooldown"] = list(donor["cooldown"])
     return clean
 
 
