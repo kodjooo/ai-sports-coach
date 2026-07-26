@@ -418,10 +418,10 @@ async def generate_plan(
     Возвращает workouts: [{weekday, warmup:[name], cooldown:[name],
     exercises:[{name,sets,reps,rest_sec}]}] — названия строго из каталога.
     """
-    # Фильтруем ТОЛЬКО по доступному инвентарю (без привязки к месту).
-    # Палитру держим компактной — большой промпт замедляет ответ и ловит таймауты.
-    main_pool = catalog.main_candidates(equipment, limit=90)
-    warm_pool = catalog.warmup_candidates(equipment)[:60]
+    # Фильтруем ТОЛЬКО по доступному инвентарю (без привязки к месту). Палитру не режем —
+    # это влияет на качество/разнообразие; таймаут решаем отдельно (ниже).
+    main_pool = catalog.main_candidates(equipment)
+    warm_pool = catalog.warmup_candidates(equipment)
     if not main_pool:
         logger.error("generate_plan: пустая палитра каталога (инвентарь=%s)", equipment)
         return []
@@ -466,7 +466,7 @@ async def generate_plan(
     # До 2 попыток: LLM изредка возвращает названия вне каталога — тогда план пуст, пробуем ещё раз.
     # ВАЖНО: без SDK-ретраев и с коротким таймаутом на вызов, иначе на таймаут запрос
     # ретраится сам (до 3×) и пользователь висит на «печатает…» минутами.
-    client = get_client().with_options(timeout=55.0, max_retries=0)
+    client = get_client().with_options(timeout=75.0, max_retries=0)
     last_raw: list = []
     for attempt in range(2):
         try:
