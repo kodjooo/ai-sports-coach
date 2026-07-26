@@ -321,11 +321,35 @@ async def choose_effort(cb: CallbackQuery, state: FSMContext) -> None:
     await _advance(cb.message, state)
 
 
+def _cooldown_for_zones(zones: list[str], n: int = 5) -> list[dict]:
+    """Подбирает движения заминки (растяжки каталога) под фактические зоны дня."""
+    from app.core import catalog
+    flat = [z.strip() for zg in zones for z in (zg or "").split("/") if z.strip()]
+    pool = catalog.warmup_candidates("Всё оборудование", zones=flat)  # растяжки — вес тела
+    out, seen = [], set()
+    for e in pool:
+        if e["name"] in seen:
+            continue
+        seen.add(e["name"])
+        out.append({"name": e["name"], "muscle_group": e["muscle_group"],
+                    "technique": e["technique"], "gif": e["gif"]})
+        if len(out) >= n:
+            break
+    return out
+
+
 async def _show_cooldown(target, state: FSMContext) -> None:
     """Заминка: пошагово движения каталога с GIF; если их нет — старый текст."""
     await state.update_data(phase_now="cooldown")  # дальше «завершить» не переспрашивает
     data = await state.get_data()
     cool_items = data.get("cool_items") or []
+    # Если во время тренировки меняли упражнения — пересобираем заминку под фактические мышцы
+    if data.get("replaced"):
+        zones = [it.get("muscle_group", "") for it in data.get("items", [])]
+        rebuilt = _cooldown_for_zones(zones)
+        if rebuilt:
+            cool_items = rebuilt
+            await state.update_data(cool_items=cool_items)
     if cool_items:
         await state.update_data(cool_idx=0)
         await target.answer("🧘 Финишная прямая — заминка по одному движению.")
@@ -681,8 +705,9 @@ async def replace_apply(cb: CallbackQuery, state: FSMContext) -> None:
         note = f"Заменили упражнение в плане навсегда на {ex.name}"
 
     items[i] = item
-    # Новое упражнение начинаем с 1-го подхода → покажется карточка с GIF и описанием
-    await state.update_data(items=items, suggest=None, cur_set=1, pending_reps=None)
+    # Новое упражнение начинаем с 1-го подхода → покажется карточка с GIF и описанием.
+    # Флаг replaced → заминку в конце пересоберём под фактические мышцы.
+    await state.update_data(items=items, suggest=None, cur_set=1, pending_reps=None, replaced=True)
     await vector.add_memory(
         user.id, f"change-{cb.id}", note, {"type": "change", "date": str(_today())}
     )
