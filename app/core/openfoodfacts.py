@@ -8,12 +8,32 @@ from __future__ import annotations
 
 import asyncio
 import logging
+import statistics
+import time
 
 import aiohttp
 
 from app.core import usda
 
 logger = logging.getLogger(__name__)
+
+# Кэш кандидатов из баз: (источник, query) -> (срок годности, список кандидатов).
+# Один и тот же запрос в пределах суток даёт одинаковый результат → калории не «плавают»
+# от прогона к прогону из-за флапа выдачи OFF/USDA, плюс меньше сетевых вызовов.
+_CAND_CACHE: dict[tuple[str, str], tuple[float, list[dict]]] = {}
+_CACHE_TTL = 86400  # сутки
+
+
+async def _cached(source: str, fn, session, query: str) -> list[dict]:
+    key = (source, (query or "").lower().strip())
+    now = time.time()
+    hit = _CAND_CACHE.get(key)
+    if hit and hit[0] > now:
+        return hit[1]
+    val = await fn(session, query)
+    if val:  # кэшируем только непустую выдачу (пустую могло дать сетевым сбоем)
+        _CAND_CACHE[key] = (now + _CACHE_TTL, val)
+    return val
 
 _SEARCH_URL = "https://world.openfoodfacts.org/cgi/search.pl"
 _HEADERS = {
@@ -71,12 +91,30 @@ async def _candidates(session: aiohttp.ClientSession, query: str, n: int = 6) ->
 
 
 def _pick(candidates: list[dict], model_per100_kcal: float) -> dict | None:
-    """Выбирает кандидата, чья калорийность ближе всего к оценке модели,
-    и только если он в разумном коридоре (0.6–1.6× от оценки)."""
+    """Выбирает калорийность на 100 г по МЕДИАНЕ кандидатов из базы (а не «ближайшего к
+    оценке модели» — это давало порочный круг и шум прогон-к-прогону).
+
+    Шаги: отсекаем выбросы и «light/zero»-продукты → берём медиану → возвращаем кандидата,
+    ближайшего к медиане (ради согласованных Б/Ж/У). Доверяем базе только в АСИММЕТРИЧНОМ
+    коридоре вокруг оценки модели: снизу жёстко (0.75×, защита от занижения калорий —
+    в OFF полно обезжиренных версий), сверху мягче (1.6×)."""
     if not candidates or model_per100_kcal <= 0:
         return None
-    best = min(candidates, key=lambda c: abs(c["kcal"] - model_per100_kcal))
-    if 0.6 * model_per100_kcal <= best["kcal"] <= 1.6 * model_per100_kcal:
+    kcals = [c["kcal"] for c in candidates if c.get("kcal", 0) > 0]
+    if not kcals:
+        return None
+    med = statistics.median(kcals)
+    # выбросы вне [0.5×; 2×] медианы + «light/zero» (меньше 20 ккал там, где ждём заметную плотность)
+    trimmed = [
+        c for c in candidates
+        if 0.5 * med <= c["kcal"] <= 2.0 * med
+        and not (c["kcal"] < 20 and model_per100_kcal >= 40)
+    ]
+    if not trimmed:
+        trimmed = candidates
+    med_k = statistics.median([c["kcal"] for c in trimmed])
+    best = min(trimmed, key=lambda c: abs(c["kcal"] - med_k))
+    if 0.75 * model_per100_kcal <= best["kcal"] <= 1.6 * model_per100_kcal:
         return best
     return None
 
@@ -105,10 +143,10 @@ async def refine(analysis: dict) -> dict:
             source = None
             per100 = None
             if usda.enabled():
-                per100 = _pick(await usda.candidates(session, query), model_per100)
+                per100 = _pick(await _cached("usda", usda.candidates, session, query), model_per100)
                 source = "usda" if per100 else None
             if not per100:
-                per100 = _pick(await _candidates(session, query), model_per100)
+                per100 = _pick(await _cached("off", _candidates, session, query), model_per100)
                 source = "off" if per100 else None
             if not per100:
                 continue  # нет надёжного совпадения — оставляем оценку модели
