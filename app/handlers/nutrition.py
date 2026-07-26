@@ -27,9 +27,27 @@ def _confirm_kb(draft_id: str) -> InlineKeyboardMarkup:
                 InlineKeyboardButton(text="✅ Сохранить", callback_data=f"meal:save:{draft_id}"),
                 InlineKeyboardButton(text="✏️ Исправить", callback_data=f"meal:edit:{draft_id}"),
             ],
+            [  # съел не всё — записать долю порции
+                InlineKeyboardButton(text="½ порции", callback_data=f"meal:frac:{draft_id}:1:2"),
+                InlineKeyboardButton(text="⅓", callback_data=f"meal:frac:{draft_id}:1:3"),
+                InlineKeyboardButton(text="¼", callback_data=f"meal:frac:{draft_id}:1:4"),
+            ],
             [InlineKeyboardButton(text="↩️ Отмена", callback_data=f"meal:cancel:{draft_id}")],
         ]
     )
+
+
+def _scale_analysis(analysis: dict, factor: float) -> dict:
+    """Масштабирует граммы и КБЖУ на долю (для «съел половину/треть/четверть»)."""
+    a = dict(analysis)
+    keys = ("grams", "kcal", "protein", "fat", "carbs")
+    a["items"] = [
+        {**it, **{k: round((it.get(k) or 0) * factor, 1) for k in keys if k in it}}
+        for it in analysis.get("items", [])
+    ]
+    t = analysis.get("total", {})
+    a["total"] = {**t, **{k: round((t.get(k) or 0) * factor) for k in ("kcal", "protein", "fat", "carbs")}}
+    return a
 
 
 def _format(analysis: dict) -> str:
@@ -108,16 +126,14 @@ async def on_photo(message: Message, state: FSMContext, bot: Bot) -> None:
     await message.answer(_format(analysis), reply_markup=_confirm_kb(draft_id))
 
 
-@router.callback_query(F.data.startswith("meal:save:"))
-async def meal_save(cb: CallbackQuery, state: FSMContext) -> None:
-    draft_id = cb.data.split(":", 2)[2]
+async def _save_draft(cb: CallbackQuery, state: FSMContext, draft_id: str, factor: float = 1.0) -> None:
+    """Сохраняет черновик приёма (опц. долю порции factor) и показывает остаток до нормы."""
     key = f"{cb.from_user.id}:{draft_id}"
     if key in _saving:
         await cb.answer("Уже сохраняю…")
         return
     _saving.add(key)
     try:
-        # Сразу убираем кнопки, чтобы по карточке нельзя было тапнуть повторно
         try:
             await cb.message.edit_reply_markup(reply_markup=None)
         except Exception:
@@ -126,6 +142,8 @@ async def meal_save(cb: CallbackQuery, state: FSMContext) -> None:
         if analysis is None:
             await cb.answer("Это блюдо уже сохранено или отменено", show_alert=True)
             return
+        if factor != 1.0:
+            analysis = _scale_analysis(analysis, factor)
         async with async_session() as db:
             user = await repo.get_user_by_tg(db, cb.from_user.id)
             await repo.add_meal(db, user.id, analysis, analysis.get("photo"))
@@ -133,7 +151,8 @@ async def meal_save(cb: CallbackQuery, state: FSMContext) -> None:
             norm = nutrition.daily_norm(user)
     finally:
         _saving.discard(key)
-    text = "Записал ✅"
+    frac_note = {0.5: " (½ порции)", 1/3: " (⅓ порции)", 0.25: " (¼ порции)"}.get(round(factor, 4), "")
+    text = f"Записал ✅{frac_note}"
     if norm:
         left_k = max(norm["kcal"] - totals["kcal"], 0)
         left_p = max(norm["protein"] - totals["protein"], 0)
@@ -145,6 +164,19 @@ async def meal_save(cb: CallbackQuery, state: FSMContext) -> None:
         )
     await cb.message.answer(text)
     await cb.answer()
+
+
+@router.callback_query(F.data.startswith("meal:frac:"))
+async def meal_frac(cb: CallbackQuery, state: FSMContext) -> None:
+    parts = cb.data.split(":")  # meal:frac:<draft_id>:<n>:<d>
+    draft_id, n, d = parts[2], int(parts[3]), int(parts[4])
+    await _save_draft(cb, state, draft_id, factor=n / d)
+
+
+@router.callback_query(F.data.startswith("meal:save:"))
+async def meal_save(cb: CallbackQuery, state: FSMContext) -> None:
+    draft_id = cb.data.split(":", 2)[2]
+    await _save_draft(cb, state, draft_id, factor=1.0)
 
 
 @router.callback_query(F.data.startswith("meal:cancel:"))

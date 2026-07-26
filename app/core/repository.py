@@ -662,6 +662,26 @@ async def recent_dishes(db: AsyncSession, user_id: int, limit: int = 20) -> list
     return out
 
 
+async def today_meals(db: AsyncSession, user_id: int) -> list[Meal]:
+    """Приёмы пищи за сегодня (по локальной дате) — для показа и удаления."""
+    since = _local_day_start()
+    res = await db.execute(
+        select(Meal).where(Meal.user_id == user_id, Meal.logged_at >= since).order_by(Meal.logged_at)
+    )
+    return list(res.scalars().all())
+
+
+async def delete_meal(db: AsyncSession, meal_id: int, user_id: int) -> bool:
+    """Удаляет приём пищи (с ингредиентами), если он принадлежит пользователю."""
+    meal = await db.get(Meal, meal_id)
+    if meal is None or meal.user_id != user_id:
+        return False
+    await db.execute(delete(MealItem).where(MealItem.meal_id == meal_id))
+    await db.delete(meal)
+    await db.commit()
+    return True
+
+
 async def today_totals(db: AsyncSession, user_id: int) -> dict:
     """Суммарные БЖУ/ккал за сегодня (по локальной дате сервера)."""
     since = _local_day_start()  # начало сегодняшнего дня по TZ бота

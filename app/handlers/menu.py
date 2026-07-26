@@ -8,7 +8,7 @@ from app.utils import local_today
 from aiogram import F, Router
 from aiogram.filters import Command
 from aiogram.fsm.context import FSMContext
-from aiogram.types import CallbackQuery, Message
+from aiogram.types import CallbackQuery, InlineKeyboardButton, InlineKeyboardMarkup, Message
 
 from app.core.db import async_session
 from app.core import nutrition, progress
@@ -194,6 +194,44 @@ async def show_nutrition(message: Message) -> None:
         lines.append(f"🔥 Потрачено на тренировке: ~{burned_today} ккал (не входит в норму выше)")
     lines.append("\n📷 Пришли фото еды или напиши, что съел — запишу и посчитаю КБЖУ.")
     await message.answer("\n".join(lines))
+
+    # Список сегодняшних приёмов с кнопкой удаления (если случайно добавил)
+    async with async_session() as db:
+        meals = await repo.today_meals(db, user.id)
+    if meals:
+        rows = []
+        for m in meals:
+            title = (m.note or "приём пищи")[:32]
+            rows.append([InlineKeyboardButton(
+                text=f"🗑 {title} — {round(float(m.kcal or 0))} ккал",
+                callback_data=f"meal:del:{m.id}",
+            )])
+        await message.answer(
+            "Убрать ошибочно добавленное:",
+            reply_markup=InlineKeyboardMarkup(inline_keyboard=rows),
+        )
+
+
+@router.callback_query(F.data.startswith("meal:del:"))
+async def delete_meal_cb(cb: CallbackQuery) -> None:
+    meal_id = int(cb.data.split(":")[2])
+    async with async_session() as db:
+        user = await repo.get_user_by_tg(db, cb.from_user.id)
+        ok = await repo.delete_meal(db, meal_id, user.id) if user else False
+        totals = await repo.today_totals(db, user.id) if user else None
+    if not ok:
+        await cb.answer("Уже удалено", show_alert=False)
+        return
+    await cb.answer("Удалил ✅")
+    try:
+        await cb.message.edit_reply_markup(reply_markup=None)
+    except Exception:
+        pass
+    if totals:
+        await cb.message.answer(
+            f"Убрал приём. Сегодня: {totals['kcal']} ккал "
+            f"(Б {totals['protein']} Ж {totals['fat']} У {totals['carbs']}), приёмов {totals['meals']}."
+        )
 
 
 @router.message(F.text == "📊 Статистика")
