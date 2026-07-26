@@ -687,11 +687,12 @@ def _known_hint(known: list[dict] | None) -> str:
     )
 
 
-async def analyze_food_photo(image_url: str, known: list[dict] | None = None) -> dict:
-    """Разбирает фото блюда: ингредиенты, граммы, БЖУ, ккал."""
+async def analyze_food_photo(image_url: str, known: list[dict] | None = None,
+                             model: str | None = None, tag: str = "food_photo") -> dict:
+    """Разбирает фото блюда: ингредиенты, граммы, БЖУ, ккал. model — переопределение (для A/B)."""
     try:
-        resp = await usage.complete(get_client(), "food_photo",
-            model=settings.openai_model,
+        resp = await usage.complete(get_client(), tag,
+            model=model or settings.openai_model,
             reasoning_effort=settings.openai_reasoning_effort,
             response_format={"type": "json_object"},
             messages=[

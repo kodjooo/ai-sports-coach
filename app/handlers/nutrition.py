@@ -100,6 +100,23 @@ async def _pop_draft(state: FSMContext, draft_id: str) -> dict | None:
     return analysis
 
 
+async def _shadow_food_ab(image_url: str, known, gpt5_analysis: dict) -> None:
+    """ВРЕМЕННО: прогоняет gpt-5-mini на том же фото и логирует сравнение (сырое зрение, без refine)."""
+    import logging
+    log = logging.getLogger("foodab")
+    try:
+        mini = await llm.analyze_food_photo(image_url, known=known, model="gpt-5-mini", tag="food_photo_mini")
+        def brief(a):
+            t = a.get("total", {})
+            return (f"dish={a.get('dish')!r} kcal={round(t.get('kcal') or 0)} "
+                    f"Б{round(t.get('protein') or 0)} Ж{round(t.get('fat') or 0)} У{round(t.get('carbs') or 0)} "
+                    f"items={[i.get('name') for i in a.get('items', [])]}")
+        log.info("[FOODAB] GPT5:  %s", brief(gpt5_analysis))
+        log.info("[FOODAB] MINI:  %s", brief(mini))
+    except Exception as exc:
+        log.warning("[FOODAB] ошибка теневого прогона: %s", exc)
+
+
 @router.message(F.photo)
 async def on_photo(message: Message, state: FSMContext, bot: Bot) -> None:
     file_id = message.photo[-1].file_id
@@ -113,6 +130,10 @@ async def on_photo(message: Message, state: FSMContext, bot: Bot) -> None:
             user = await repo.get_user_by_tg(db, message.from_user.id)
             known = await repo.recent_dishes(db, user.id) if user else []
         analysis = await llm.analyze_food_photo(image_url, known=known)
+        # ВРЕМЕННО: теневой прогон gpt-5-mini для A/B сравнения качества (в лог, юзеру не видно)
+        import asyncio as _asyncio
+        import copy as _copy
+        _asyncio.create_task(_shadow_food_ab(image_url, known, _copy.deepcopy(analysis)))
         if analysis.get("is_food"):
             analysis = await openfoodfacts.refine(analysis)
 
