@@ -113,7 +113,7 @@ async def _apply_time(message: Message, tg_id: int, state: FSMContext, hour: int
     days = data.get("days", [0, 2, 4])
     from_settings = data.get("from_settings")
 
-    await message.answer("Составляю персональную программу под тебя, секунду…")
+    await message.answer("Собираю персональную программу под тебя 🧠 Это может занять до пары минут…")
     async with typing(message):
         async with async_session() as db:
             user = await repo.get_user_by_tg(db, tg_id)

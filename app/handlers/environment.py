@@ -72,7 +72,7 @@ async def equipment_done(cb: CallbackQuery, state: FSMContext) -> None:
 
 async def _regenerate(message: Message, tg_id: int, state: FSMContext) -> None:
     """Пересобирает план под новую среду (из настроек), сохраняя дни."""
-    await message.answer("Пересобираю программу под новые настройки…")
+    await message.answer("Пересобираю программу под новые настройки 🧠 Это может занять до пары минут…")
     async with typing(message):
         async with async_session() as db:
             user = await repo.get_user_by_tg(db, tg_id)
