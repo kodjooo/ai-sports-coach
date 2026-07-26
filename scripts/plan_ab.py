@@ -25,7 +25,7 @@ def compact(plan):
             for w in plan]
 
 async def main():
-    res = []
+    import sys
     for model in MODELS:
         for p in PROFILES:
             for rep in range(REPS):
@@ -34,10 +34,11 @@ async def main():
                         profile_summary=p["note"], goal=p["goal"], weekdays=[0, 2, 4],
                         environment=None, equipment=p["equip"], sex=p["sex"],
                         level=p["level"], per_day=p["per_day"], model=model)
-                    res.append({"model": model, "profile": p["label"], "rep": rep, "plan": compact(plan)})
+                    row = {"model": model, "profile": p["label"], "rep": rep, "plan": compact(plan)}
                 except Exception as e:
-                    res.append({"model": model, "profile": p["label"], "rep": rep, "error": repr(e)[:150]})
-    print("===AB===")
-    print(json.dumps(res, ensure_ascii=False))
+                    row = {"model": model, "profile": p["label"], "rep": rep, "error": repr(e)[:150]}
+                # NDJSON построчно с flush — держит SSH живым и сохраняет частичные результаты
+                print(json.dumps(row, ensure_ascii=False), flush=True)
+                sys.stdout.flush()
 
 asyncio.run(main())
