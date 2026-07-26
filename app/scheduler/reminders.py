@@ -94,6 +94,8 @@ async def _exercise_names(db, template_id: int) -> str:
     items = await repo.list_template_items(db, template_id)
     names = []
     for it in items:
+        if getattr(it, "phase", "main") != "main":
+            continue  # в анонсе тренировки — только основные упражнения, без разминки/заминки
         ex = await repo.get_exercise(db, it.exercise_id)
         if ex:
             names.append(ex.name)
