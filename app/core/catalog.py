@@ -180,10 +180,14 @@ def main_candidates(equipment: str | None, level: str | None = None, limit: int 
     """Палитра основных упражнений по доступному инвентарю и УРОВНЮ (сложность ≤ потолка уровня)."""
     allowed = available_equipment(equipment)
     max_diff = _LEVEL_MAX_DIFF.get((level or "").strip().lower(), 5)
+    def _solo(e: dict) -> bool:  # без партнёра (одиночке в зале партнёра нет)
+        n = e.get("name", "").lower()
+        return "партн" not in n and "partner" not in n
     pool = [
         e for e in ALL
         if e.get("kind") in ("силовое", "плиометрика", "кардио")
         and (e.get("difficulty") or 3) <= max_diff
+        and _solo(e)
         and _feasible(e, allowed)
     ]
     # Страховка: если под уровень слишком мало — ослабляем потолок на 1

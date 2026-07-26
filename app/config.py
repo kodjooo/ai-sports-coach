@@ -11,6 +11,8 @@ class Settings(BaseSettings):
     # OpenAI
     openai_api_key: str
     openai_model: str = "gpt-5"
+    # Модель генерации плана: gpt-5.6-luna — качество ≈ gpt-5, но в ~3× дешевле и ×5 быстрее
+    openai_model_plan: str = "gpt-5.6-luna"
     # Экономная модель для узких/служебных задач (в ~10 раз дешевле)
     openai_model_mini: str = "gpt-5-mini"
     openai_embed_model: str = "text-embedding-3-small"

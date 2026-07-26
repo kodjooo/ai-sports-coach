@@ -101,20 +101,21 @@ async def _pop_draft(state: FSMContext, draft_id: str) -> dict | None:
 
 
 async def _shadow_food_ab(image_url: str, known, gpt5_analysis: dict) -> None:
-    """ВРЕМЕННО: прогоняет gpt-5-mini на том же фото и логирует сравнение (сырое зрение, без refine)."""
+    """ВРЕМЕННО: прогоняет luna и mini на том же фото и логирует сравнение (сырое зрение, без refine)."""
     import logging
     log = logging.getLogger("foodab")
-    try:
-        mini = await llm.analyze_food_photo(image_url, known=known, model="gpt-5-mini", tag="food_photo_mini")
-        def brief(a):
-            t = a.get("total", {})
-            return (f"dish={a.get('dish')!r} kcal={round(t.get('kcal') or 0)} "
-                    f"Б{round(t.get('protein') or 0)} Ж{round(t.get('fat') or 0)} У{round(t.get('carbs') or 0)} "
-                    f"items={[i.get('name') for i in a.get('items', [])]}")
-        log.info("[FOODAB] GPT5:  %s", brief(gpt5_analysis))
-        log.info("[FOODAB] MINI:  %s", brief(mini))
-    except Exception as exc:
-        log.warning("[FOODAB] ошибка теневого прогона: %s", exc)
+    def brief(a):
+        t = a.get("total", {})
+        return (f"dish={a.get('dish')!r} kcal={round(t.get('kcal') or 0)} "
+                f"Б{round(t.get('protein') or 0)} Ж{round(t.get('fat') or 0)} У{round(t.get('carbs') or 0)} "
+                f"items={[i.get('name') for i in a.get('items', [])]}")
+    log.info("[FOODAB] GPT5:  %s", brief(gpt5_analysis))
+    for name, model, tag in [("LUNA", "gpt-5.6-luna", "food_photo_luna"), ("MINI", "gpt-5-mini", "food_photo_mini")]:
+        try:
+            a = await llm.analyze_food_photo(image_url, known=known, model=model, tag=tag)
+            log.info("[FOODAB] %s:  %s", name, brief(a))
+        except Exception as exc:
+            log.warning("[FOODAB] %s ошибка: %s", name, exc)
 
 
 @router.message(F.photo)
