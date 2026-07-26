@@ -418,9 +418,10 @@ async def generate_plan(
     Возвращает workouts: [{weekday, warmup:[name], cooldown:[name],
     exercises:[{name,sets,reps,rest_sec}]}] — названия строго из каталога.
     """
-    # Фильтруем ТОЛЬКО по доступному инвентарю (без привязки к месту)
-    main_pool = catalog.main_candidates(equipment)
-    warm_pool = catalog.warmup_candidates(equipment)
+    # Фильтруем ТОЛЬКО по доступному инвентарю (без привязки к месту).
+    # Палитру держим компактной — большой промпт замедляет ответ и ловит таймауты.
+    main_pool = catalog.main_candidates(equipment, limit=90)
+    warm_pool = catalog.warmup_candidates(equipment)[:60]
     if not main_pool:
         logger.error("generate_plan: пустая палитра каталога (инвентарь=%s)", equipment)
         return []
@@ -462,11 +463,14 @@ async def generate_plan(
         f"СПИСОК РАЗМИНКИ/ЗАМИНКИ (выбирай отсюда):\n{catalog.names_for_prompt(warm_pool)}"
     )
 
-    # До 2 попыток: LLM изредка возвращает названия вне каталога — тогда план пуст, пробуем ещё раз
+    # До 2 попыток: LLM изредка возвращает названия вне каталога — тогда план пуст, пробуем ещё раз.
+    # ВАЖНО: без SDK-ретраев и с коротким таймаутом на вызов, иначе на таймаут запрос
+    # ретраится сам (до 3×) и пользователь висит на «печатает…» минутами.
+    client = get_client().with_options(timeout=55.0, max_retries=0)
     last_raw: list = []
     for attempt in range(2):
         try:
-            resp = await usage.complete(get_client(), "generate_plan",
+            resp = await usage.complete(client, "generate_plan",
                 model=settings.openai_model,
                 reasoning_effort=settings.openai_reasoning_effort_onboarding,
                 response_format={"type": "json_object"},
@@ -490,6 +494,9 @@ async def generate_plan(
             logger.warning("generate_plan: попытка %d дала пустой план после сверки с каталогом", attempt + 1)
         except Exception as exc:
             logger.warning("generate_plan: ошибка на попытке %d: %s", attempt + 1, exc)
+            # На таймаут/сетевую ошибку не ретраим — второй раз тоже упрёмся, только держим юзера
+            if "timed out" in str(exc).lower() or "timeout" in type(exc).__name__.lower():
+                break
 
     # Обе попытки провалились — не подменяем тихо, отдаём пусто (вызывающий покажет ошибку и залогирует)
     raw_names = [e.get("name") for w in last_raw for e in w.get("exercises", [])][:12]
