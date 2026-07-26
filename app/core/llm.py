@@ -743,7 +743,7 @@ async def analyze_food_photo(image_url: str, known: list[dict] | None = None,
     """Разбирает фото блюда: ингредиенты, граммы, БЖУ, ккал. model — переопределение (для A/B)."""
     try:
         resp = await usage.complete(get_client(), tag,
-            model=model or settings.openai_model,
+            model=model or settings.openai_model_food,
             reasoning_effort=settings.openai_reasoning_effort,
             response_format={"type": "json_object"},
             messages=[

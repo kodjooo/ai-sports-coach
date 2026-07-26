@@ -13,6 +13,9 @@ class Settings(BaseSettings):
     openai_model: str = "gpt-5"
     # Модель генерации плана: gpt-5.6-luna — качество ≈ gpt-5, но в ~3× дешевле и ×5 быстрее
     openai_model_plan: str = "gpt-5.6-luna"
+    # Модель распознавания еды по фото: gpt-5.1 — та же цена, что gpt-5, но точнее и стабильнее
+    # читает трудные весы (тест 3×: салат с повёрнутым табло 201 г → 200±0 против 227±38 у gpt-5)
+    openai_model_food: str = "gpt-5.1"
     # Экономная модель для узких/служебных задач (в ~10 раз дешевле)
     openai_model_mini: str = "gpt-5-mini"
     openai_embed_model: str = "text-embedding-3-small"
