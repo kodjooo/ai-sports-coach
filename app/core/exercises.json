@@ -118,7 +118,7 @@
   "name": "Велосипед на полу",
   "muscle_group": "пресс",
   "difficulty": 2,
-  "equipment": "тренажёр",
+  "equipment": "без инвентаря",
   "technique": "Лягте на спину, прижав поясницу к полу, руки за головой, приподнимите плечи в положение скручивания и подтяните колени перпендикулярно полу. На выдохе тянитесь правым локтем к левому колену, одновременно выпрямляя правую ногу, как при езде на велосипеде, затем меняйте стороны поочерёдно.",
   "variations": [],
   "environment": "везде",
@@ -127,9 +127,7 @@
   "technique_en": "Lie flat on the floor with your lower back pressed to the ground. For this exercise, you will need to put your hands beside your head. Be careful however to not strain with the neck as you perform it. Now lift your shoulders into the crunch position. Bring knees up to where they are perpendicular to the floor, with your lower legs parallel to the floor. This will be your starting position. Now simultaneously, slowly go through a cycle pedal motion kicking forward with the right leg and bringing in the knee of the left leg. Bring your right elbow close to your left knee by crunching to the side, as you breathe out. Go back to the initial position as you breathe in. Crunch to the opposite side as you cycle your legs and bring closer your left elbow to your right knee and exhale. Continue alternating in this manner until all of the recommended repetitions for each side have been completed.",
   "kind": "силовое",
   "howto": "⚠️ Ошибки: отрыв поясницы от пола и тяга шеи руками вместо скручивания корпусом.\n🔽 Легче: замедлить темп и уменьшить амплитуду выпрямления ноги.\n🔼 Тяжелее: ускорить темп или добавить паузу при сближении локтя и колена.",
-  "equipment_req": [
-   "тренажёр"
-  ]
+  "equipment_req": []
  },
  {
   "name": "Растяжка квадрицепса стоя на четвереньках",
@@ -7253,7 +7251,7 @@
  },
  {
   "name": "Разгибание спины лёжа на животе",
-  "muscle_group": "пресс",
+  "muscle_group": "поясница",
   "difficulty": 2,
   "equipment": "без инвентаря",
   "technique": "Лягте на живот, руки в стороны. Мышцами поясницы прогните спину, поднимая грудь от пола, не помогая себе руками, держа голову приподнятой, повторите 10-20 раз.",
@@ -7262,7 +7260,7 @@
   "gif": "lower_back_curl.gif",
   "name_en": "Lower Back Curl",
   "technique_en": "Lie on your stomach with your arms out to your sides. This will be your starting position. Using your lower back muscles, extend your spine lifting your chest off of the ground. Do not use your arms to push yourself up. Keep your head up during the movement. Repeat for 10-20 repetitions.",
-  "kind": "растяжка",
+  "kind": "силовое",
   "howto": "⚠️ Ошибки: помощь руками вместо работы поясницы снижает эффект; резкий подъём вместо плавного.\n🔽 Легче: уменьшите амплитуду подъёма груди.\n🔼 Тяжелее: увеличьте амплитуду или добавьте паузу вверху.",
   "equipment_req": []
  },
@@ -13440,7 +13438,7 @@
   "gif": "superman.gif",
   "name_en": "Superman",
   "technique_en": "To begin, lie straight and face down on the floor or exercise mat. Your arms should be fully extended in front of you. This is the starting position. Simultaneously raise your arms, legs, and chest off of the floor and hold this contraction for 2 seconds. Tip: Squeeze your lower back to get the best results from this exercise. Remember to exhale during this movement. Note: When holding the contracted position, you should look like superman when he is flying. Slowly begin to lower your arms, legs and chest back down to the starting position while inhaling. Repeat for the recommended amount of repetitions prescribed in your program.",
-  "kind": "растяжка",
+  "kind": "силовое",
   "howto": "⚠️ Ошибки: рывковый подъём с задержкой дыхания — поднимайтесь плавно на выдохе.\n🔽 Легче: поднимайте только руки или только ноги поочерёдно.\n🔼 Тяжелее: увеличьте время удержания в верхней точке.",
   "equipment_req": []
  },
