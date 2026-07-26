@@ -100,36 +100,6 @@ async def _pop_draft(state: FSMContext, draft_id: str) -> dict | None:
     return analysis
 
 
-async def _shadow_food_ab(image_url: str, known, gpt5_analysis: dict) -> None:
-    """ВРЕМЕННО: прогоняет luna и mini на том же фото, логирует сравнение И сохраняет датасет
-    (фото + полные выходы моделей) в /app/logs/foodab/ — том usage_logs переживает пересборку,
-    чтобы можно было офлайн прогнать беспристрастного судью."""
-    import logging, json as _json, os, uuid
-    log = logging.getLogger("foodab")
-    def brief(a):
-        t = a.get("total", {})
-        return (f"dish={a.get('dish')!r} kcal={round(t.get('kcal') or 0)} "
-                f"Б{round(t.get('protein') or 0)} Ж{round(t.get('fat') or 0)} У{round(t.get('carbs') or 0)} "
-                f"items={[i.get('name') for i in a.get('items', [])]}")
-    log.info("[FOODAB] GPT5:  %s", brief(gpt5_analysis))
-    outputs = {"gpt-5": gpt5_analysis}
-    for name, model, tag in [("LUNA", "gpt-5.6-luna", "food_photo_luna"), ("MINI", "gpt-5-mini", "food_photo_mini")]:
-        try:
-            a = await llm.analyze_food_photo(image_url, known=known, model=model, tag=tag)
-            outputs[model] = a
-            log.info("[FOODAB] %s:  %s", name, brief(a))
-        except Exception as exc:
-            log.warning("[FOODAB] %s ошибка: %s", name, exc)
-    try:
-        d = "/app/logs/foodab"
-        os.makedirs(d, exist_ok=True)
-        rec = {"image_url": image_url, "known": known, "outputs": outputs}
-        with open(f"{d}/{uuid.uuid4().hex}.json", "w") as f:
-            _json.dump(rec, f, ensure_ascii=False)
-    except Exception as exc:
-        log.warning("[FOODAB] не удалось сохранить датасет: %s", exc)
-
-
 @router.message(F.photo)
 async def on_photo(message: Message, state: FSMContext, bot: Bot) -> None:
     file_id = message.photo[-1].file_id
@@ -143,10 +113,6 @@ async def on_photo(message: Message, state: FSMContext, bot: Bot) -> None:
             user = await repo.get_user_by_tg(db, message.from_user.id)
             known = await repo.recent_dishes(db, user.id) if user else []
         analysis = await llm.analyze_food_photo(image_url, known=known)
-        # ВРЕМЕННО: теневой прогон gpt-5-mini для A/B сравнения качества (в лог, юзеру не видно)
-        import asyncio as _asyncio
-        import copy as _copy
-        _asyncio.create_task(_shadow_food_ab(image_url, known, _copy.deepcopy(analysis)))
         if analysis.get("is_food"):
             analysis = await openfoodfacts.refine(analysis)
 
