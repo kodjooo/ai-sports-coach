@@ -42,6 +42,24 @@ def _is_time_based(name: str, muscle_group: str) -> bool:
     return any(k in text for k in _TIME_KEYWORDS)
 
 
+# Признаки упражнения «на каждую сторону» (один подход = обе стороны, подпись это поясняет)
+_PER_SIDE_KEYWORDS = (
+    "на каждую", "каждый бок", "каждую ног", "каждую стор", "боковая планк", "болгар",
+    "выпад", "на одной ног", "одной рук", "попеременн", "разноимённ", "разноименн",
+    "пистолет", "сплит-присед", "сплит присед", "бок", "на колене",
+)
+
+
+def _is_per_side(name: str) -> bool:
+    n = (name or "").lower()
+    return any(k in n for k in _PER_SIDE_KEYWORDS)
+
+
+def _warmup_dose(name: str, muscle_group: str) -> str:
+    """Примерная доза движения разминки/заминки для показа."""
+    return "~30 сек" if _is_time_based(name, muscle_group) else "~10 повторов"
+
+
 def _today() -> date:
     """Сегодняшняя дата в часовом поясе бота (не UTC контейнера)."""
     return datetime.now(ZoneInfo(settings.tz)).date()
@@ -67,10 +85,11 @@ async def _send_exercise_card(target, item: dict, caption: str, reply_markup=Non
     await target.answer(caption, reply_markup=reply_markup)
 
 
-def _phase_caption(m: dict, idx: int, total: int) -> str:
-    """Подпись движения разминки/заминки: номер, название, короткая техника."""
+def _phase_caption(m: dict, idx: int, total: int, dose: str) -> str:
+    """Подпись движения разминки/заминки: номер, название, доза (повторы/сек), короткая техника."""
     tech = (m.get("technique") or "").strip()
-    head = f"<b>{m['name']}</b> ({idx + 1}/{total})"
+    side = " · на каждую сторону" if _is_per_side(m.get("name", "")) else ""
+    head = f"<b>{m['name']}</b> ({idx + 1}/{total}) — {dose}{side}"
     return head + (f"\n{tech}" if tech else "")
 
 
@@ -81,7 +100,8 @@ async def _show_warmup_step(target, state: FSMContext) -> None:
     items = data.get("warm_items") or []
     idx = data.get("warm_idx", 0)
     m = items[idx]
-    caption = "🔥 " + _phase_caption(m, idx, len(items))
+    dose = _warmup_dose(m.get("name", ""), m.get("muscle_group", ""))
+    caption = "🔥 " + _phase_caption(m, idx, len(items), dose)
     await _send_exercise_card(target, m, caption, reply_markup=warmup_step_kb(last=idx + 1 >= len(items)))
 
 
@@ -91,7 +111,7 @@ async def _show_cooldown_step(target, state: FSMContext) -> None:
     items = data.get("cool_items") or []
     idx = data.get("cool_idx", 0)
     m = items[idx]
-    caption = "🧘 " + _phase_caption(m, idx, len(items))
+    caption = "🧘 " + _phase_caption(m, idx, len(items), "~20–30 сек")  # заминка — статичная растяжка
     await _send_exercise_card(target, m, caption, reply_markup=cooldown_step_kb(last=idx + 1 >= len(items)))
 
 
@@ -186,13 +206,14 @@ async def _show_set(target, state: FSMContext) -> None:
     item = items[i]
     is_time = item.get("is_time", False)
     unit = "сек" if is_time else "повт."
+    per_side = " на каждую сторону" if _is_per_side(item.get("name", "")) else ""
     # Цель: подсказка по ощущению прошлого подхода, иначе плановая
     goal = data.get("suggest") or item["target_reps"]
-    prompt = "Сколько секунд продержал?" if is_time else "Выбери число повторов:"
-    set_line = (
-        f"<b>{item['name']}</b> — сет {data['cur_set']} из {item['target_sets']} "
-        f"(цель ~{goal} {unit})\n{prompt}"
+    prompt = (
+        f"Сколько секунд продержал{' на сторону' if per_side else ''}?"
+        if is_time else f"Сколько повторов{' на сторону' if per_side else ''}?"
     )
+    set_body = f"сет {data['cur_set']} из {item['target_sets']} (цель ~{goal} {unit}{per_side})\n{prompt}"
     kb = reps_kb(target=goal, is_time=is_time)
     if data["cur_set"] == 1:
         # Первый подход — единая карточка: GIF + название · группа + техника + строка сета + кнопки
@@ -200,13 +221,11 @@ async def _show_set(target, state: FSMContext) -> None:
         muscle = item.get("muscle_group") or ""
         head = f"<b>{item['name']}</b>" + (f" · {muscle}" if muscle else "")
         caption = head + (f"\n{tech}" if tech else "")
-        caption += (
-            f"\n\nСет {data['cur_set']} из {item['target_sets']} (цель ~{goal} {unit})\n{prompt}"
-        )
+        caption += f"\n\n{set_body[0].upper()}{set_body[1:]}"
         await _send_exercise_card(target, item, caption, reply_markup=kb)
     else:
         # Последующие подходы — только строка сета с кнопками (без гифки и описания)
-        await target.answer(set_line, reply_markup=kb)
+        await target.answer(f"<b>{item['name']}</b> — {set_body}", reply_markup=kb)
 
 
 @router.message(F.text == "▶️ Тренировка")

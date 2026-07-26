@@ -172,14 +172,28 @@ def _round_robin_by_muscle(items: list[dict], limit: int) -> list[dict]:
     return out
 
 
-def main_candidates(equipment: str | None, limit: int = 130) -> list[dict]:
-    """Палитра основных упражнений (силовое/плиометрика/кардио) по доступному инвентарю."""
+# Потолок сложности упражнения (1..5) по уровню клиента — чтобы новичку не давать продвинутое
+_LEVEL_MAX_DIFF = {"новичок": 3, "средний": 4, "продвинутый": 5}
+
+
+def main_candidates(equipment: str | None, level: str | None = None, limit: int = 130) -> list[dict]:
+    """Палитра основных упражнений по доступному инвентарю и УРОВНЮ (сложность ≤ потолка уровня)."""
     allowed = available_equipment(equipment)
+    max_diff = _LEVEL_MAX_DIFF.get((level or "").strip().lower(), 5)
     pool = [
         e for e in ALL
         if e.get("kind") in ("силовое", "плиометрика", "кардио")
+        and (e.get("difficulty") or 3) <= max_diff
         and _feasible(e, allowed)
     ]
+    # Страховка: если под уровень слишком мало — ослабляем потолок на 1
+    if len(pool) < 20 and max_diff < 5:
+        pool = [
+            e for e in ALL
+            if e.get("kind") in ("силовое", "плиометрика", "кардио")
+            and (e.get("difficulty") or 3) <= max_diff + 1
+            and _feasible(e, allowed)
+        ]
     return _round_robin_by_muscle(pool, limit)
 
 
