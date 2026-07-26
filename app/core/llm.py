@@ -466,13 +466,15 @@ async def generate_plan(
     # До 2 попыток: LLM изредка возвращает названия вне каталога — тогда план пуст, пробуем ещё раз.
     # ВАЖНО: без SDK-ретраев и с коротким таймаутом на вызов, иначе на таймаут запрос
     # ретраится сам (до 3×) и пользователь висит на «печатает…» минутами.
-    client = get_client().with_options(timeout=75.0, max_retries=0)
+    client = get_client().with_options(timeout=100.0, max_retries=0)
     last_raw: list = []
     for attempt in range(2):
         try:
             resp = await usage.complete(client, "generate_plan",
                 model=settings.openai_model,
-                reasoning_effort=settings.openai_reasoning_effort_onboarding,
+                # minimal вместо low: та же gpt-5, но выбор из готового списка не требует
+                # глубоких «раздумий» — с low это давало 75+ с и таймаут, с minimal ~12 с
+                reasoning_effort="minimal",
                 response_format={"type": "json_object"},
                 messages=[
                     {"role": "system", "content": system_content},
