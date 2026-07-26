@@ -100,6 +100,10 @@ async def seed_exercises(db: AsyncSession) -> None:
             if clean.get("howto") and ex.howto != clean["howto"]:
                 ex.howto = clean["howto"]
                 changed = True
+            # Техника — обновляем при расхождении с каталогом (напр. исправления описаний)
+            if clean.get("technique") and ex.technique != clean["technique"]:
+                ex.technique = clean["technique"]
+                changed = True
     if changed:
         await db.commit()
 
