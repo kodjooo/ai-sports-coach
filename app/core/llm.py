@@ -44,11 +44,11 @@ def _system_content(system_prompt: str | None) -> str:
     return SAFETY_HEADER + "\n\n" + (system_prompt or SYSTEM_PROMPT)
 
 
-async def chat(user_prompt: str, system_prompt: str | None = None) -> str:
-    """Единичный запрос к модели рассуждений с персональным системным промптом."""
+async def chat(user_prompt: str, system_prompt: str | None = None, model: str | None = None) -> str:
+    """Единичный запрос к модели рассуждений с персональным системным промптом. model — override (A/B)."""
     try:
         resp = await usage.complete(get_client(), "chat",
-            model=settings.openai_model,
+            model=model or settings.openai_model,
             reasoning_effort=settings.openai_reasoning_effort,
             messages=[
                 {"role": "system", "content": _system_content(system_prompt)},
@@ -272,11 +272,12 @@ async def equivalent_load(old_name: str, sets: int, reps: int, new_name: str, is
         return {"sets": sets, "reps": reps}
 
 
-async def estimate_burn(summary: str, weight_kg: float | None, sex: str | None) -> int:
-    """Грубая оценка потраченных калорий за тренировку (домашняя силовая/кор)."""
+async def estimate_burn(summary: str, weight_kg: float | None, sex: str | None,
+                        model: str | None = None) -> int:
+    """Грубая оценка потраченных калорий за тренировку (домашняя силовая/кор). model — override (A/B)."""
     try:
         resp = await usage.complete(get_client(), "estimate_burn",
-            model=settings.openai_model_mini,
+            model=model or settings.openai_model_mini,
             reasoning_effort="minimal",
             response_format={"type": "json_object"},
             messages=[
