@@ -5,7 +5,8 @@ import asyncio
 import app.core.llm as llm
 from app.config import settings
 
-MODELS = ["gpt-5", "gpt-5.1", "gpt-5.6-luna"]
+# (модель, reasoning) — luna требует 'none' при function tools
+MODELS = [("gpt-5", "low"), ("gpt-5.6-luna", "none")]
 
 TOOLS_HINT = (
     "Если уместно, предлагай изменения через функции: нагрузка (adjust_load), замена (replace_exercise), "
@@ -37,12 +38,13 @@ async def main():
     settings.openai_reasoning_effort = "low"
     for tag, msg in MSGS:
         print(f"\n===== [{tag}] «{msg}» =====", flush=True)
-        for model in MODELS:
+        for model, reasoning in MODELS:
             try:
-                r = await llm.chat_with_tools([{"role": "user", "content": msg}], SYS, model=model)
+                r = await llm.chat_with_tools([{"role": "user", "content": msg}], SYS,
+                                              model=model, reasoning=reasoning)
                 act = r.get("action")
                 act_s = f"  →ДЕЙСТВИЕ: {act['name']}({act.get('args')})" if act else "  →действие: нет"
-                print(f"--- {model} ---\n{r.get('text','').strip()}{act_s}", flush=True)
+                print(f"--- {model}({reasoning}) ---\n{r.get('text','').strip()}{act_s}", flush=True)
             except Exception as e:
                 print(f"--- {model} --- ERR {repr(e)[:80]}", flush=True)
 
