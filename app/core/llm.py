@@ -770,8 +770,9 @@ async def analyze_food_photo(image_url: str, known: list[dict] | None = None,
         return {"is_food": False, "items": [], "total": {}, "note": "ошибка анализа"}
 
 
-async def analyze_food_text(description: str, prev: dict | None = None, known: list[dict] | None = None) -> dict:
-    """Оценка КБЖУ по текстовому описанию (или коррекция прежнего разбора)."""
+async def analyze_food_text(description: str, prev: dict | None = None, known: list[dict] | None = None,
+                            model: str | None = None) -> dict:
+    """Оценка КБЖУ по текстовому описанию (или коррекция прежнего разбора). model — переопределение (A/B)."""
     ctx = ""
     if prev:
         ctx = (
@@ -781,7 +782,7 @@ async def analyze_food_text(description: str, prev: dict | None = None, known: l
         )
     try:
         resp = await usage.complete(get_client(), "food_text",
-            model=settings.openai_model_mini,
+            model=model or settings.openai_model_mini,
             reasoning_effort=settings.openai_reasoning_effort,
             response_format={"type": "json_object"},
             messages=[
