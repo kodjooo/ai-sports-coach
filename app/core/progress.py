@@ -68,8 +68,8 @@ async def full_stats(db: AsyncSession, user_id: int) -> str:
     total = await repo.total_done_sessions(db, user_id)
 
     since = local_today() - timedelta(days=7)
-    week = await repo.sessions_in_period(db, user_id, since)
-    week_done = len([s for s in week if s.status == "done"])
+    # Считаем только реальные тренировки (с подходами); пустые сессии не в счёт
+    week_done = await repo.count_workouts_in_period(db, user_id, since)
     # План на неделю = число тренировочных дней (активных шаблонов)
     week_planned = len(await repo.list_templates(db, user_id))
 

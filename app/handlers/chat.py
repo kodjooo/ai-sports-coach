@@ -143,10 +143,20 @@ async def handle_chat(message: Message, state: FSMContext, text: str) -> None:
         result = await llm.chat_with_tools(messages, system)
 
     action = result.get("action")
+    text_out = result.get("text") or ""
+    # Подстраховка: если модель вместо вызова инструмента НАПИСАЛА тег «[предложение: Записать
+    # съеденное: X]» обычным текстом (имитация из истории) — синтезируем действие log_meal сами,
+    # чтобы появилась кнопка, а не сырой текст. Заодно вырезаем сам тег из показываемого ответа.
+    if action is None:
+        m = re.search(r"Записать съеденное:\s*(.+?)\s*[\]\n]", text_out)
+        if m:
+            action = {"name": "log_meal", "args": {"description": m.group(1).strip()}}
+    text_out = re.sub(r"\s*\[предложение:.*?\]\s*", " ", text_out, flags=re.S).strip()
+
     desc = coach_actions.describe(action) if action else None
     # Если модель вернула только действие без текста — уместная реплика по типу действия
-    if result.get("text"):
-        answer = result["text"]
+    if text_out:
+        answer = text_out
     elif action and action.get("name") == "log_meal":
         answer = "Запишу съеденное 👇"
     elif desc:

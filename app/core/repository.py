@@ -777,10 +777,26 @@ async def calories_burned(db: AsyncSession, user_id: int, days: int = 7) -> int:
 
 
 async def total_done_sessions(db: AsyncSession, user_id: int) -> int:
-    """Всего завершённых тренировок."""
+    """Всего завершённых тренировок (только с реально сделанными подходами)."""
     res = await db.execute(
         select(func.count()).select_from(Session).where(
-            Session.user_id == user_id, Session.status == "done"
+            Session.user_id == user_id,
+            Session.status == "done",
+            Session.id.in_(select(SetLog.session_id)),
+        )
+    )
+    return int(res.scalar_one())
+
+
+async def count_workouts_in_period(db: AsyncSession, user_id: int, since: date) -> int:
+    """Число реальных тренировок (done + есть подходы) за период, для недельной статистики.
+    Пустые сессии (только разминка/заминка, 0 подходов) НЕ считаются тренировкой."""
+    res = await db.execute(
+        select(func.count()).select_from(Session).where(
+            Session.user_id == user_id,
+            Session.status == "done",
+            Session.planned_date >= since,
+            Session.id.in_(select(SetLog.session_id)),
         )
     )
     return int(res.scalar_one())
@@ -791,7 +807,7 @@ async def exercise_records(db: AsyncSession, user_id: int) -> list[tuple[str, in
     res = await db.execute(
         select(SetLog.exercise_id, func.max(SetLog.reps))
         .join(Session, Session.id == SetLog.session_id)
-        .where(Session.user_id == user_id)
+        .where(Session.user_id == user_id, SetLog.reps > 0)
         .group_by(SetLog.exercise_id)
     )
     records: list[tuple[str, int]] = []
