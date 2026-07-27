@@ -182,16 +182,17 @@ COACH_TOOLS = [
 ]
 
 
-async def chat_with_tools(messages: list[dict], system: str) -> dict:
+async def chat_with_tools(messages: list[dict], system: str, model: str | None = None) -> dict:
     """Диалоговый ответ тренера с возможностью предложить действие (function calling).
 
     Возвращает {"text": str, "action": {"name","args"}|None}.
     Действие НЕ исполняется здесь — только предлагается для подтверждения.
+    model — переопределение модели (для A/B).
     """
     full = [{"role": "system", "content": system}] + messages
     try:
         resp = await usage.complete(get_client(), "chat_tools",
-            model=settings.openai_model,
+            model=model or settings.openai_model,
             reasoning_effort=settings.openai_reasoning_effort,
             tools=COACH_TOOLS,
             tool_choice="auto",
