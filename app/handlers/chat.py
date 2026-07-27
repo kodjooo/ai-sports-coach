@@ -6,7 +6,7 @@ from datetime import date
 
 from aiogram import F, Router
 from aiogram.fsm.context import FSMContext
-from aiogram.types import CallbackQuery, Message
+from aiogram.types import CallbackQuery, InlineKeyboardButton, InlineKeyboardMarkup, Message
 
 from app import debounce
 from app.core import llm, nutrition, progress, vector
@@ -151,7 +151,9 @@ async def handle_chat(message: Message, state: FSMContext, text: str) -> None:
         await state.update_data(pending_action=action)
         await message.answer(answer)
         await message.answer(f"💡 Предлагаю: {desc}", reply_markup=confirm_action_kb())
-        assistant_content = f"{answer}\n[предложение: {desc}]"
+        # ВАЖНО: в историю НЕ пишем машинный тег «[предложение: …]» — иначе модель начинает
+        # имитировать его обычным текстом вместо вызова инструмента, и кнопка не появляется.
+        assistant_content = answer
     else:
         await message.answer(answer)
         assistant_content = answer
@@ -179,8 +181,14 @@ async def act_apply(cb: CallbackQuery, state: FSMContext) -> None:
     except Exception:
         pass
     await cb.answer("Применяю…")
-    result = await coach_actions.apply(action, cb.from_user.id)
-    await cb.message.answer(f"✅ {result}")
+    result, undo_id = await coach_actions.apply(action, cb.from_user.id)
+    # Для записи еды даём кнопку отмены прямо тут (на случай ошибочной записи)
+    kb = None
+    if undo_id is not None:
+        kb = InlineKeyboardMarkup(inline_keyboard=[[
+            InlineKeyboardButton(text="↩️ Убрать эту запись", callback_data=f"meal:del:{undo_id}")
+        ]])
+    await cb.message.answer(f"✅ {result}", reply_markup=kb)
 
 
 @router.callback_query(F.data == "act:cancel")

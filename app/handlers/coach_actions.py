@@ -40,14 +40,14 @@ def describe(action: dict) -> str | None:
     return None
 
 
-async def apply(action: dict, tg_id: int) -> str:
-    """Применяет действие к данным пользователя. Возвращает текст-результат."""
+async def apply(action: dict, tg_id: int) -> tuple[str, int | None]:
+    """Применяет действие к данным пользователя. Возвращает (текст-результат, id_записи_еды_для_отмены)."""
     name = action.get("name")
     args = action.get("args", {})
     async with async_session() as db:
         user = await repo.get_user_by_tg(db, tg_id)
         if user is None:
-            return "Не нашёл профиль. Нажми /start."
+            return "Не нашёл профиль. Нажми /start.", None
 
         if name == "adjust_load":
             ex = await repo.find_exercise_by_name(db, args.get("exercise_name", ""))
@@ -56,21 +56,21 @@ async def apply(action: dict, tg_id: int) -> str:
             n = await repo.adjust_load(
                 db, user.id, ex.id, args.get("target_sets"), args.get("target_reps")
             )
-            return f"Готово, обновил нагрузку «{ex.name}»." if n else "В плане нет этого упражнения."
+            return (f"Готово, обновил нагрузку «{ex.name}»." if n else "В плане нет этого упражнения."), None
 
         if name == "replace_exercise":
             old = await repo.find_exercise_by_name(db, args.get("old_exercise", ""))
             new = await repo.find_exercise_by_name(db, args.get("new_exercise", ""))
             if not old or not new:
-                return "Не нашёл одно из упражнений в каталоге."
+                return "Не нашёл одно из упражнений в каталоге.", None
             n = await repo.replace_exercise_in_plan(db, user.id, old.id, new.id)
-            return f"Заменил «{old.name}» на «{new.name}»." if n else "В плане нет исходного упражнения."
+            return (f"Заменил «{old.name}» на «{new.name}»." if n else "В плане нет исходного упражнения."), None
 
         if name == "set_time":
             hour = int(args.get("hour", 8))
             minute = int(args.get("minute", 0))
             await repo.set_train_time(db, user, hour, minute)
-            return f"Напоминания теперь на {hour:02d}:{minute:02d}."
+            return f"Напоминания теперь на {hour:02d}:{minute:02d}.", None
 
         if name == "log_weight":
             from app.utils import valid_weight
@@ -79,9 +79,9 @@ async def apply(action: dict, tg_id: int) -> str:
             except (TypeError, ValueError):
                 weight = None
             if weight is None:
-                return "Не понял вес — напиши число в кг (например 82.5)."
+                return "Не понял вес — напиши число в кг (например 82.5).", None
             await repo.log_weight(db, user.id, weight)
-            return f"Записал вес {weight:g} кг."
+            return f"Записал вес {weight:g} кг.", None
 
         if name == "log_meal":
             from app.core import llm, nutrition, openfoodfacts
@@ -89,9 +89,9 @@ async def apply(action: dict, tg_id: int) -> str:
             known = await repo.recent_dishes(db, user.id)
             analysis = await llm.analyze_food_text(args.get("description", ""), known=known)
             if not analysis.get("items"):
-                return "Не понял, что именно съедено."
+                return "Не понял, что именно съедено.", None
             analysis = await openfoodfacts.refine(analysis)
-            await repo.add_meal(db, user.id, analysis)
+            meal = await repo.add_meal(db, user.id, analysis)
             t = analysis.get("total", {})
             dish = analysis.get("dish") or "приём пищи"
             msg = (
@@ -108,15 +108,15 @@ async def apply(action: dict, tg_id: int) -> str:
                     f"Ж {max(norm['fat'] - totals['fat'], 0)} · "
                     f"У {max(norm['carbs'] - totals['carbs'], 0)} г"
                 )
-            return msg
+            return msg, meal.id
 
         if name == "set_plan":
             workouts = args.get("workouts", [])
             if not workouts:
-                return "Пустой план — нечего применять."
+                return "Пустой план — нечего применять.", None
             n = await repo.build_custom_plan(db, user.id, workouts, environment=user.environment, equipment=user.equipment)
             if args.get("hour") is not None:
                 await repo.set_train_time(db, user, int(args["hour"]), int(args.get("minute", 0)))
-            return f"Готово! Собрал новый план на {n} дн. Загляни в «План недели»."
+            return f"Готово! Собрал новый план на {n} дн. Загляни в «План недели».", None
 
-    return "Не понял действие."
+    return "Не понял действие.", None

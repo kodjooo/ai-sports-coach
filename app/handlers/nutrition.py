@@ -164,13 +164,15 @@ async def _save_draft(cb: CallbackQuery, state: FSMContext, draft_id: str, facto
             analysis = _scale_analysis(analysis, factor)
         async with async_session() as db:
             user = await repo.get_user_by_tg(db, cb.from_user.id)
-            await repo.add_meal(db, user.id, analysis, analysis.get("photo"))
+            meal = await repo.add_meal(db, user.id, analysis, analysis.get("photo"))
             totals = await repo.today_totals(db, user.id)
             norm = nutrition.daily_norm(user)
     finally:
         _saving.discard(key)
     frac_note = {0.5: " (½ порции)", 1/3: " (⅓ порции)", 0.25: " (¼ порции)"}.get(round(factor, 4), "")
-    text = f"Записал ✅{frac_note}"
+    dish = analysis.get("dish") or "приём пищи"
+    t = analysis.get("total", {}) or {}
+    text = f"Записал: {dish}{frac_note} — {round(t.get('kcal') or 0)} ккал ✅"
     if norm:
         left_k = max(norm["kcal"] - totals["kcal"], 0)
         left_p = max(norm["protein"] - totals["protein"], 0)
@@ -180,7 +182,11 @@ async def _save_draft(cb: CallbackQuery, state: FSMContext, draft_id: str, facto
             f"\nСегодня: {totals['kcal']} / {norm['kcal']} ккал\n"
             f"Осталось добрать: {left_k} ккал · Б {left_p} · Ж {left_f} · У {left_c} г"
         )
-    await cb.message.answer(text)
+    # Кнопка отмены прямо у сообщения «Записал» (а не в меню) — на случай ошибочной записи
+    undo_kb = InlineKeyboardMarkup(inline_keyboard=[[
+        InlineKeyboardButton(text="↩️ Убрать эту запись", callback_data=f"meal:del:{meal.id}")
+    ]])
+    await cb.message.answer(text, reply_markup=undo_kb)
     await cb.answer()
 
 

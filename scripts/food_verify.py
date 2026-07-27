@@ -10,10 +10,22 @@ REPS = 3
 
 async def full(image_url, known):
     a = await llm.analyze_food_photo(image_url, known=known, model="gpt-5", tag="fv")
+    # повторяем гейт само-консистентности из on_photo
+    if (a.get("is_food") and a.get("portion_basis") == "estimate"
+            and ((a.get("total") or {}).get("kcal") or 0) > 500):
+        extra = await asyncio.gather(
+            llm.analyze_food_photo(image_url, known=known, model="gpt-5", tag="fv"),
+            llm.analyze_food_photo(image_url, known=known, model="gpt-5", tag="fv"),
+            return_exceptions=True,
+        )
+        cands = [a] + [e for e in extra if isinstance(e, dict) and e.get("is_food")]
+        cands.sort(key=lambda x: (x.get("total") or {}).get("kcal") or 0)
+        a = cands[len(cands) // 2]
     dish = a.get("dish")
+    basis = a.get("portion_basis")
     g = sum(round(i.get("grams") or 0) for i in a.get("items", []))
     a = await openfoodfacts.refine(copy.deepcopy(a))
-    return dish, g, round((a.get("total") or {}).get("kcal") or 0)
+    return f"{dish} [{basis}]", g, round((a.get("total") or {}).get("kcal") or 0)
 
 async def main():
     settings.openai_reasoning_effort = "low"
