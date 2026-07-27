@@ -45,10 +45,14 @@ def _system_content(system_prompt: str | None) -> str:
 
 
 async def chat(user_prompt: str, system_prompt: str | None = None, model: str | None = None) -> str:
-    """Единичный запрос к модели рассуждений с персональным системным промптом. model — override (A/B)."""
+    """Единичная текстовая генерация без инструментов (фидбек/недельный вывод).
+
+    По умолчанию — openai_model_text (luna): на связном тексте качество ≈ gpt-5, но дешевле.
+    model — override (A/B).
+    """
     try:
         resp = await usage.complete(get_client(), "chat",
-            model=model or settings.openai_model,
+            model=model or settings.openai_model_text,
             reasoning_effort=settings.openai_reasoning_effort,
             messages=[
                 {"role": "system", "content": _system_content(system_prompt)},
