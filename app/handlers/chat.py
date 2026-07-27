@@ -9,7 +9,7 @@ from aiogram.fsm.context import FSMContext
 from aiogram.types import CallbackQuery, InlineKeyboardButton, InlineKeyboardMarkup, Message
 
 from app import debounce
-from app.core import llm, nutrition, progress, vector
+from app.core import limits, llm, nutrition, progress, vector
 from app.core import repository as repo
 from app.core.db import async_session
 from app.core.models import User
@@ -102,6 +102,13 @@ async def handle_chat(message: Message, state: FSMContext, text: str) -> None:
                 await repo.log_weight(db, user.id, weight)
                 await message.answer(f"Записал вес — {weight:g} кг ⚖️")
                 return
+
+        # Лимит на дорогой чат-вызов (админы — без лимита; активация = прошёл онбординг)
+        activated = bool(user.profile_summary or user.system_prompt)
+        ok, reason = await limits.check_and_consume(user.tg_id, "chat", activated)
+        if not ok:
+            await message.answer(limits.deny_message(reason, "chat"))
+            return
 
         # Собираем контекст
         facts = await progress.build_facts(db, user.id)

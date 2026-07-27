@@ -12,7 +12,7 @@ from aiogram import Bot, F, Router
 from aiogram.fsm.context import FSMContext
 from aiogram.types import CallbackQuery, InlineKeyboardButton, InlineKeyboardMarkup, Message
 
-from app.core import llm, nutrition, openfoodfacts
+from app.core import limits, llm, nutrition, openfoodfacts
 from app.core import repository as repo
 from app.core.db import async_session
 from app.states import Nutrition
@@ -113,6 +113,12 @@ async def on_photo(message: Message, state: FSMContext, bot: Bot) -> None:
         async with async_session() as db:
             user = await repo.get_user_by_tg(db, message.from_user.id)
             known = await repo.recent_dishes(db, user.id) if user else []
+        # Лимит на дорогое распознавание еды (админы — без лимита; активация = прошёл онбординг)
+        activated = bool(user and (user.profile_summary or user.system_prompt))
+        ok, reason = await limits.check_and_consume(message.from_user.id, "food", activated)
+        if not ok:
+            await message.answer(limits.deny_message(reason, "food"))
+            return
         analysis = await llm.analyze_food_photo(image_url, known=known)
         # Само-консистентность ТОЛЬКО для крупной оценочной еды: если вес прикинут на глаз
         # (нет весов/этикетки) и порция калорийная (>500 ккал) — модель между прогонами сильно

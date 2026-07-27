@@ -69,7 +69,31 @@ class Settings(BaseSettings):
     # Список tg_id через запятую — логировать только их. Пусто = все (при log_dialog=true).
     log_dialog_users: str = ""
 
+    # Админы (tg_id через запятую) — без каких-либо лимитов и предохранителя.
+    admin_tg_ids: str = ""
+
+    # Глобальный предохранитель по стоимости LLM за день (в $). Софт — деградация/алерт,
+    # хард — временно отключаем дорогие LLM-функции (кнопочный функционал продолжает работать).
+    daily_cost_soft_usd: float = 5.0
+    daily_cost_hard_usd: float = 10.0
+
+    # Лимиты дорогих действий. trial — суммарный запас для новичка (до «активации» = прошёл
+    # онбординг); daily — суточный лимит для активированного пользователя.
+    limit_food_trial: int = 10
+    limit_food_daily: int = 15
+    limit_chat_trial: int = 15
+    limit_chat_daily: int = 30
+
     model_config = SettingsConfigDict(env_file=".env", extra="ignore")
+
+    @property
+    def admin_ids(self) -> set[int]:
+        ids: set[int] = set()
+        for part in self.admin_tg_ids.split(","):
+            part = part.strip()
+            if part.isdigit():
+                ids.add(int(part))
+        return ids
 
     @property
     def database_url(self) -> str:
