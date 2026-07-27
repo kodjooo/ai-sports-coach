@@ -802,33 +802,3 @@ async def analyze_food_text(description: str, prev: dict | None = None, known: l
     except Exception as exc:
         logger.warning("Ошибка анализа еды по тексту: %s", exc)
         return {"is_food": False, "items": [], "total": {}, "note": "ошибка анализа"}
-
-
-async def vision_estimate_kcal(image_url: str, grams: float | None) -> str:
-    """Оценка калорийности блюда по фото (Фаза 3)."""
-    hint = f"Примерный вес порции: {grams} г. " if grams else ""
-    try:
-        resp = await usage.complete(get_client(), "vision_kcal",
-            model=settings.openai_model,
-            reasoning_effort=settings.openai_reasoning_effort,
-            messages=[
-                {"role": "system", "content": SYSTEM_PROMPT},
-                {
-                    "role": "user",
-                    "content": [
-                        {
-                            "type": "text",
-                            "text": (
-                                f"{hint}Оцени калорийность блюда на фото. "
-                                "Ответь одной строкой: примерные ккал и 1 короткий совет."
-                            ),
-                        },
-                        {"type": "image_url", "image_url": {"url": image_url}},
-                    ],
-                },
-            ],
-        )
-        return resp.choices[0].message.content or ""
-    except Exception as exc:
-        logger.warning("Ошибка Vision-запроса к OpenAI: %s", exc)
-        return "Не удалось оценить фото. Попробуй позже."
