@@ -5,6 +5,7 @@
 """
 from __future__ import annotations
 
+import asyncio
 import base64
 
 from aiogram import Bot, F, Router
@@ -113,6 +114,23 @@ async def on_photo(message: Message, state: FSMContext, bot: Bot) -> None:
             user = await repo.get_user_by_tg(db, message.from_user.id)
             known = await repo.recent_dishes(db, user.id) if user else []
         analysis = await llm.analyze_food_photo(image_url, known=known)
+        # Само-консистентность ТОЛЬКО для крупной оценочной еды: если вес прикинут на глаз
+        # (нет весов/этикетки) и порция калорийная (>500 ккал) — модель между прогонами сильно
+        # шумит по объёму (выброс вроде суши 3118). Делаем 2 доп. прохода ПАРАЛЛЕЛЬНО (латентность
+        # как +1 вызов) и берём разбор с МЕДИАННЫМ итогом по ккал — устойчиво к выбросу.
+        # Весы/этикетки и мелкие порции (банан/яблоко/йогурт) второй проход НЕ трогает.
+        if (analysis.get("is_food") and analysis.get("portion_basis") == "estimate"
+                and ((analysis.get("total") or {}).get("kcal") or 0) > 500):
+            extra = await asyncio.gather(
+                llm.analyze_food_photo(image_url, known=known),
+                llm.analyze_food_photo(image_url, known=known),
+                return_exceptions=True,
+            )
+            cands = [analysis] + [
+                e for e in extra if isinstance(e, dict) and e.get("is_food")
+            ]
+            cands.sort(key=lambda a: (a.get("total") or {}).get("kcal") or 0)
+            analysis = cands[len(cands) // 2]  # медиана по итоговым ккал
         if analysis.get("is_food"):
             analysis = await openfoodfacts.refine(analysis)
 

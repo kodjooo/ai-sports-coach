@@ -707,9 +707,12 @@ async def embed(text: str) -> list[float]:
 
 _FOOD_SCHEMA_HINT = (
     "Верни СТРОГО JSON: {\"is_food\": bool, \"dish\": str, \"note\": str, "
+    "\"portion_basis\": \"scale\"|\"label\"|\"estimate\", "
     "\"items\": [{\"name\": str, \"query\": str, \"source\": str, \"grams\": number, \"kcal\": number, "
     "\"protein\": number, \"fat\": number, \"carbs\": number}], "
     "\"total\": {\"kcal\": number, \"protein\": number, \"fat\": number, \"carbs\": number}}. "
+    "portion_basis: \"scale\" — вес взят с табло кухонных весов; \"label\" — с этикетки/упаковки; "
+    "\"estimate\" — вес прикинут на глаз (нет ни весов, ни этикетки). "
     "dish — краткое название блюда целиком по-русски (напр. «Плов с курицей», «Овсянка с бананом»). "
     "name — ингредиент по-русски; query — простое обобщённое название продукта по-английски "
     "для поиска в базе (напр. \"boiled rice\", \"chicken breast\", \"olive oil\"). "
