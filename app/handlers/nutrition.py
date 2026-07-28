@@ -60,15 +60,25 @@ def _format(analysis: dict) -> str:
             f"• {it.get('name', '?')} ~{round(it.get('grams') or 0)} г — "
             f"{round(it.get('kcal') or 0)} ккал"
         )
+    total_g = round(sum((it.get("grams") or 0) for it in analysis.get("items", [])))
+    weight_part = f"~{total_g} г, " if total_g else ""
     lines.append(
-        f"\n<b>Итого:</b> {round(t.get('kcal') or 0)} ккал, "
+        f"\n<b>Итого:</b> {weight_part}{round(t.get('kcal') or 0)} ккал, "
         f"Б {round(t.get('protein') or 0)} / Ж {round(t.get('fat') or 0)} / "
         f"У {round(t.get('carbs') or 0)}"
     )
-    sources = {it.get("source") for it in analysis.get("items", []) if it.get("source")}
-    if sources:
-        names = {"usda": "USDA", "off": "OpenFoodFacts", "label": "этикетка на упаковке"}
-        lines.append("<i>Уточнено по базе: " + ", ".join(names.get(s, s) for s in sources) + ".</i>")
+    # Источник: базой считаем только реальные совпадения (USDA/OFF/этикетка). Если их нет —
+    # значит цифры оценил ИИ (в базе не нашлось точного совпадения), подписываем честно.
+    src = {it.get("source") for it in analysis.get("items", [])}
+    names = {"usda": "USDA", "off": "OpenFoodFacts", "label": "этикетка"}
+    db_src = [names[s] for s in ("label", "usda", "off") if s in src]
+    if db_src:
+        note = "Уточнено по базе: " + ", ".join(db_src)
+        if src - {"label", "usda", "off"}:  # часть позиций осталась на оценке ИИ
+            note += "; остальное — оценка ИИ"
+        lines.append(f"<i>{note}.</i>")
+    else:
+        lines.append("<i>Оценка ИИ по фото/описанию (в базе нет точного совпадения). Можно поправить вес.</i>")
     return "\n".join(lines)
 
 
