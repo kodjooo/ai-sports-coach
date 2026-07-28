@@ -54,3 +54,13 @@ async def typing(message: Message):
         yield
     finally:
         task.cancel()
+
+
+def md_bold_to_html(text: str) -> str:
+    """Конвертирует markdown-жирный **текст**/__текст__ в HTML <b> (сообщения шлём с parse_mode=HTML,
+    поэтому «звёздочки» от LLM иначе видны как есть)."""
+    if not text:
+        return text
+    text = re.sub(r"\*\*(.+?)\*\*", r"<b>\1</b>", text, flags=re.S)
+    text = re.sub(r"__(.+?)__", r"<b>\1</b>", text, flags=re.S)
+    return text

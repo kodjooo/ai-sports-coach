@@ -2518,7 +2518,7 @@
     "name": "Растяжка ноги сидя на стуле",
     "muscle_group": "задняя поверхность бедра",
     "difficulty": 2,
-    "equipment": "без инвентаря",
+    "equipment": "стул",
     "technique": "Сядьте прямо на стул, держась за края сиденья. Поднимите одну ногу, выпрямляя колено и сгибая голеностоп, медленно отведите её в сторону, затем верните к центру и опустите. Повторите на другую ногу.",
     "variations": [],
     "environment": "везде",
@@ -2527,13 +2527,15 @@
     "technique_en": "Sit upright in a chair and grip the seat on the sides. Raise one leg, extending the knee, flexing the ankle as you do so. Slowly move that leg outward as far as you can, and then back to the center and down. Repeat for your other leg.",
     "kind": "растяжка",
     "howto": "⚠️ Ошибки: сгибание колена и рывок — держите колено прямым, двигайтесь медленно.\n🔽 Легче: сократите амплитуду отведения.\n🔼 Тяжелее: увеличьте время удержания или амплитуду.",
-    "equipment_req": []
+    "equipment_req": [
+      "стул"
+    ]
   },
   {
     "name": "Растяжка поясницы сидя на стуле",
     "muscle_group": "широчайшие",
     "difficulty": 2,
-    "equipment": "без инвентаря",
+    "equipment": "стул",
     "technique": "Сядьте прямо на стул. Наклонитесь в сторону, подняв руку над головой, придерживаясь свободной рукой за стул. Удерживайте 10 секунд, затем повторите в другую сторону.",
     "variations": [],
     "environment": "везде",
@@ -2542,7 +2544,9 @@
     "technique_en": "Sit upright on a chair. Bend to one side with your arm over your head. You can hold onto the chair with your free hand. Hold for 10 seconds, and repeat for your other side.",
     "kind": "растяжка",
     "howto": "⚠️ Ошибки: наклон вперёд вместо в сторону и задержка дыхания — наклоняйтесь строго вбок, дышите ровно.\n🔽 Легче: сократите время удержания.\n🔼 Тяжелее: увеличьте время удержания.",
-    "equipment_req": []
+    "equipment_req": [
+      "стул"
+    ]
   },
   {
     "name": "Приседания со штангой (стойка)",
@@ -2565,7 +2569,7 @@
     "name": "Растяжка верха тела на стуле",
     "muscle_group": "плечи",
     "difficulty": 2,
-    "equipment": "без инвентаря",
+    "equipment": "стул",
     "technique": "Сядьте на край стула, держась за его спинку сзади. Выпрямите руки и, сохраняя спину прямой, потяните корпус вперёд до ощущения растяжения, удерживайте 20-30 секунд.",
     "variations": [],
     "environment": "везде",
@@ -2574,13 +2578,15 @@
     "technique_en": "Sit on the edge of a chair, gripping the back of it. Straighten your arms, keeping your back straight, and pull your upper body forward so you feel a stretch. Hold for 20-30 seconds.",
     "kind": "растяжка",
     "howto": "⚠️ Ошибки: округление спины и резкий рывок — спина прямая, тянитесь плавно.\n🔽 Легче: сократите время удержания.\n🔼 Тяжелее: увеличьте время удержания.",
-    "equipment_req": []
+    "equipment_req": [
+      "стул"
+    ]
   },
   {
     "name": "Растяжка груди и переднего пучка дельт с палкой",
     "muscle_group": "грудь",
     "difficulty": 2,
-    "equipment": "без инвентаря",
+    "equipment": "палка",
     "technique": "Встаньте прямо, держа гимнастическую палку хватом чуть шире плеч ладонями вниз перед собой. Аккуратно поднимите палку вверх и заведите за голову, ощущая растяжение груди и плеч.",
     "variations": [],
     "environment": "везде",
@@ -2589,7 +2595,9 @@
     "technique_en": "Start off by standing with your legs together, holding a bodybar or a broomstick. Take a slightly wider than shoulder width grip on the pole and hold it in front of you with your palms facing down. Carefully lift the pole up and behind your head.",
     "kind": "растяжка",
     "howto": "⚠️ Ошибки: резкий рывок и слишком широкий хват — поднимайте плавно, хват чуть шире плеч.\n🔽 Легче: сократите амплитуду подъёма палки.\n🔼 Тяжелее: увеличьте амплитуду или время удержания.",
-    "equipment_req": []
+    "equipment_req": [
+      "палка"
+    ]
   },
   {
     "name": "Толчок мяча от груди из трёхточечной стойки",

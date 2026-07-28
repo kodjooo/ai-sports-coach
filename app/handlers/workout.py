@@ -29,17 +29,32 @@ from app.keyboards import (
     workout_menu,
 )
 from app.states import Workout
-from app.utils import typing
+from app.utils import md_bold_to_html, typing
 
 router = Router()
 
 # Ключевые слова «временных» упражнений (результат в секундах, а не повторах)
 _TIME_KEYWORDS = ("планк", "вис", "изометр", "hold", "статич", "уголок", "удержан")
+# «Повторные» глаголы: если движение динамическое (отжимание/присед/выпад и т.п.),
+# считаем повторами, даже если в названии есть «планка» (напр. «отжимание в боковую планку»).
+_REP_KEYWORDS = ("отжиман", "присед", "выпад", "подъём", "подъем", "тяга", "жим",
+                 "скручиван", "мостик", "сгибан", "разгибан", "прыж", "берпи", "махи")
 
 
 def _is_time_based(name: str, muscle_group: str) -> bool:
+    n = (name or "").lower()
+    if any(k in n for k in _REP_KEYWORDS):
+        return False  # динамическое движение → повторы, а не секунды
     text = f"{name} {muscle_group}".lower()
     return any(k in text for k in _TIME_KEYWORDS)
+
+
+def _equipment_note(item: dict) -> str:
+    """Короткая подпись про инвентарь для упражнения (по каталогу)."""
+    from app.core import catalog
+    hit = catalog.resolve(item.get("name", ""))
+    req = (hit.get("equipment_req") if hit else None) or []
+    return "нужен инвентарь: " + ", ".join(req) if req else "без инвентаря"
 
 
 # Признаки упражнения «на каждую сторону» (один подход = обе стороны, подпись это поясняет)
@@ -373,7 +388,10 @@ async def _advance(target, state: FSMContext) -> None:
         _start_rest(target, rest, state)  # карточку подхода покажем ПОСЛЕ отдыха
     elif i + 1 < len(items):
         rest = item.get("rest_sec") or 60
-        await target.answer(f"⏱ Отдых {rest} сек перед следующим упражнением.")
+        nxt = items[i + 1]
+        await target.answer(
+            f"⏱ Отдых {rest} сек. Дальше: <b>{nxt['name']}</b> — {_equipment_note(nxt)}."
+        )
         await state.update_data(cur_item=i + 1, cur_set=1, pending_reps=None, suggest=None)
         _start_rest(target, rest, state)
     else:
@@ -596,7 +614,7 @@ async def _finish_inner(target, state: FSMContext) -> None:
             {"type": "coach_feedback", "date": str(_today())},
         )
     await state.clear()
-    msg = feedback or "Отличная работа!"
+    msg = md_bold_to_html(feedback) if feedback else "Отличная работа!"
     if burned:
         msg += f"\n\n🔥 Потрачено ~{burned} ккал за тренировку."
     await target.answer(msg, reply_markup=main_menu())
@@ -625,36 +643,36 @@ async def replace_start(cb: CallbackQuery, state: FSMContext) -> None:
     cur_group = (cur.get("muscle_group") or "").split("/")[0].strip().lower()
     from aiogram.types import InlineKeyboardButton, InlineKeyboardMarkup
 
-    async with async_session() as db:
-        from sqlalchemy import select
-        from app.core.models import Exercise
+    from app.core import catalog
 
+    async with async_session() as db:
         user = await repo.get_user_by_tg(db, cb.from_user.id)
         equip = (user.equipment if user else None)
-        res = await db.execute(select(Exercise).where(Exercise.id != cur_ex_id))
-        others = list(res.scalars().all())
+        level = (user.level if user else None)
+        # Кандидаты замены — из ТОЙ ЖЕ палитры, что и генерация плана: уже отфильтрованы
+        # по инвентарю И уровню (новичку — без плиометрики и сложного). Единый источник правды.
+        pool = catalog.main_candidates(equip, level, limit=400)
+        # Резолвим названия каталога в упражнения БД (для callback по id)
+        opts = []
+        for e in pool:
+            if e["name"] == cur["name"]:
+                continue
+            ex = await repo.find_exercise_by_name(db, e["name"])
+            if ex:
+                opts.append((ex, e.get("muscle_group") or "—"))
 
-    # Фильтр по ДОСТУПНОМУ ОБОРУДОВАНИЮ (единая ось): предлагаем только выполнимое.
-    from app.core import catalog
-    avail = catalog.available_equipment(equip)
+    # Сначала — та же группа мышц (равнозначная замена), потом остальные из палитры
+    def same_group(mg: str) -> bool:
+        return bool(cur_group) and cur_group in (mg or "").lower()
 
-    def feasible(ex) -> bool:
-        hit = catalog.resolve(ex.name)
-        if not hit:
-            return True  # нет в каталоге — не отсекаем (напр. кастомные)
-        return set(hit.get("equipment_req") or []).issubset(avail)
-
-    suitable = [ex for ex in others if feasible(ex)]
-    others = suitable or others
-
-    # Сначала — упражнения на ту же группу мышц (равнозначная замена)
-    def same_group(ex) -> bool:
-        return cur_group and cur_group in (ex.muscle_group or "").lower()
-
-    others.sort(key=lambda ex: (not same_group(ex), ex.name))
+    opts.sort(key=lambda t: (not same_group(t[1]), t[0].name))
+    if not opts:
+        await cb.message.answer("Не нашёл подходящих замен под твой инвентарь и уровень 🤔")
+        await cb.answer()
+        return
     rows = [
-        [InlineKeyboardButton(text=f"{ex.name} · {ex.muscle_group or '—'}", callback_data=f"repex:{ex.id}")]
-        for ex in others[:8]
+        [InlineKeyboardButton(text=f"{ex.name} · {mg}", callback_data=f"repex:{ex.id}")]
+        for ex, mg in opts[:8]
     ]
     rows.append([InlineKeyboardButton(text="↩️ Отмена замены", callback_data="wk:replace_cancel")])
     await cb.message.answer(

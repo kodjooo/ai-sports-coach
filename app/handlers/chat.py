@@ -15,7 +15,7 @@ from app.core.db import async_session
 from app.core.models import User
 from app.handlers import coach_actions
 from app.keyboards import confirm_action_kb
-from app.utils import parse_weight, typing
+from app.utils import md_bold_to_html, parse_weight, typing
 
 router = Router()
 
@@ -163,6 +163,7 @@ async def handle_chat(message: Message, state: FSMContext, text: str) -> None:
         answer = "Есть идея по программе 👇"
     else:
         answer = "Понял."
+    answer = md_bold_to_html(answer)  # LLM иногда даёт **markdown**, а шлём с HTML
 
     if desc:
         await state.update_data(pending_action=action)
