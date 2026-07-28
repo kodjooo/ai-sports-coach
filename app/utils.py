@@ -64,3 +64,17 @@ def md_bold_to_html(text: str) -> str:
     text = re.sub(r"\*\*(.+?)\*\*", r"<b>\1</b>", text, flags=re.S)
     text = re.sub(r"__(.+?)__", r"<b>\1</b>", text, flags=re.S)
     return text
+
+
+# Определение «временных» упражнений (результат в секундах, а не повторах) — единый источник
+# для карточки тренировки и плана недели, чтобы единицы не расходились.
+_TIME_KW = ("планк", "вис", "изометр", "hold", "статич", "уголок", "удержан")
+_REP_KW = ("отжиман", "присед", "выпад", "подъём", "подъем", "тяга", "жим",
+           "скручиван", "мостик", "сгибан", "разгибан", "прыж", "берпи", "махи")
+
+
+def is_time_based(name: str, muscle_group: str = "") -> bool:
+    n = (name or "").lower()
+    if any(k in n for k in _REP_KW):
+        return False  # динамическое движение → повторы, даже если в названии «планка»
+    return any(k in f"{n} {(muscle_group or '').lower()}" for k in _TIME_KW)

@@ -29,24 +29,13 @@ from app.keyboards import (
     workout_menu,
 )
 from app.states import Workout
-from app.utils import md_bold_to_html, typing
+from app.utils import is_time_based, md_bold_to_html, typing
 
 router = Router()
 
-# Ключевые слова «временных» упражнений (результат в секундах, а не повторах)
-_TIME_KEYWORDS = ("планк", "вис", "изометр", "hold", "статич", "уголок", "удержан")
-# «Повторные» глаголы: если движение динамическое (отжимание/присед/выпад и т.п.),
-# считаем повторами, даже если в названии есть «планка» (напр. «отжимание в боковую планку»).
-_REP_KEYWORDS = ("отжиман", "присед", "выпад", "подъём", "подъем", "тяга", "жим",
-                 "скручиван", "мостик", "сгибан", "разгибан", "прыж", "берпи", "махи")
-
-
 def _is_time_based(name: str, muscle_group: str) -> bool:
-    n = (name or "").lower()
-    if any(k in n for k in _REP_KEYWORDS):
-        return False  # динамическое движение → повторы, а не секунды
-    text = f"{name} {muscle_group}".lower()
-    return any(k in text for k in _TIME_KEYWORDS)
+    # Единый источник в app.utils.is_time_based (чтобы карточка и план недели не расходились)
+    return is_time_based(name, muscle_group)
 
 
 def _equipment_note(item: dict) -> str:

@@ -473,7 +473,6 @@ async def generate_plan(
         f"Цель: {goal or '—'}\nПол: {sex or '—'}\n"
         f"Уровень подготовки: {level or 'новичок'}\n"
         f"Профиль (учти боли/ограничения/желания): {profile_summary or '—'}\n"
-        f"Место тренировок: {environment or 'дом'}\n"
         f"Инвентарь: {equipment or 'нет'}\n"
         f"Дни недели (0=Пн): {weekdays}\n\n"
         f"СПИСОК ОСНОВНЫХ упражнений (выбирай отсюда):\n{catalog.names_for_prompt(main_pool)}\n\n"

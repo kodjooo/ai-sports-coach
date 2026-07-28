@@ -3,7 +3,7 @@ from __future__ import annotations
 
 from datetime import timedelta
 
-from app.utils import local_today
+from app.utils import is_time_based, local_today
 
 from aiogram import F, Router
 from aiogram.filters import Command
@@ -137,7 +137,8 @@ async def _render_plan(user_id: int) -> str:
                     continue  # разминка/заминка показываются отдельными разделами (текстом)
                 ex = await repo.get_exercise(db, it.exercise_id)
                 rest = f", отдых {it.rest_sec} сек" if it.rest_sec else ""
-                sr = f" {it.target_sets}×{it.target_reps}" if it.target_sets and it.target_reps else ""
+                unit = " сек" if is_time_based(ex.name if ex else "", ex.muscle_group if ex else "") else ""
+                sr = f" {it.target_sets}×{it.target_reps}{unit}" if it.target_sets and it.target_reps else ""
                 rows.append(f"{ex.name if ex else '?'}{sr}{rest}")
             block = [f"\n<b>{tpl.label}</b> ({day}):"]
             if tpl.warmup:

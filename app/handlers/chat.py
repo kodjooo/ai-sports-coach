@@ -46,7 +46,7 @@ def _context_block(profile, plan, weight_line, facts, memory, summary, env, equi
     return (
         "Контекст о клиенте (не показывай дословно, используй по смыслу):\n"
         f"ПРОФИЛЬ: {profile or '—'}\n"
-        f"МЕСТО ТРЕНИРОВОК: {env or 'дом'}; ИНВЕНТАРЬ: {equip or 'нет'}\n"
+        f"ИНВЕНТАРЬ: {equip or 'нет'}\n"
         f"ПЛАН: {plan}\n"
         f"ВЕС: {weight_line}\n"
         f"ПИТАНИЕ СЕГОДНЯ: {nutri}\n"
