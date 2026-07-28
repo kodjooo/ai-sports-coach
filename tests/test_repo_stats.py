@@ -11,14 +11,14 @@ from sqlalchemy.ext.asyncio import async_sessionmaker, create_async_engine
 from sqlalchemy.pool import StaticPool
 
 from app.core import repository as repo
-from app.core.models import Base, Meal, Session, SetLog, User
+from app.core.models import Base, Meal, MealItem, Session, SetLog, User
 
 
 async def _make_session():
     engine = create_async_engine("sqlite+aiosqlite:///:memory:", poolclass=StaticPool)
     async with engine.begin() as conn:
         # создаём только нужные таблицы (у exercises — JSONB, sqlite его не соберёт)
-        tables = [t.__table__ for t in (User, Session, SetLog, Meal)]
+        tables = [t.__table__ for t in (User, Session, SetLog, Meal, MealItem)]
         await conn.run_sync(lambda c: Base.metadata.create_all(c, tables=tables))
     return async_sessionmaker(engine, expire_on_commit=False)
 
