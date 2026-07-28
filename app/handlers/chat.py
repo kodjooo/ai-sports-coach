@@ -107,7 +107,7 @@ async def handle_chat(message: Message, state: FSMContext, text: str) -> None:
         activated = bool(user.profile_summary or user.system_prompt)
         ok, reason = await limits.check_and_consume(user.tg_id, "chat", activated)
         if not ok:
-            await message.answer(limits.deny_message(reason, "chat"))
+            await message.answer(limits.deny_message(reason, "chat", activated))
             return
 
         # Собираем контекст

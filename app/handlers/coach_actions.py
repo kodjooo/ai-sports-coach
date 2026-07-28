@@ -52,7 +52,7 @@ async def apply(action: dict, tg_id: int) -> tuple[str, int | None]:
         if name == "adjust_load":
             ex = await repo.find_exercise_by_name(db, args.get("exercise_name", ""))
             if not ex:
-                return "Не нашёл такое упражнение в плане."
+                return "Не нашёл такое упражнение в плане.", None
             n = await repo.adjust_load(
                 db, user.id, ex.id, args.get("target_sets"), args.get("target_reps")
             )

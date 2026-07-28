@@ -26,7 +26,7 @@ def settings_menu() -> InlineKeyboardMarkup:
         inline_keyboard=[
             [InlineKeyboardButton(text="📅 Дни тренировок", callback_data="set:schedule")],
             [InlineKeyboardButton(text="⏰ Время напоминаний", callback_data="set:time")],
-            [InlineKeyboardButton(text="🏋 Место и инвентарь", callback_data="set:env")],
+            [InlineKeyboardButton(text="🏋️ Мой инвентарь", callback_data="set:env")],
             [InlineKeyboardButton(text="🎚 Уровень подготовки", callback_data="set:level")],
             [InlineKeyboardButton(text="🔢 Упражнений в тренировке", callback_data="set:exd")],
             [InlineKeyboardButton(text="🍽 Цель по питанию", callback_data="set:ngoal")],

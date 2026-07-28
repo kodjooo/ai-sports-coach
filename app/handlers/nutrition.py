@@ -127,7 +127,7 @@ async def on_photo(message: Message, state: FSMContext, bot: Bot) -> None:
         activated = bool(user and (user.profile_summary or user.system_prompt))
         ok, reason = await limits.check_and_consume(message.from_user.id, "food", activated)
         if not ok:
-            await message.answer(limits.deny_message(reason, "food"))
+            await message.answer(limits.deny_message(reason, "food", activated))
             return
         analysis = await llm.analyze_food_photo(image_url, known=known)
         # Само-консистентность ТОЛЬКО для крупной оценочной еды: если вес прикинут на глаз
