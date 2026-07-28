@@ -42,7 +42,8 @@ def _patch(monkeypatch):
     monkeypatch.setattr(settings, "limit_food_daily", 5, raising=False)
     monkeypatch.setattr(settings, "daily_cost_soft_usd", 5.0, raising=False)
     monkeypatch.setattr(settings, "daily_cost_hard_usd", 10.0, raising=False)
-    monkeypatch.setattr(settings, "admin_ids", {999}, raising=False)
+    # admin_ids — вычисляемое property, монипатчим саму проверку
+    monkeypatch.setattr(limits, "is_admin", lambda tg: tg == 999)
     limits._LIMITS["food"] = (3, 5)
     return fake
 
