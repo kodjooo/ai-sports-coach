@@ -18,7 +18,7 @@ depends_on: Union[str, Sequence[str], None] = None
 def upgrade() -> None:
     op.create_table(
         "favorite_meals",
-        sa.Column("id", sa.BigInteger(), primary_key=True, autoincrement=True),
+        sa.Column("id", sa.Integer(), primary_key=True, autoincrement=True),
         sa.Column("user_id", sa.BigInteger(), sa.ForeignKey("users.id"), nullable=False),
         sa.Column("dish", sa.String(), nullable=False),
         sa.Column("kcal", sa.Numeric(), nullable=True),

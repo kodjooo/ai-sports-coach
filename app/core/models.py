@@ -185,7 +185,7 @@ class FavoriteMeal(Base):
 
     __tablename__ = "favorite_meals"
 
-    id: Mapped[int] = mapped_column(BigInteger, primary_key=True)
+    id: Mapped[int] = mapped_column(Integer, primary_key=True, autoincrement=True)
     user_id: Mapped[int] = mapped_column(BigInteger, ForeignKey("users.id"))
     dish: Mapped[str] = mapped_column(String)              # название для кнопки
     kcal: Mapped[Decimal | None] = mapped_column(Numeric)  # ккал полной порции (для подписи)
