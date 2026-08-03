@@ -28,10 +28,10 @@ def _confirm_kb(draft_id: str) -> InlineKeyboardMarkup:
                 InlineKeyboardButton(text="✅ Сохранить", callback_data=f"meal:save:{draft_id}"),
                 InlineKeyboardButton(text="✏️ Исправить", callback_data=f"meal:edit:{draft_id}"),
             ],
-            [  # съел не всё — записать долю порции
+            [  # съел не всё — записать долю порции (единый формат на всех кнопках)
                 InlineKeyboardButton(text="½ порции", callback_data=f"meal:frac:{draft_id}:1:2"),
-                InlineKeyboardButton(text="⅓", callback_data=f"meal:frac:{draft_id}:1:3"),
-                InlineKeyboardButton(text="¼", callback_data=f"meal:frac:{draft_id}:1:4"),
+                InlineKeyboardButton(text="⅓ порции", callback_data=f"meal:frac:{draft_id}:1:3"),
+                InlineKeyboardButton(text="¼ порции", callback_data=f"meal:frac:{draft_id}:1:4"),
             ],
             [InlineKeyboardButton(text="↩️ Отмена", callback_data=f"meal:cancel:{draft_id}")],
         ]
@@ -158,6 +158,25 @@ async def on_photo(message: Message, state: FSMContext, bot: Bot) -> None:
     analysis["photo"] = file_id
     await _set_draft(state, draft_id, analysis)
     await message.answer(_format(analysis), reply_markup=_confirm_kb(draft_id))
+
+
+async def present_meal_from_text(message: Message, state: FSMContext, description: str) -> bool:
+    """Еда, названная текстом в чате: распознаём и показываем ТАКУЮ ЖЕ карточку с кнопками
+    (сохранить/доли/исправить/отмена), как для фото. Каждое сообщение = свой черновик, поэтому
+    несколько блюд можно сохранить по отдельности. Возвращает True, если это оказалась еда."""
+    async with typing(message):
+        async with async_session() as db:
+            user = await repo.get_user_by_tg(db, message.from_user.id)
+            known = await repo.recent_dishes(db, user.id) if user else []
+        analysis = await llm.analyze_food_text(description, known=known)
+        if analysis.get("is_food"):
+            analysis = await openfoodfacts.refine(analysis)
+    if not analysis.get("is_food"):
+        return False
+    draft_id = str(message.message_id)
+    await _set_draft(state, draft_id, analysis)
+    await message.answer(_format(analysis), reply_markup=_confirm_kb(draft_id))
+    return True
 
 
 async def _save_draft(cb: CallbackQuery, state: FSMContext, draft_id: str, factor: float = 1.0) -> None:

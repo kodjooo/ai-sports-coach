@@ -14,6 +14,7 @@ from app.core import repository as repo
 from app.core.db import async_session
 from app.core.models import User
 from app.handlers import coach_actions
+from app.handlers.nutrition import present_meal_from_text as meal_present
 from app.keyboards import confirm_action_kb
 from app.utils import md_bold_to_html, parse_weight, typing
 
@@ -165,18 +166,14 @@ async def handle_chat(message: Message, state: FSMContext, text: str) -> None:
     answer = md_bold_to_html(answer)  # LLM иногда даёт **markdown**, а шлём с HTML
 
     if is_meal:
-        # Еду, введённую текстом, записываем СРАЗУ (надёжно), с кнопкой отмены — без отдельного
-        # подтверждения. Иначе несколько блюд подряд перезаписывали pending_action и терялись.
-        if text_out:  # если модель что-то сказала по делу — покажем
-            await message.answer(answer)
-        result, undo_id = await coach_actions.apply(action, message.from_user.id)
-        kb = None
-        if undo_id is not None:
-            kb = InlineKeyboardMarkup(inline_keyboard=[[
-                InlineKeyboardButton(text="↩️ Убрать эту запись", callback_data=f"meal:del:{undo_id}")
-            ]])
-        await message.answer(f"✅ {result}", reply_markup=kb)
-        assistant_content = f"(записал приём пищи: {action['args'].get('description', '')})"
+        # Еду, названную текстом, ведём как фото: показываем карточку с кнопками
+        # (сохранить / доли / исправить / отмена). Каждое сообщение = свой черновик,
+        # поэтому несколько блюд можно сохранить по отдельности и ничего не теряется.
+        desc_food = (action.get("args") or {}).get("description") or text
+        shown = await meal_present(message, state, desc_food)
+        if not shown:
+            await message.answer("Не понял, что именно съедено — опиши блюдо чуть подробнее 🙂")
+        assistant_content = f"(предложил записать: {desc_food})"
     elif desc:
         await state.update_data(pending_action=action)
         await message.answer(answer)
