@@ -64,10 +64,12 @@ async def build_facts(db: AsyncSession, user_id: int, limit: int = 30) -> str:
 
 
 async def full_stats(db: AsyncSession, user_id: int) -> str:
-    """Расширенная статистика: всего, неделя, вес, рекорды."""
+    """Расширенная статистика: всего, текущая неделя (с понедельника), вес."""
     total = await repo.total_done_sessions(db, user_id)
 
-    since = local_today() - timedelta(days=7)
+    today = local_today()
+    since = today - timedelta(days=today.weekday())  # понедельник текущей недели
+    days_win = today.weekday() + 1                    # Пн..сегодня включительно
     # Считаем только реальные тренировки (с подходами); пустые сессии не в счёт
     week_done = await repo.count_workouts_in_period(db, user_id, since)
     # План на неделю = число тренировочных дней (активных шаблонов)
@@ -75,13 +77,12 @@ async def full_stats(db: AsyncSession, user_id: int) -> str:
 
     weight = await repo.current_weight(db, user_id)
     dw = await repo.weight_change(db, user_id, days=30)
-    records = await repo.exercise_records(db, user_id)
 
-    burned_week = await repo.calories_burned(db, user_id, days=7)
+    burned_week = await repo.calories_burned(db, user_id, days=days_win)
 
     lines = ["📊 <b>Статистика</b>", ""]
     lines.append(f"🏋️ Всего тренировок: <b>{total}</b>")
-    lines.append(f"📅 За неделю: <b>{week_done}</b> из {week_planned}")
+    lines.append(f"📅 На этой неделе: <b>{week_done}</b> из {week_planned}")
     if burned_week:
         lines.append(f"🔥 Потрачено за неделю: <b>~{burned_week}</b> ккал")
 
@@ -94,18 +95,13 @@ async def full_stats(db: AsyncSession, user_id: int) -> str:
     else:
         lines.append("⚖️ Вес ещё не записан")
 
-    if records:
-        lines.append("")
-        lines.append("🏆 <b>Рекорды</b> (лучший подход, повт./сек):")
-        for name, best in records:
-            lines.append(f"• {name}: {best}")
-
     return "\n".join(lines)
 
 
 async def weekly_report(db: AsyncSession, user_id: int) -> str:
     """Недельный отчёт: тренировки, динамика веса."""
-    since = local_today() - timedelta(days=7)
+    today = local_today()
+    since = today - timedelta(days=today.weekday())  # с понедельника текущей недели
     sessions = await repo.sessions_in_period(db, user_id, since)
     done = [s for s in sessions if s.status == "done"]
     # План на неделю = число тренировочных дней (активных шаблонов)

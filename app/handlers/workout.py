@@ -385,6 +385,7 @@ async def _advance(target, state: FSMContext) -> None:
         _start_rest(target, rest, state)
     else:
         _cancel_rest(target.chat.id)
+        await _rest_between_phases(target, "💪 Основная часть готова! Отдышись ~30–60 сек — и лёгкая заминка 🧘")
         await _show_cooldown(target, state)
 
 
@@ -453,9 +454,15 @@ async def finish_discard(cb: CallbackQuery, state: FSMContext) -> None:
     await cb.answer()
 
 
+async def _rest_between_phases(target, text: str) -> None:
+    """Короткая пауза-подсказка между фазами (после разминки / перед заминкой)."""
+    await target.answer(text)
+
+
 @router.callback_query(Workout.in_progress, F.data == "wk:warmup_done")
 async def warmup_done(cb: CallbackQuery, state: FSMContext) -> None:
     await cb.answer()
+    await _rest_between_phases(cb.message, "🧘 Разминка окончена — переведи дух ~30 сек, и переходим к основной части 💪")
     await _show_set(cb.message, state)
 
 
@@ -470,6 +477,7 @@ async def warm_next(cb: CallbackQuery, state: FSMContext) -> None:
         await state.update_data(warm_idx=idx)
         await _show_warmup_step(cb.message, state)
     else:
+        await _rest_between_phases(cb.message, "🧘 Разминка окончена — переведи дух ~30 сек, и переходим к основной части 💪")
         await _show_set(cb.message, state)
 
 

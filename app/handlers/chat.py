@@ -153,19 +153,31 @@ async def handle_chat(message: Message, state: FSMContext, text: str) -> None:
             action = {"name": "log_meal", "args": {"description": m.group(1).strip()}}
     text_out = re.sub(r"\s*\[предложение:.*?\]\s*", " ", text_out, flags=re.S).strip()
 
-    desc = coach_actions.describe(action) if action else None
-    # Если модель вернула только действие без текста — уместная реплика по типу действия
+    is_meal = bool(action and action.get("name") == "log_meal")
+    desc = coach_actions.describe(action) if (action and not is_meal) else None
+    # Реплика по типу действия, если модель не дала текст
     if text_out:
         answer = text_out
-    elif action and action.get("name") == "log_meal":
-        answer = "Запишу съеденное 👇"
     elif desc:
         answer = "Есть идея по программе 👇"
     else:
         answer = "Понял."
     answer = md_bold_to_html(answer)  # LLM иногда даёт **markdown**, а шлём с HTML
 
-    if desc:
+    if is_meal:
+        # Еду, введённую текстом, записываем СРАЗУ (надёжно), с кнопкой отмены — без отдельного
+        # подтверждения. Иначе несколько блюд подряд перезаписывали pending_action и терялись.
+        if text_out:  # если модель что-то сказала по делу — покажем
+            await message.answer(answer)
+        result, undo_id = await coach_actions.apply(action, message.from_user.id)
+        kb = None
+        if undo_id is not None:
+            kb = InlineKeyboardMarkup(inline_keyboard=[[
+                InlineKeyboardButton(text="↩️ Убрать эту запись", callback_data=f"meal:del:{undo_id}")
+            ]])
+        await message.answer(f"✅ {result}", reply_markup=kb)
+        assistant_content = f"(записал приём пищи: {action['args'].get('description', '')})"
+    elif desc:
         await state.update_data(pending_action=action)
         await message.answer(answer)
         await message.answer(f"💡 Предлагаю: {desc}", reply_markup=confirm_action_kb())
