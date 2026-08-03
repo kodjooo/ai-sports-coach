@@ -178,3 +178,17 @@ class MealItem(Base):
     protein: Mapped[Decimal | None] = mapped_column(Numeric)
     fat: Mapped[Decimal | None] = mapped_column(Numeric)
     carbs: Mapped[Decimal | None] = mapped_column(Numeric)
+
+
+class FavoriteMeal(Base):
+    """Избранное блюдо: снимок разбора (полная порция) для записи одной кнопкой."""
+
+    __tablename__ = "favorite_meals"
+
+    id: Mapped[int] = mapped_column(BigInteger, primary_key=True)
+    user_id: Mapped[int] = mapped_column(BigInteger, ForeignKey("users.id"))
+    dish: Mapped[str] = mapped_column(String)              # название для кнопки
+    kcal: Mapped[Decimal | None] = mapped_column(Numeric)  # ккал полной порции (для подписи)
+    payload: Mapped[str] = mapped_column(String)           # JSON-снимок analysis (items+total)
+    times_used: Mapped[int] = mapped_column(Integer, default=0, server_default="0")
+    created_at: Mapped[datetime] = mapped_column(DateTime(timezone=True), server_default=func.now())

@@ -7,6 +7,7 @@ from __future__ import annotations
 
 import asyncio
 import base64
+import json
 
 from aiogram import Bot, F, Router
 from aiogram.fsm.context import FSMContext
@@ -217,11 +218,12 @@ async def _save_draft(cb: CallbackQuery, state: FSMContext, draft_id: str, facto
             f"\nСегодня: {totals['kcal']} / {norm['kcal']} ккал\n"
             f"Осталось добрать: {left_k} ккал · Б {left_p} · Ж {left_f} · У {left_c} г"
         )
-    # Кнопка отмены прямо у сообщения «Записал» (а не в меню) — на случай ошибочной записи
-    undo_kb = InlineKeyboardMarkup(inline_keyboard=[[
-        InlineKeyboardButton(text="↩️ Убрать эту запись", callback_data=f"meal:del:{meal.id}")
+    # Кнопки у сообщения «Записал»: отмена (ошибочная запись) и добавление в избранное
+    kb = InlineKeyboardMarkup(inline_keyboard=[[
+        InlineKeyboardButton(text="↩️ Убрать эту запись", callback_data=f"meal:del:{meal.id}"),
+        InlineKeyboardButton(text="⭐ В избранное", callback_data=f"fav:add:{meal.id}"),
     ]])
-    await cb.message.answer(text, reply_markup=undo_kb)
+    await cb.message.answer(text, reply_markup=kb)
     await cb.answer()
 
 
@@ -294,3 +296,103 @@ async def handle_correction(message: Message, state: FSMContext, text: str) -> N
     await state.set_state(None)
     await _set_draft(state, draft_id, analysis)
     await message.answer(_format(analysis), reply_markup=_confirm_kb(draft_id))
+
+
+# ---------- Избранные блюда ----------
+
+def _favorites_kb(favs: list, manage: bool = False) -> InlineKeyboardMarkup:
+    rows = []
+    for f in favs[:20]:
+        if manage:
+            rows.append([InlineKeyboardButton(
+                text=f"🗑 {f.dish[:34]}", callback_data=f"fav:rm:{f.id}")])
+        else:
+            kcal = round(float(f.kcal or 0))
+            rows.append([InlineKeyboardButton(
+                text=f"{f.dish[:30]} — {kcal} ккал", callback_data=f"fav:log:{f.id}")])
+    if favs and not manage:
+        rows.append([InlineKeyboardButton(text="🗑 Управлять списком", callback_data="fav:manage")])
+    elif manage:
+        rows.append([InlineKeyboardButton(text="⬅️ Назад", callback_data="fav:list")])
+    return InlineKeyboardMarkup(inline_keyboard=rows)
+
+
+@router.callback_query(F.data.startswith("fav:add:"))
+async def fav_add(cb: CallbackQuery) -> None:
+    meal_id = int(cb.data.split(":")[2])
+    async with async_session() as db:
+        user = await repo.get_user_by_tg(db, cb.from_user.id)
+        fav = await repo.add_favorite_from_meal(db, user.id, meal_id) if user else None
+    await cb.answer("⭐ Добавил в избранное" if fav else "Не получилось", show_alert=not fav)
+    if fav:
+        try:  # убираем кнопку, чтобы не жать повторно
+            await cb.message.edit_reply_markup(reply_markup=InlineKeyboardMarkup(inline_keyboard=[[
+                InlineKeyboardButton(text="↩️ Убрать эту запись", callback_data=f"meal:del:{meal_id}")
+            ]]))
+        except Exception:
+            pass
+
+
+@router.callback_query(F.data == "fav:list")
+async def fav_list(cb: CallbackQuery) -> None:
+    async with async_session() as db:
+        user = await repo.get_user_by_tg(db, cb.from_user.id)
+        favs = await repo.list_favorites(db, user.id) if user else []
+    if not favs:
+        await cb.answer()
+        await cb.message.answer("В избранном пока пусто. Запиши блюдо и нажми «⭐ В избранное».")
+        return
+    await cb.answer()
+    await cb.message.answer("⭐ <b>Мои блюда</b> — тапни, чтобы записать:", reply_markup=_favorites_kb(favs))
+
+
+@router.callback_query(F.data == "fav:manage")
+async def fav_manage(cb: CallbackQuery) -> None:
+    async with async_session() as db:
+        user = await repo.get_user_by_tg(db, cb.from_user.id)
+        favs = await repo.list_favorites(db, user.id) if user else []
+    await cb.answer()
+    try:
+        await cb.message.edit_text("⭐ <b>Мои блюда</b> — убрать ненужное:", reply_markup=_favorites_kb(favs, manage=True))
+    except Exception:
+        await cb.message.answer("⭐ <b>Мои блюда</b> — убрать ненужное:", reply_markup=_favorites_kb(favs, manage=True))
+
+
+@router.callback_query(F.data.startswith("fav:rm:"))
+async def fav_rm(cb: CallbackQuery) -> None:
+    fav_id = int(cb.data.split(":")[2])
+    async with async_session() as db:
+        user = await repo.get_user_by_tg(db, cb.from_user.id)
+        await repo.delete_favorite(db, fav_id, user.id) if user else None
+        favs = await repo.list_favorites(db, user.id) if user else []
+    await cb.answer("Убрал")
+    try:
+        if favs:
+            await cb.message.edit_reply_markup(reply_markup=_favorites_kb(favs, manage=True))
+        else:
+            await cb.message.edit_text("В избранном пусто.")
+    except Exception:
+        pass
+
+
+@router.callback_query(F.data.startswith("fav:log:"))
+async def fav_log(cb: CallbackQuery, state: FSMContext) -> None:
+    """Запись из избранного: показываем ТУ ЖЕ карточку с кнопками (Сохранить/½⅓¼/Отмена)."""
+    fav_id = int(cb.data.split(":")[2])
+    async with async_session() as db:
+        user = await repo.get_user_by_tg(db, cb.from_user.id)
+        fav = await repo.get_favorite(db, fav_id, user.id) if user else None
+        if fav:
+            await repo.bump_favorite(db, fav_id)
+    if not fav:
+        await cb.answer("Блюдо не найдено", show_alert=True)
+        return
+    await cb.answer()
+    try:
+        analysis = json.loads(fav.payload)
+    except Exception:
+        await cb.message.answer("Не удалось прочитать избранное блюдо 🤔")
+        return
+    draft_id = f"fav{fav_id}-{cb.message.message_id}"
+    await _set_draft(state, draft_id, analysis)
+    await cb.message.answer(_format(analysis), reply_markup=_confirm_kb(draft_id))

@@ -198,7 +198,10 @@ async def show_nutrition(message: Message) -> None:
     if burned_today:
         lines.append(f"🔥 Потрачено на тренировке: ~{burned_today} ккал (не входит в норму выше)")
     lines.append("\n📷 Пришли фото еды или напиши, что съел — запишу и посчитаю КБЖУ.")
-    await message.answer("\n".join(lines))
+    fav_kb = InlineKeyboardMarkup(inline_keyboard=[[
+        InlineKeyboardButton(text="⭐ Мои блюда", callback_data="fav:list")
+    ]])
+    await message.answer("\n".join(lines), reply_markup=fav_kb)
 
     # Список сегодняшних приёмов с кнопкой удаления (если случайно добавил)
     async with async_session() as db:

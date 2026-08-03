@@ -1,6 +1,7 @@
 """Слой доступа к данным: операции над сущностями и метрики."""
 from __future__ import annotations
 
+import json
 from datetime import date, datetime, timedelta, timezone
 from zoneinfo import ZoneInfo
 
@@ -40,6 +41,7 @@ def _local_day_start(days_ago: int = 0) -> datetime:
 from app.core.models import (
     ChatMessage,
     Exercise,
+    FavoriteMeal,
     Meal,
     MealItem,
     Session,
@@ -841,3 +843,69 @@ async def exercise_record(db: AsyncSession, user_id: int, exercise_id: int) -> i
         .where(Session.user_id == user_id, SetLog.exercise_id == exercise_id)
     )
     return res.scalar_one_or_none()
+
+
+# ---------- Избранные блюда ----------
+
+def _num(v):
+    return float(v) if v is not None else None
+
+
+async def add_favorite_from_meal(db: AsyncSession, user_id: int, meal_id: int) -> FavoriteMeal | None:
+    """Сохраняет уже записанный приём в избранное (снимок полной порции). Дубликаты по названию
+    не плодим — если такое блюдо уже в избранном, возвращаем существующее."""
+    meal = await db.get(Meal, meal_id)
+    if meal is None or meal.user_id != user_id:
+        return None
+    dish = meal.note or "Блюдо"
+    exist = await db.execute(
+        select(FavoriteMeal).where(FavoriteMeal.user_id == user_id, FavoriteMeal.dish == dish)
+    )
+    found = exist.scalar_one_or_none()
+    if found:
+        return found
+    res = await db.execute(select(MealItem).where(MealItem.meal_id == meal_id))
+    items = [
+        {"name": it.name, "grams": _num(it.grams), "kcal": _num(it.kcal),
+         "protein": _num(it.protein), "fat": _num(it.fat), "carbs": _num(it.carbs)}
+        for it in res.scalars().all()
+    ]
+    analysis = {
+        "is_food": True, "dish": dish, "items": items,
+        "total": {"kcal": _num(meal.kcal), "protein": _num(meal.protein),
+                  "fat": _num(meal.fat), "carbs": _num(meal.carbs)},
+    }
+    fav = FavoriteMeal(user_id=user_id, dish=dish, kcal=meal.kcal,
+                       payload=json.dumps(analysis, ensure_ascii=False))
+    db.add(fav)
+    await db.commit()
+    return fav
+
+
+async def list_favorites(db: AsyncSession, user_id: int) -> list[FavoriteMeal]:
+    res = await db.execute(
+        select(FavoriteMeal).where(FavoriteMeal.user_id == user_id)
+        .order_by(FavoriteMeal.times_used.desc(), FavoriteMeal.created_at.desc())
+    )
+    return list(res.scalars().all())
+
+
+async def get_favorite(db: AsyncSession, fav_id: int, user_id: int) -> FavoriteMeal | None:
+    fav = await db.get(FavoriteMeal, fav_id)
+    return fav if (fav and fav.user_id == user_id) else None
+
+
+async def bump_favorite(db: AsyncSession, fav_id: int) -> None:
+    fav = await db.get(FavoriteMeal, fav_id)
+    if fav:
+        fav.times_used = (fav.times_used or 0) + 1
+        await db.commit()
+
+
+async def delete_favorite(db: AsyncSession, fav_id: int, user_id: int) -> bool:
+    fav = await db.get(FavoriteMeal, fav_id)
+    if fav is None or fav.user_id != user_id:
+        return False
+    await db.delete(fav)
+    await db.commit()
+    return True
