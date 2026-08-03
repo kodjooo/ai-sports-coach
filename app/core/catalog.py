@@ -204,18 +204,32 @@ def main_candidates(equipment: str | None, level: str | None = None, limit: int 
     return _round_robin_by_muscle(pool, limit)
 
 
-def warmup_candidates(equipment: str | None, zones: list[str] | None = None) -> list[dict]:
-    """Палитра разминки/заминки (растяжка) — при указании zones приоритет зонам."""
+def _stretch_pool(equipment: str | None, zones: list[str] | None, types: tuple[str, ...]) -> list[dict]:
+    """Пул упражнений типа «растяжка», отфильтрованный по инвентарю и по stretch_type
+    (dynamic — для разминки, static — для заминки, both — универсальные). Неразмеченные
+    считаем 'both' (безопасно до полной разметки данных). При zones — приоритет зонам."""
     allowed = available_equipment(equipment)
-    pool = [e for e in ALL if e.get("kind") == "растяжка" and _feasible(e, allowed)]
+    pool = [
+        e for e in ALL
+        if e.get("kind") == "растяжка" and _feasible(e, allowed)
+        and e.get("stretch_type", "both") in types
+    ]
     if not zones:
         return pool
     zset = {z.strip().lower() for z in zones if z.strip()}
     def hit(e: dict) -> bool:
         return any(part.strip().lower() in zset for part in e["muscle_group"].split("/"))
-    prioritized = [e for e in pool if hit(e)]
-    general = [e for e in pool if not hit(e)]
-    return prioritized + general
+    return [e for e in pool if hit(e)] + [e for e in pool if not hit(e)]
+
+
+def warmup_candidates(equipment: str | None, zones: list[str] | None = None) -> list[dict]:
+    """Палитра РАЗМИНКИ — динамические/мобилизационные движения (stretch_type dynamic|both)."""
+    return _stretch_pool(equipment, zones, ("dynamic", "both"))
+
+
+def cooldown_candidates(equipment: str | None, zones: list[str] | None = None) -> list[dict]:
+    """Палитра ЗАМИНКИ — статические растяжки (stretch_type static|both)."""
+    return _stretch_pool(equipment, zones, ("static", "both"))
 
 
 def names_for_prompt(items: list[dict]) -> str:

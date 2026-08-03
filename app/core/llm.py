@@ -435,7 +435,8 @@ async def generate_plan(
     # Фильтруем ТОЛЬКО по доступному инвентарю (без привязки к месту). Палитру не режем —
     # это влияет на качество/разнообразие; таймаут решаем отдельно (ниже).
     main_pool = catalog.main_candidates(equipment, level)
-    warm_pool = catalog.warmup_candidates(equipment)
+    warm_pool = catalog.warmup_candidates(equipment)   # динамические — для разминки
+    cool_pool = catalog.cooldown_candidates(equipment)  # статические — для заминки
     if not main_pool:
         logger.error("generate_plan: пустая палитра каталога (инвентарь=%s)", equipment)
         return []
@@ -479,7 +480,10 @@ async def generate_plan(
         f"Инвентарь: {equipment or 'нет'}\n"
         f"Дни недели (0=Пн): {weekdays}\n\n"
         f"СПИСОК ОСНОВНЫХ упражнений (выбирай отсюда):\n{catalog.names_for_prompt(main_pool)}\n\n"
-        f"СПИСОК РАЗМИНКИ/ЗАМИНКИ (выбирай отсюда):\n{catalog.names_for_prompt(warm_pool)}"
+        f"СПИСОК РАЗМИНКИ — динамические, только для warmup (выбирай отсюда):\n"
+        f"{catalog.names_for_prompt(warm_pool)}\n\n"
+        f"СПИСОК ЗАМИНКИ — статические растяжки, только для cooldown (выбирай отсюда):\n"
+        f"{catalog.names_for_prompt(cool_pool)}"
     )
 
     # До 2 попыток: LLM изредка возвращает названия вне каталога — тогда план пуст, пробуем ещё раз.
@@ -502,7 +506,7 @@ async def generate_plan(
             data = json.loads(resp.choices[0].message.content or "{}")
             last_raw = data.get("workouts", []) or []
             plan = _sanitize_plan(last_raw, main_pool, warm_pool, per_day=per_day,
-                                  weekdays=weekdays)
+                                  weekdays=weekdays, cool_pool=cool_pool)
             if plan:
                 names = [e["name"] for e in plan[0].get("exercises", [])]
                 logger.info(
@@ -529,7 +533,8 @@ async def generate_plan(
 
 
 def _sanitize_plan(workouts: list[dict], main_pool: list[dict], warm_pool: list[dict],
-                   per_day: int = 0, weekdays: list[int] | None = None) -> list[dict]:
+                   per_day: int = 0, weekdays: list[int] | None = None,
+                   cool_pool: list[dict] | None = None) -> list[dict]:
     """Сверяет названия с ПАЛИТРОЙ (не всем каталогом), отбрасывает неизвестные, проставляет фазы.
 
     Сверка идёт только среди отфильтрованных под клиента упражнений — чтобы fuzzy не подтянул
@@ -561,10 +566,10 @@ def _sanitize_plan(workouts: list[dict], main_pool: list[dict], warm_pool: list[
         if not exercises:
             continue
 
-        def _resolve_names(names) -> list[dict]:
+        def _resolve_names(names, pool) -> list[dict]:
             out, seen = [], set()
             for n in (names or []):
-                hit = catalog.resolve_in(n if isinstance(n, str) else "", warm_pool)
+                hit = catalog.resolve_in(n if isinstance(n, str) else "", pool)
                 if hit and hit["name"] not in seen:
                     seen.add(hit["name"])
                     out.append({
@@ -574,10 +579,12 @@ def _sanitize_plan(workouts: list[dict], main_pool: list[dict], warm_pool: list[
                     })
             return out
 
+        # разминка — из динамического пула, заминка — из статического (cool_pool);
+        # если cool_pool не передан (старые вызовы) — используем warm_pool как раньше
         clean.append({
             "weekday": w.get("weekday", 0),
-            "warmup": _resolve_names(w.get("warmup")),
-            "cooldown": _resolve_names(w.get("cooldown")),
+            "warmup": _resolve_names(w.get("warmup"), warm_pool),
+            "cooldown": _resolve_names(w.get("cooldown"), cool_pool if cool_pool is not None else warm_pool),
             "exercises": exercises,
         })
 

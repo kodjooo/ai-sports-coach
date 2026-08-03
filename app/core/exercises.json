@@ -27,7 +27,8 @@
     "technique_en": "Lie on your back, with one leg extended straight out. With the other leg, bend the hip and knee to 90 degrees. You may brace your leg with your hands if necessary. This will be your starting position. Extend your leg straight into the air, pausing briefly at the top. Return the leg to the starting position. Then switch to the other leg.",
     "kind": "растяжка",
     "howto": "⚠️ Ошибки: отрыв таза от пола и слишком быстрый темп без контроля опускания.\n🔽 Легче: уменьшить угол сгибания или сократить число повторений.\n🔼 Тяжелее: добавить утяжелитель на голень или задержку в верхней точке.",
-    "equipment_req": []
+    "equipment_req": [],
+    "stretch_type": "static"
   },
   {
     "name": "Скручивания в тренажёре",
@@ -78,7 +79,8 @@
     "howto": "⚠️ Ошибки: слишком сильное давление сразу и задержка дыхания в болезненных точках.\n🔽 Легче: снизить давление, опираясь частично на локоть или свободную ногу.\n🔼 Тяжелее: перенести больше веса тела на ролик, убрав опору свободной ногой.",
     "equipment_req": [
       "массажный ролик"
-    ]
+    ],
+    "stretch_type": "both"
   },
   {
     "name": "Растяжка приводящих мышц (партнёрская)",
@@ -95,7 +97,8 @@
     "howto": "⚠️ Ошибки: резкое разведение ног партнёром и задержка дыхания при сопротивлении.\n🔽 Легче: сократить время напряжения и амплитуду разведения ног.\n🔼 Тяжелее: увеличить время удержания растяжки и амплитуду разведения.",
     "equipment_req": [
       "партнёр"
-    ]
+    ],
+    "stretch_type": "static"
   },
   {
     "name": "Продвинутая мельница с гирей",
@@ -142,7 +145,8 @@
     "technique_en": "Start off on your hands and knees, then lift your leg off the floor and hold the foot with your hand. Use your hand to hold the foot or ankle, keeping the knee fully flexed, stretching the quadriceps and hip flexors. Focus on extending your hips, thrusting them towards the floor. Hold and then switch sides.",
     "kind": "растяжка",
     "howto": "⚠️ Ошибки: прогиб в пояснице вместо подачи таза вперёд.\n🔽 Легче: сократить время удержания и не подавать таз так далеко.\n🔼 Тяжелее: увеличить время удержания и сильнее подать таз вперёд-вниз.",
-    "equipment_req": []
+    "equipment_req": [],
+    "stretch_type": "static"
   },
   {
     "name": "Попеременный молотковый подъём гантелей на бицепс",
@@ -341,7 +345,8 @@
     "technique_en": "Use a sturdy object like a squat rack to hold yourself. Lift the right leg in the air (just around 2 inches from the floor) and perform a circular motion with the big toe. Pretend that you are drawing a big circle with it. Tip: One circle equals 1 repetition. Breathe normally as you perform the movement. When you are done with the right foot, then repeat with the left leg.",
     "kind": "растяжка",
     "howto": "⚠️ Ошибки: слишком маленькая амплитуда и движение только пальцами без работы стопы.\n🔽 Легче: уменьшить число повторений и амплитуду круга.\n🔼 Тяжелее: увеличить амплитуду круга или выполнять с сопротивлением ленты.",
-    "equipment_req": []
+    "equipment_req": [],
+    "stretch_type": "dynamic"
   },
   {
     "name": "Растяжка ягодиц лёжа (лодыжка на колене)",
@@ -356,7 +361,8 @@
     "technique_en": "From a lying position, bend your knees and keep your feet on the floor. Place your ankle of one foot on your opposite knee. Grasp the thigh or knee of the bottom leg and pull both of your legs into the chest. Relax your neck and shoulders. Hold and then switch sides.",
     "kind": "растяжка",
     "howto": "⚠️ Ошибки: напряжение шеи и плеч вместо расслабленного положения.\n🔽 Легче: сократить время удержания и не подтягивать ноги так близко к груди.\n🔼 Тяжелее: увеличить время удержания и сильнее подтянуть ноги к груди.",
-    "equipment_req": []
+    "equipment_req": [],
+    "stretch_type": "static"
   },
   {
     "name": "Миофасциальный релиз передней большеберцовой мышцы",
@@ -373,7 +379,8 @@
     "howto": "⚠️ Ошибки: слишком быстрое прокатывание без задержки на напряжённых точках.\n🔽 Легче: снизить давление, опираясь руками на пол.\n🔼 Тяжелее: увеличить давление, перенеся больше веса тела на ролик.",
     "equipment_req": [
       "массажный ролик"
-    ]
+    ],
+    "stretch_type": "both"
   },
   {
     "name": "Жим штанги лёжа лицом вниз на наклонной скамье",
@@ -406,7 +413,8 @@
     "technique_en": "Stand up and extend your arms straight out by the sides. The arms should be parallel to the floor and perpendicular (90-degree angle) to your torso. This will be your starting position. Slowly start to make circles of about 1 foot in diameter with each outstretched arm. Breathe normally as you perform the movement. Continue the circular motion of the outstretched arms for about ten seconds. Then reverse the movement, going the opposite direction.",
     "kind": "растяжка",
     "howto": "⚠️ Ошибки: сгибание рук в локтях и слишком большая амплитуда круга.\n🔽 Легче: уменьшить диаметр круга и время выполнения.\n🔼 Тяжелее: увеличить диаметр круга или держать лёгкие гантели.",
-    "equipment_req": []
+    "equipment_req": [],
+    "stretch_type": "dynamic"
   },
   {
     "name": "Жим гантелей Арнольда",
@@ -1186,7 +1194,8 @@
     "howto": "⚠️ Ошибки: резкое отведение локтей партнёром без плавного нарастания усилия.\n🔽 Легче: сократить время напряжения и амплитуду отведения локтей.\n🔼 Тяжелее: увеличить время удержания и амплитуду отведения локтей.",
     "equipment_req": [
       "партнёр"
-    ]
+    ],
+    "stretch_type": "static"
   },
   {
     "name": "Отжимания от скамьи на трицепс",
@@ -1782,7 +1791,8 @@
     "howto": "⚠️ Ошибки: слишком сильное давление и задержка дыхания — давите умеренно, дышите ровно.\n🔽 Легче: уменьшите давление, опираясь на ноги.\n🔼 Тяжелее: увеличьте время удержания на болевой точке.",
     "equipment_req": [
       "массажный ролик"
-    ]
+    ],
+    "stretch_type": "both"
   },
   {
     "name": "Жим Брэдфорда (Рокки-жим)",
@@ -2363,7 +2373,8 @@
     "technique_en": "Stand facing a wall from a couple feet away. Lean against the wall, placing your weight on your forearms. Attempt to keep your heels on the ground. Hold. You may move further or closer the wall, making it more or less difficult, respectively.",
     "kind": "растяжка",
     "howto": "⚠️ Ошибки: отрыв пятки от пола и слишком резкий наклон — пятки прижаты, наклон плавный.\n🔽 Легче: сократите время удержания или наклон.\n🔼 Тяжелее: увеличьте время удержания или наклон.",
-    "equipment_req": []
+    "equipment_req": [],
+    "stretch_type": "static"
   },
   {
     "name": "Растяжка икр у стены с упором на руки",
@@ -2378,7 +2389,8 @@
     "technique_en": "Stand facing a wall from several feet away. Stagger your stance, placing one foot forward. Lean forward and rest your hands on the wall, keeping your heel, hip and head in a straight line. Attempt to keep your heel on the ground. Hold and then switch sides.",
     "kind": "растяжка",
     "howto": "⚠️ Ошибки: отрыв пятки от пола и согнутое колено задней ноги — пятка прижата, колено прямое.\n🔽 Легче: сократите время удержания.\n🔼 Тяжелее: увеличьте время удержания.",
-    "equipment_req": []
+    "equipment_req": [],
+    "stretch_type": "static"
   },
   {
     "name": "Миофасциальный релиз икр на ролике",
@@ -2395,7 +2407,8 @@
     "howto": "⚠️ Ошибки: слишком быстрое прокатывание и задержка дыхания — двигайтесь медленно, дышите ровно.\n🔽 Легче: уменьшите давление, опираясь на руки.\n🔼 Тяжелее: увеличьте время на болевой точке.",
     "equipment_req": [
       "массажный ролик"
-    ]
+    ],
+    "stretch_type": "both"
   },
   {
     "name": "Становая тяга с автомобилем",
@@ -2459,7 +2472,8 @@
     "technique_en": "Position yourself on the floor on your hands and knees. Pull your belly in and round your spine, lower back, shoulders, and neck, letting your head drop. Hold.",
     "kind": "растяжка",
     "howto": "⚠️ Ошибки: задержка дыхания и резкое движение — дышите ровно, двигайтесь плавно.\n🔽 Легче: сократите время удержания позы.\n🔼 Тяжелее: увеличьте время удержания позы.",
-    "equipment_req": []
+    "equipment_req": [],
+    "stretch_type": "both"
   },
   {
     "name": "Бросок мяча из-за головы с ловлей",
@@ -2529,7 +2543,8 @@
     "howto": "⚠️ Ошибки: сгибание колена и рывок — держите колено прямым, двигайтесь медленно.\n🔽 Легче: сократите амплитуду отведения.\n🔼 Тяжелее: увеличьте время удержания или амплитуду.",
     "equipment_req": [
       "стул"
-    ]
+    ],
+    "stretch_type": "static"
   },
   {
     "name": "Растяжка поясницы сидя на стуле",
@@ -2546,7 +2561,8 @@
     "howto": "⚠️ Ошибки: наклон вперёд вместо в сторону и задержка дыхания — наклоняйтесь строго вбок, дышите ровно.\n🔽 Легче: сократите время удержания.\n🔼 Тяжелее: увеличьте время удержания.",
     "equipment_req": [
       "стул"
-    ]
+    ],
+    "stretch_type": "static"
   },
   {
     "name": "Приседания со штангой (стойка)",
@@ -2580,7 +2596,8 @@
     "howto": "⚠️ Ошибки: округление спины и резкий рывок — спина прямая, тянитесь плавно.\n🔽 Легче: сократите время удержания.\n🔼 Тяжелее: увеличьте время удержания.",
     "equipment_req": [
       "стул"
-    ]
+    ],
+    "stretch_type": "static"
   },
   {
     "name": "Растяжка груди и переднего пучка дельт с палкой",
@@ -2597,7 +2614,8 @@
     "howto": "⚠️ Ошибки: резкий рывок и слишком широкий хват — поднимайте плавно, хват чуть шире плеч.\n🔽 Легче: сократите амплитуду подъёма палки.\n🔼 Тяжелее: увеличьте амплитуду или время удержания.",
     "equipment_req": [
       "палка"
-    ]
+    ],
+    "stretch_type": "static"
   },
   {
     "name": "Толчок мяча от груди из трёхточечной стойки",
@@ -2682,7 +2700,8 @@
     "howto": "⚠️ Ошибки: рывок и смещение локтя с мяча — опускайтесь плавно, локоть фиксирован.\n🔽 Легче: сократите время удержания.\n🔼 Тяжелее: увеличьте время удержания или глубину опускания.",
     "equipment_req": [
       "фитбол"
-    ]
+    ],
+    "stretch_type": "static"
   },
   {
     "name": "Поза ребёнка",
@@ -2697,7 +2716,8 @@
     "technique_en": "Get on your hands and knees, walk your hands in front of you. Lower your buttocks down to sit on your heels. Let your arms drag along the floor as you sit back to stretch your entire spine. Once you settle onto your heels, bring your hands next to your feet and relax. \"breathe\" into your back. Rest your forehead on the floor. Avoid this position if you have knee problems.",
     "kind": "растяжка",
     "howto": "⚠️ Ошибки: задержка дыхания и напряжение плеч — дышите ровно, расслабьте плечи.\n🔽 Легче: сократите время удержания позы.\n🔼 Тяжелее: увеличьте время удержания позы.",
-    "equipment_req": []
+    "equipment_req": [],
+    "stretch_type": "static"
   },
   {
     "name": "Подтягивания обратным хватом",
@@ -2729,7 +2749,8 @@
     "technique_en": "Get into a seated position on the floor. Place both hands at the rear of your head, fingers interlocked, thumbs pointing down and elbows pointing straight ahead. Slowly pull your head down to your chest. Hold.",
     "kind": "растяжка",
     "howto": "⚠️ Ошибки: резкий рывок и напряжение плеч — тяните плавно, плечи расслаблены.\n🔽 Легче: сократите время удержания.\n🔼 Тяжелее: увеличьте время удержания.",
-    "equipment_req": []
+    "equipment_req": [],
+    "stretch_type": "static"
   },
   {
     "name": "Цирковой колокол (подъём тяжёлой гантели)",
@@ -3133,7 +3154,8 @@
     "technique_en": "Stand with your feet shoulder width apart. This will be your starting position. Perform a rear lunge by stepping back with one foot and flexing the hips and front knee. As you do so, rotate your torso across the front leg. After a brief pause, return to the starting position and repeat on the other side, continuing in an alternating fashion.",
     "kind": "растяжка",
     "howto": "⚠️ Ошибки: колено переднее заходит за носок и потеря равновесия — шагайте по диагонали контролируемо, смотрите вперёд.\n🔽 Легче: меньшая амплитуда или без веса.\n🔼 Тяжелее: с гантелями или увеличенная амплитуда.",
-    "equipment_req": []
+    "equipment_req": [],
+    "stretch_type": "dynamic"
   },
   {
     "name": "Распятие с весом",
@@ -3229,7 +3251,8 @@
     "technique_en": "Sit up on the floor. Cross your right leg over your left, keeping the knee bent. Your left leg is straight and down on the floor. Place your left arm on your right leg and your right hand on the floor. Rotate your upper body to the right, and hold. Switch sides.",
     "kind": "растяжка",
     "howto": "⚠️ Ошибки: округление спины и рывки — разворачивайте корпус плавно, спину держите прямой.\n🔽 Легче: меньший разворот, короче время удержания.\n🔼 Тяжелее: удержание 30+ секунд с большей амплитудой.",
-    "equipment_req": []
+    "equipment_req": [],
+    "stretch_type": "static"
   },
   {
     "name": "Мёртвый жук",
@@ -4269,7 +4292,8 @@
     "technique_en": "Stand with your feet shoulder width apart. This will be your starting position. Keeping your arms straight, swing them straight up in front of you, increasing the range of motion each time until your arms are above your head.",
     "kind": "растяжка",
     "howto": "⚠️ Ошибки: рывок с чрезмерной амплитудой сразу и сгибание локтей — увеличивайте амплитуду постепенно, руки прямые.\n🔽 Легче: меньшая амплитуда и скорость.\n🔼 Тяжелее: большая амплитуда и скорость.",
-    "equipment_req": []
+    "equipment_req": [],
+    "stretch_type": "dynamic"
   },
   {
     "name": "Динамическая растяжка груди",
@@ -4284,7 +4308,8 @@
     "technique_en": "Stand with your hands together, arms extended directly in front of you. This will be your starting position. Keeping your arms straight, quickly move your arms back as far as possible and back in again, similar to an exaggerated clapping motion. Repeat the movement, increasing speed as you do so.",
     "kind": "растяжка",
     "howto": "⚠️ Ошибки: сгибание локтей и слишком резкое начало — руки прямые, скорость наращивайте постепенно.\n🔽 Легче: меньшая амплитуда и скорость.\n🔼 Тяжелее: большая амплитуда и скорость.",
-    "equipment_req": []
+    "equipment_req": [],
+    "stretch_type": "dynamic"
   },
   {
     "name": "Подъём EZ-грифа на бицепс",
@@ -4334,7 +4359,8 @@
     "technique_en": "Sit or stand with your feet slightly apart. Place your hands on your shoulders with your elbows at shoulder level and pointing out. Slowly make a circle with your elbows. Breathe out as you start the circle and breathe in as you complete the circle.",
     "kind": "растяжка",
     "howto": "⚠️ Ошибки: слишком быстрый темп и задержка дыхания — вращайте медленно, дышите в ритме движения.\n🔽 Легче: меньшая амплитуда круга.\n🔼 Тяжелее: больше повторов или увеличенная амплитуда.",
-    "equipment_req": []
+    "equipment_req": [],
+    "stretch_type": "dynamic"
   },
   {
     "name": "Локоть к колену",
@@ -4364,7 +4390,8 @@
     "technique_en": "Stand up straight. Place both hands on your lower back, fingers pointing downward and elbows out. Then gently pull your elbows back aiming to touch them together.",
     "kind": "растяжка",
     "howto": "⚠️ Ошибки: подъём плеч и рывок локтями — сводите плавно, плечи опущены.\n🔽 Легче: меньшая амплитуда сведения.\n🔼 Тяжелее: пауза в сведённом положении.",
-    "equipment_req": []
+    "equipment_req": [],
+    "stretch_type": "dynamic"
   },
   {
     "name": "Выпад назад с возвышения со штангой",
@@ -4740,7 +4767,8 @@
     "howto": "⚠️ Ошибки: слишком сильное давление сразу и задержка дыхания — увеличивайте давление постепенно и дышите ровно.\n🔽 Легче: уменьшите давление, опираясь на стопу частично.\n🔼 Тяжелее: увеличьте давление, перенеся больше веса тела.",
     "equipment_req": [
       "массажный ролик"
-    ]
+    ],
+    "stretch_type": "both"
   },
   {
     "name": "Протяжка санок вперёд с жимом",
@@ -4804,7 +4832,8 @@
     "technique_en": "Stand with your hands behind your head, and squat down keeping your torso upright and your head up. This will be your starting position. Jump forward several feet, avoiding jumping unnecessarily high. As your feet contact the ground, absorb the impact through your legs, and jump again. Repeat the movement.",
     "kind": "растяжка",
     "howto": "⚠️ Ошибки: слишком высокий прыжок и жёсткое приземление — прыгайте невысоко и амортизируйте ногами.\n🔽 Легче: уменьшите дистанцию прыжка.\n🔼 Тяжелее: увеличьте дистанцию или число повторов.",
-    "equipment_req": []
+    "equipment_req": [],
+    "stretch_type": "dynamic"
   },
   {
     "name": "Скручивания \"лягушка\"",
@@ -4953,7 +4982,8 @@
     "technique_en": "Stand next to a chair or other support, holding on with one hand. Swing your leg forward, keeping the leg straight. Continue with a downward swing, bringing the leg as far back as your flexibility allows. Then switch legs.",
     "kind": "растяжка",
     "howto": "⚠️ Ошибки: сгибание опорной ноги и раскачивание корпусом — держите опорную ногу прямой и корпус стабильным.\n🔽 Легче: уменьшите амплитуду маха.\n🔼 Тяжелее: увеличьте амплитуду или добавьте утяжелитель.",
-    "equipment_req": []
+    "equipment_req": [],
+    "stretch_type": "dynamic"
   },
   {
     "name": "Подъём блина перед собой",
@@ -5188,7 +5218,8 @@
     "technique_en": "Sit on the floor with your knees bent and feet together. Interlock your fingers behind your head. This will be your starting position. Curl downwards, bringing your elbows to the inside of your thighs. After a brief pause, return to the starting position with your head up and your back straight. Repeat the movement.",
     "kind": "растяжка",
     "howto": "⚠️ Ошибки: рывки при скручивании и округление шеи — тянитесь плавно, не дёргая головой.\n🔽 Легче: уменьшите амплитуду наклона.\n🔼 Тяжелее: увеличьте время удержания или амплитуду.",
-    "equipment_req": []
+    "equipment_req": [],
+    "stretch_type": "static"
   },
   {
     "name": "Выпрыгивания из упора лёжа (\"гройнерс\")",
@@ -5203,7 +5234,8 @@
     "technique_en": "Begin in a pushup position on the floor. This will be your starting position. Using both legs, jump forward landing with your feet next to your hands. Keep your head up as you do so. Return to the starting position and immediately repeat the movement, continuing in a steady rhythm.",
     "kind": "растяжка",
     "howto": "⚠️ Ошибки: провисание таза и слишком медленный темп — держите пресс в напряжении и двигайтесь ритмично.\n🔽 Легче: выполняйте шагом вместо прыжка.\n🔼 Тяжелее: увеличьте скорость или добавьте прыжок вверх.",
-    "equipment_req": []
+    "equipment_req": [],
+    "stretch_type": "dynamic"
   },
   {
     "name": "Гакк-приседания",
@@ -5272,7 +5304,8 @@
     "howto": "⚠️ Ошибки: слишком быстрый прокат и задержка дыхания — двигайтесь медленно и дышите ровно.\n🔽 Легче: снизьте давление, оставив часть веса на руках.\n🔼 Тяжелее: увеличьте давление, перенеся весь вес на ногу.",
     "equipment_req": [
       "массажный ролик"
-    ]
+    ],
+    "stretch_type": "both"
   },
   {
     "name": "Растяжка бицепса бедра лёжа с ремнём",
@@ -5289,7 +5322,8 @@
     "howto": "⚠️ Ошибки: сгибание рабочей ноги и рывки при натяжении — держите ногу прямой и тяните плавно.\n🔽 Легче: уменьшите натяжение ремня.\n🔼 Тяжелее: увеличьте натяжение или время удержания.",
     "equipment_req": [
       "кольца"
-    ]
+    ],
+    "stretch_type": "static"
   },
   {
     "name": "Отжимания в стойке на руках у стены",
@@ -5487,7 +5521,8 @@
     "technique_en": "Position yourself on your hands and knees on the ground. Maintaining good posture, raise one bent knee off of the ground. This will be your starting position. Keeping the knee in a bent position, rotate the femur in an arc, attempting to make a big circle with your knee. Perform this slowly for a number of repetitions, and repeat on the other side.",
     "kind": "растяжка",
     "howto": "⚠️ Ошибки: раскачивание корпусом и слишком быстрый темп — держите корпус стабильным и двигайтесь медленно.\n🔽 Легче: уменьшите амплитуду круга.\n🔼 Тяжелее: увеличьте амплитуду или число повторов.",
-    "equipment_req": []
+    "equipment_req": [],
+    "stretch_type": "dynamic"
   },
   {
     "name": "Разгибание бедра назад с резиновой лентой",
@@ -5555,7 +5590,8 @@
     "howto": "⚠️ Ошибки: провал коленей внутрь и потеря контроля над мячом — держите колени над лодыжками и крепко фиксируйте мяч.\n🔽 Легче: опускайтесь на меньшую глубину.\n🔼 Тяжелее: увеличьте глубину или время удержания.",
     "equipment_req": [
       "фитбол"
-    ]
+    ],
+    "stretch_type": "static"
   },
   {
     "name": "Подтягивание коленей к груди лёжа",
@@ -5570,7 +5606,8 @@
     "technique_en": "Lie down on your back and pull both knees up to your chest. Hold your arms under the knees, not over (that would put to much pressure on your knee joints). Slowly pull the knees toward your shoulders. This also stretches your buttocks muscles.",
     "kind": "растяжка",
     "howto": "⚠️ Ошибки: обхват коленей сверху и рывки — держите руки под голенями и тяните плавно.\n🔽 Легче: уменьшите амплитуду подтягивания.\n🔼 Тяжелее: увеличьте время удержания растяжки.",
-    "equipment_req": []
+    "equipment_req": [],
+    "stretch_type": "static"
   },
   {
     "name": "Прыжки через барьеры",
@@ -5634,7 +5671,8 @@
     "technique_en": "Loop a belt, rope, or band around one of your feet, and swing that leg across your body to the opposite side, keeping the leg extended as you lay on the ground. This will be your starting position. Keeping your foot off of the floor, pull on the belt, using the tension to pull the toes up. Hold, and repeat on the other side.",
     "kind": "растяжка",
     "howto": "⚠️ Ошибки: сгибание рабочей ноги и рывки при натяжении — держите ногу прямой и тяните плавно.\n🔽 Легче: уменьшите натяжение ремня.\n🔼 Тяжелее: увеличьте натяжение или время удержания.",
-    "equipment_req": []
+    "equipment_req": [],
+    "stretch_type": "static"
   },
   {
     "name": "Миофасциальный релиз илиотибиального тракта",
@@ -5651,7 +5689,8 @@
     "howto": "⚠️ Ошибки: слишком быстрый прокат и задержка дыхания — двигайтесь медленно и дышите ровно.\n🔽 Легче: снизьте давление, оставив часть веса на руках.\n🔼 Тяжелее: увеличьте давление, перенеся весь вес на ногу.",
     "equipment_req": [
       "массажный ролик"
-    ]
+    ],
+    "stretch_type": "both"
   },
   {
     "name": "Гусеничная ходьба (\"инчворм\")",
@@ -5666,7 +5705,8 @@
     "technique_en": "Stand with your feet close together. Keeping your legs straight, stretch down and put your hands on the floor directly in front of you. This will be your starting position. Begin by walking your hands forward slowly, alternating your left and your right. As you do so, bend only at the hip, keeping your legs straight. Keep going until your body is parallel to the ground in a pushup position. Now, keep your hands in place and slowly take short steps with your feet, moving only a few inches at a time. Continue walking until your feet are by hour hands, keeping your legs straight as you do so.",
     "kind": "растяжка",
     "howto": "⚠️ Ошибки: сгибание коленей при шагании руками и провисание таза — держите ноги прямыми и пресс напряжённым.\n🔽 Легче: сгибайте колени сильнее, уменьшая растяжку.\n🔼 Тяжелее: держите ноги максимально прямыми и добавьте отжимание внизу.",
-    "equipment_req": []
+    "equipment_req": [],
+    "stretch_type": "dynamic"
   },
   {
     "name": "Разгибание рук со штангой из-за головы на наклонной скамье",
@@ -5982,7 +6022,8 @@
     "howto": "⚠️ Ошибки: резкий рывок ремнём — тяните плавно; отрыв таза от пола снижает эффект растяжки.\n🔽 Легче: уменьшите угол отведения ноги и время удержания.\n🔼 Тяжелее: увеличьте угол отведения и удерживайте дольше.",
     "equipment_req": [
       "резинки"
-    ]
+    ],
+    "stretch_type": "static"
   },
   {
     "name": "Растяжка сгибателей бедра и квадрицепса (среднего уровня)",
@@ -5999,7 +6040,8 @@
     "howto": "⚠️ Ошибки: чрезмерное натяжение поясницы вместо бедра — тяните плавно и контролируйте прогиб; отрыв таза от пола.\n🔽 Легче: тяните ремень слабее, меньшая амплитуда подъёма колена.\n🔼 Тяжелее: увеличьте натяжение и время удержания.",
     "equipment_req": [
       "резинки"
-    ]
+    ],
+    "stretch_type": "static"
   },
   {
     "name": "Внутренняя ротация плеча с резинкой",
@@ -6084,7 +6126,8 @@
     "howto": "⚠️ Ошибки: отрыв плеч от пола снижает растяжение поясницы и грудного отдела; резкие рывки ногой.\n🔽 Легче: уменьшите амплитуду заведения ноги.\n🔼 Тяжелее: заводите ногу дальше и удерживайте паузу в крайней точке.",
     "equipment_req": [
       "кольца"
-    ]
+    ],
+    "stretch_type": "static"
   },
   {
     "name": "Изометрическое сжатие грудных мышц",
@@ -6564,7 +6607,8 @@
     "technique_en": "Lie down on the floor with your right leg straight. Bend your left leg and lower it across your body, holding the knee down toward the floor with your right hand. (The knee doesn't need to touch the floor if you're tight.) Place your left arm comfortably beside you and turn your head to the left. Imagine you have a weight tied to your tailbone. let your tailbone fall back toward the floor as your chest reaches in the opposite direction to stretch your lower back. Switch sides.",
     "kind": "растяжка",
     "howto": "⚠️ Ошибки: отрыв плеч от пола снижает эффект скручивания; резкое давление на колено вместо плавного.\n🔽 Легче: уменьшите амплитуду заведения колена.\n🔼 Тяжелее: увеличьте амплитуду и время удержания.",
-    "equipment_req": []
+    "equipment_req": [],
+    "stretch_type": "static"
   },
   {
     "name": "Круговые движения коленями",
@@ -6579,7 +6623,8 @@
     "technique_en": "Stand with your legs together and hands by your waist. Now move your knees in a circular motion as you breathe normally. Repeat for the recommended amount of repetitions.",
     "kind": "растяжка",
     "howto": "⚠️ Ошибки: слишком резкие движения нагружают суставы — двигайтесь плавно; задержка дыхания.\n🔽 Легче: уменьшите амплитуду вращения.\n🔼 Тяжелее: увеличьте амплитуду и число повторений.",
-    "equipment_req": []
+    "equipment_req": [],
+    "stretch_type": "dynamic"
   },
   {
     "name": "Подъём коленей/ног на брусьях",
@@ -6675,7 +6720,8 @@
     "technique_en": "Start by kneeling on a mat with your palms flat and your fingers pointing back toward your knees. Slowly lean back keeping your palms flat on the floor until you feel a stretch in your wrists and forearms. Hold.",
     "kind": "растяжка",
     "howto": "⚠️ Ошибки: резкий откат назад травмирует запястья — двигайтесь плавно; отрыв ладоней от пола снижает растяжение.\n🔽 Легче: уменьшите угол отклонения и время удержания.\n🔼 Тяжелее: увеличьте угол отклонения и время удержания.",
-    "equipment_req": []
+    "equipment_req": [],
+    "stretch_type": "static"
   },
   {
     "name": "Тяга каната сверху стоя на коленях",
@@ -6707,7 +6753,8 @@
     "technique_en": "Kneel on a mat and bring your right knee up so the bottom of your foot is on the floor and extend your left leg out behind you so the top of your foot is on the floor. Shift your weight forward until you feel a stretch in your hip. Hold, then repeat for your other side.",
     "kind": "растяжка",
     "howto": "⚠️ Ошибки: прогиб в пояснице вместо смещения таза вперёд; недостаточный перенос веса вперёд снижает растяжку.\n🔽 Легче: уменьшите смещение веса вперёд и время удержания.\n🔼 Тяжелее: увеличьте смещение веса и время удержания.",
-    "equipment_req": []
+    "equipment_req": [],
+    "stretch_type": "static"
   },
   {
     "name": "Выпрыгивания из приседа на коленях",
@@ -6871,7 +6918,8 @@
     "howto": "⚠️ Ошибки: слишком быстрое перекатывание не даёт роллеру проработать ткань; излишнее давление вызывает боль.\n🔽 Легче: сократите время давления на точку и снизьте вес тела на роллере.\n🔼 Тяжелее: увеличьте время давления на болезненную точку.",
     "equipment_req": [
       "массажный ролик"
-    ]
+    ],
+    "stretch_type": "both"
   },
   {
     "name": "Жим гири лёжа с перекинутой ногой",
@@ -6905,7 +6953,8 @@
     "howto": "⚠️ Ошибки: сгибание колена поднятой ноги снижает растяжение; резкий рывок вместо плавного подтягивания.\n🔽 Легче: уменьшите амплитуду подтягивания ноги к себе.\n🔼 Тяжелее: увеличьте амплитуду и время удержания.",
     "equipment_req": [
       "кольца"
-    ]
+    ],
+    "stretch_type": "static"
   },
   {
     "name": "Разгибание ног в тренажёре",
@@ -7186,7 +7235,8 @@
     "technique_en": "Kneel on the floor, holding your heels with both hands. Lift your buttocks up and forward while bringing your head back to look up at the ceiling, to give an arch in your back.",
     "kind": "растяжка",
     "howto": "⚠️ Ошибки: резкое запрокидывание головы вместо плавного движения; недостаточный подъём таза снижает прогиб.\n🔽 Легче: уменьшите амплитуду подъёма таза и запрокидывания головы.\n🔼 Тяжелее: увеличьте амплитуду и время удержания.",
-    "equipment_req": []
+    "equipment_req": [],
+    "stretch_type": "static"
   },
   {
     "name": "Сведение рук на нижнем блоке (кроссовер снизу)",
@@ -7255,7 +7305,8 @@
     "howto": "⚠️ Ошибки: прокатка прямо по позвоночнику вместо смещения в сторону травмоопасна; слишком быстрое перекатывание не даёт эффекта.\n🔽 Легче: сократите время давления на точку.\n🔼 Тяжелее: увеличьте время давления на болезненную точку.",
     "equipment_req": [
       "массажный ролик"
-    ]
+    ],
+    "stretch_type": "both"
   },
   {
     "name": "Разгибание спины лёжа на животе",
@@ -7321,7 +7372,8 @@
     "howto": "⚠️ Ошибки: партнёр давит слишком резко — надавливание должно быть мягким и постепенным; отсутствие обратной связи о боли.\n🔽 Легче: уменьшите усилие давления партнёра и время растяжки.\n🔼 Тяжелее: увеличьте усилие давления и время удержания.",
     "equipment_req": [
       "партнёр"
-    ]
+    ],
+    "stretch_type": "static"
   },
   {
     "name": "Сгибание рук на бицепс лёжа на блоке",
@@ -7427,7 +7479,8 @@
     "howto": "⚠️ Ошибки: слишком сильное сопротивление партнёра — усилие должно быть умеренным и без боли.\n🔽 Легче: сократите время удержания и амплитуду.\n🔼 Тяжелее: увеличьте время удержания и глубину растяжки.",
     "equipment_req": [
       "партнёр"
-    ]
+    ],
+    "stretch_type": "static"
   },
   {
     "name": "Разгибание рук с гантелями лёжа (французский жим лёжа)",
@@ -7496,7 +7549,8 @@
     "howto": "⚠️ Ошибки: чрезмерное давление партнёра, вызывающее боль — усиливать растяжку плавно.\n🔽 Легче: уменьшите угол сгибания и время удержания.\n🔼 Тяжелее: увеличьте время удержания и глубину подтягивания.",
     "equipment_req": [
       "партнёр"
-    ]
+    ],
+    "stretch_type": "static"
   },
   {
     "name": "Растяжка задней поверхности бедра лёжа с партнёром",
@@ -7513,7 +7567,8 @@
     "howto": "⚠️ Ошибки: сгибание колена во время сопротивления — держите ногу прямой.\n🔽 Легче: уменьшите угол подъёма ноги и время удержания.\n🔼 Тяжелее: увеличьте время удержания и амплитуду подтягивания к голове.",
     "equipment_req": [
       "партнёр"
-    ]
+    ],
+    "stretch_type": "static"
   },
   {
     "name": "Подъём штанги на бицепс лёжа на высокой скамье",
@@ -7600,7 +7655,8 @@
     "howto": "⚠️ Ошибки: прогиб поясницы во время растяжки — держите таз прижатым к полу.\n🔽 Легче: уменьшите угол сгибания и время удержания.\n🔼 Тяжелее: увеличьте время удержания и амплитуду подтягивания.",
     "equipment_req": [
       "партнёр"
-    ]
+    ],
+    "stretch_type": "static"
   },
   {
     "name": "Разведение рук с гантелями назад лёжа на скамье",
@@ -7840,7 +7896,8 @@
     "technique_en": "Stand so your feet are shoulder width apart and your hands are on your hips. Twist at your waist until you feel a stretch. Hold for 10 to, then twist to the other side.",
     "kind": "растяжка",
     "howto": "⚠️ Ошибки: чрезмерный рывок в скручивании — двигайтесь плавно до лёгкого натяжения.\n🔽 Легче: уменьшите амплитуду скручивания и время удержания.\n🔼 Тяжелее: увеличьте амплитуду и время удержания.",
-    "equipment_req": []
+    "equipment_req": [],
+    "stretch_type": "static"
   },
   {
     "name": "Подтягивания разнохватом",
@@ -8023,7 +8080,8 @@
     "howto": "⚠️ Ошибки: давление прямо на позвоночник — прокатывайте только мышцы сбоку.\n🔽 Легче: уменьшите давление и время в точке.\n🔼 Тяжелее: увеличьте время удержания в напряжённых точках.",
     "equipment_req": [
       "массажный ролик"
-    ]
+    ],
+    "stretch_type": "both"
   },
   {
     "name": "Жим штанги к шее лёжа",
@@ -8105,7 +8163,8 @@
     "howto": "⚠️ Ошибки: прогиб поясницы во время растяжки — держите таз прижатым к скамье.\n🔽 Легче: уменьшите амплитуду подтягивания стопы.\n🔼 Тяжелее: увеличьте амплитуду и приподнимите бедро выше.",
     "equipment_req": [
       "скамья"
-    ]
+    ],
+    "stretch_type": "static"
   },
   {
     "name": "Растяжка квадрицепса лёжа на боку",
@@ -8120,7 +8179,8 @@
     "technique_en": "Start off by lying on your right side, with your right knee bent at a 90-degree angle resting on the floor in front of you (this stabilizes the torso). Bend your left knee behind you and hold your left foot with your left hand. To stretch your hip flexor, press your left hip forward as you push your left foot back into your hand. Switch sides.",
     "kind": "растяжка",
     "howto": "⚠️ Ошибки: прогиб поясницы при подаче бедра вперёд — держите корпус стабильным.\n🔽 Легче: уменьшите амплитуду подачи бедра.\n🔼 Тяжелее: увеличьте амплитуду и время удержания.",
-    "equipment_req": []
+    "equipment_req": [],
+    "stretch_type": "static"
   },
   {
     "name": "Тяга гантели одной рукой в наклоне",
@@ -8529,7 +8589,8 @@
     "technique_en": "From a standing position, place a bent arm against a wall or doorway. Slowly lean toward your arm until you feel a stretch in your lats.",
     "kind": "растяжка",
     "howto": "⚠️ Ошибки: резкий наклон корпуса — наклоняйтесь плавно до умеренного натяжения.\n🔽 Легче: уменьшите угол наклона и время удержания.\n🔼 Тяжелее: увеличьте угол наклона и время удержания.",
-    "equipment_req": []
+    "equipment_req": [],
+    "stretch_type": "static"
   },
   {
     "name": "Подтягивание одной рукой (с полотенцем)",
@@ -8667,7 +8728,8 @@
     "technique_en": "Lie facedown on the floor. Put your left hand under your left hipbone to pad your hip and pubic bone. Bend your right knee so you can hold the foot in your right hand. Lift the foot in the air and simultaneously lift your shoulders off the floor. This also stretches the right hip flexor and the chest and shoulders. Switch sides. If it doesn't bother your back, you can try it with both arms and legs at the same time.",
     "kind": "растяжка",
     "howto": "⚠️ Ошибки: резкий рывок при подъёме плеч — двигайтесь плавно, контролируя дыхание.\n🔽 Легче: уменьшите амплитуду подъёма плеч и время удержания.\n🔼 Тяжелее: увеличьте время удержания и амплитуду подъёма.",
-    "equipment_req": []
+    "equipment_req": [],
+    "stretch_type": "static"
   },
   {
     "name": "Вис на турнике одной рукой",
@@ -8684,7 +8746,8 @@
     "howto": "⚠️ Ошибки: полное расслабление плеча в висе — держите лопатку слегка активной.\n🔽 Легче: используйте опору под ноги, снижая нагрузку.\n🔼 Тяжелее: увеличьте время виса без опоры.",
     "equipment_req": [
       "турник"
-    ]
+    ],
+    "stretch_type": "static"
   },
   {
     "name": "Подтягивание колена к груди лёжа",
@@ -8699,7 +8762,8 @@
     "technique_en": "Start off by lying on the floor. Extend one leg straight and pull the other knee to your chest. Hold under the knee joint to protect the kneecap. Gently tug that knee toward your nose. Switch sides. This stretches the buttocks and lower back of the bent leg and the hip flexor of the straight leg.",
     "kind": "растяжка",
     "howto": "⚠️ Ошибки: резкое подтягивание колена — двигайтесь плавно без рывков.\n🔽 Легче: уменьшите амплитуду подтягивания колена.\n🔼 Тяжелее: увеличьте время удержания и амплитуду.",
-    "equipment_req": []
+    "equipment_req": [],
+    "stretch_type": "static"
   },
   {
     "name": "Присед на одной ноге со штангой (болгарский присед со штангой на плечах)",
@@ -8785,7 +8849,8 @@
     "howto": "⚠️ Ошибки: чрезмерное давление партнёра, вызывающее боль — усиливать растяжку плавно.\n🔽 Легче: уменьшите время удержания и сопротивление.\n🔼 Тяжелее: увеличьте время удержания и амплитуду растяжки.",
     "equipment_req": [
       "партнёр"
-    ]
+    ],
+    "stretch_type": "static"
   },
   {
     "name": "Бросок медбола об пол из-за головы",
@@ -8834,7 +8899,8 @@
     "technique_en": "Standing straight up, lace your fingers together and open your palms to the ceiling. Keep your shoulders down as you extend your arms up. To create a full torso stretch, pull your tailbone down and stabilize your torso as you do this. Stretch the muscles on both the front and the back of the torso.",
     "kind": "растяжка",
     "howto": "⚠️ Ошибки: прогиб в пояснице — тяните копчик вниз и держите живот втянутым.\n🔽 Легче: меньшая амплитуда и удержание.\n🔼 Тяжелее: удержание до с более глубоким вытяжением.",
-    "equipment_req": []
+    "equipment_req": [],
+    "stretch_type": "static"
   },
   {
     "name": "Растяжка трицепса над головой с партнёром",
@@ -8851,7 +8917,8 @@
     "howto": "⚠️ Ошибки: резкое давление партнёра — усиливать растяжку плавно и по ощущениям, а не рывком.\n🔽 Легче: короче фаза сопротивления и меньшая глубина растяжки.\n🔼 Тяжелее: увеличить время сопротивления до с более глубокой растяжкой после.",
     "equipment_req": [
       "партнёр"
-    ]
+    ],
+    "stretch_type": "static"
   },
   {
     "name": "Жим на блоке против скручивания (Pallof press)",
@@ -8989,7 +9056,8 @@
     "technique_en": "Lie down with your feet on the floor, heels directly under your knees. Lift only your tailbone to the ceiling to stretch your lower back. (Don't lift the entire spine yet.) Pull in your stomach. To go into a bridge, lift the entire spine except the neck.",
     "kind": "растяжка",
     "howto": "⚠️ Ошибки: подъём всего корпуса разом — начинайте движение именно с наклона таза, затем поднимайте позвоночник по сегментам.\n🔽 Легче: подъём только таза без перехода в полный мостик.\n🔼 Тяжелее: удержание в верхней точке мостика или выполнение на одной ноге.",
-    "equipment_req": []
+    "equipment_req": [],
+    "stretch_type": "dynamic"
   },
   {
     "name": "Миофасциальный релиз малоберцовых мышц роликом",
@@ -9006,7 +9074,8 @@
     "howto": "⚠️ Ошибки: слишком быстрое перекатывание — двигайтесь медленно, задерживаясь на болезненных точках.\n🔽 Легче: меньше веса тела на ролике, опираясь второй ногой на пол.\n🔼 Тяжелее: перенести весь вес тела на прорабатываемую ногу.",
     "equipment_req": [
       "массажный ролик"
-    ]
+    ],
+    "stretch_type": "both"
   },
   {
     "name": "Растяжка малоберцовых мышц",
@@ -9023,7 +9092,8 @@
     "howto": "⚠️ Ошибки: резкий рывок ленты — тяните плавно до лёгкого натяжения без боли.\n🔽 Легче: меньшая амплитуда выворота стопы и удержание.\n🔼 Тяжелее: увеличить удержание до с более сильным натяжением.",
     "equipment_req": [
       "резинки"
-    ]
+    ],
+    "stretch_type": "static"
   },
   {
     "name": "Ягодичный мост на фитболе",
@@ -9075,7 +9145,8 @@
     "howto": "⚠️ Ошибки: слишком сильное давление сразу — начинайте с умеренного веса тела на ролике.\n🔽 Легче: меньше веса тела на ролике, опираясь руками сзади.\n🔼 Тяжелее: перенести весь вес на скрещенную ногу.",
     "equipment_req": [
       "массажный ролик"
-    ]
+    ],
+    "stretch_type": "both"
   },
   {
     "name": "Планка",
@@ -9207,7 +9278,8 @@
     "howto": "⚠️ Ошибки: резкое натяжение ленты — тяните плавно до умеренного дискомфорта.\n🔽 Легче: меньшая амплитуда выворота и удержание.\n🔼 Тяжелее: увеличить удержание до с большим натяжением.",
     "equipment_req": [
       "резинки"
-    ]
+    ],
+    "stretch_type": "static"
   },
   {
     "name": "Силовой рывок штанги на грудь (пауэр-клин)",
@@ -9606,7 +9678,8 @@
     "howto": "⚠️ Ошибки: потеря равновесия из-за слишком большой опоры на мяч — контролируйте положение бёдер на мяче медленными движениями.\n🔽 Легче: опора на предплечья ближе к мячу и меньшая амплитуда.\n🔼 Тяжелее: удержание дольше или добавить лёгкое покачивание.",
     "equipment_req": [
       "фитбол"
-    ]
+    ],
+    "stretch_type": "static"
   },
   {
     "name": "Миофасциальный релиз квадрицепса роликом",
@@ -9623,7 +9696,8 @@
     "howto": "⚠️ Ошибки: слишком быстрое перекатывание — двигайтесь медленно, задерживаясь на болезненных точках.\n🔽 Легче: меньше веса тела на ролике, опираясь второй ногой на пол.\n🔼 Тяжелее: перенести весь вес тела на прорабатываемую ногу.",
     "equipment_req": [
       "массажный ролик"
-    ]
+    ],
+    "stretch_type": "both"
   },
   {
     "name": "Быстрый запрыгивание на тумбу",
@@ -9707,7 +9781,8 @@
     "technique_en": "Place yourself on your hands knees on an exercise mat. Your head should be looking forward and the bend of the knees should create a 90-degree angle between the hamstrings and the calves. This will be your starting position. Extend one leg up and behind you. The knee and hip should both extend. Then switch sides.",
     "kind": "растяжка",
     "howto": "⚠️ Ошибки: прогиб в пояснице при подъёме ноги — поднимайте ногу без переразгибания поясницы.\n🔽 Легче: меньшая амплитуда подъёма.\n🔼 Тяжелее: добавить утяжелитель на голень или удержание в верхней точке.",
-    "equipment_req": []
+    "equipment_req": [],
+    "stretch_type": "dynamic"
   },
   {
     "name": "Велотренажёр с горизонтальной посадкой",
@@ -10056,7 +10131,8 @@
     "howto": "⚠️ Ошибки: слишком быстрое перекатывание — двигайтесь медленно, задерживаясь на болезненных точках.\n🔽 Легче: меньше веса тела на ролике, опираясь ногами на пол.\n🔼 Тяжелее: перенести больше веса тела на ролик.",
     "equipment_req": [
       "массажный ролик"
-    ]
+    ],
+    "stretch_type": "both"
   },
   {
     "name": "Переноска рамы-рикши",
@@ -10276,7 +10352,8 @@
     "howto": "⚠️ Ошибки: форсирование движения при дискомфорте — двигайтесь плавно, останавливаясь до появления боли.\n🔽 Легче: более широкий хват на палке.\n🔼 Тяжелее: более узкий хват на палке.",
     "equipment_req": [
       "штанга"
-    ]
+    ],
+    "stretch_type": "static"
   },
   {
     "name": "Гребной тренажёр",
@@ -10308,7 +10385,8 @@
     "technique_en": "It's easiest to get into this stretch if you start standing up, put one leg behind you, and slowly lower your torso down to the floor. Keep the front heel on the floor (if it lifts up, scoot your other leg further back). Place your hands on either side of your front leg. To get more out of this stretch, push your butt up toward the ceiling, and then gradually lower it back toward the floor. You'll Stretch the hip flexor of the back leg and the hamstring and buttocks of the front.",
     "kind": "растяжка",
     "howto": "⚠️ Ошибки: провисание поясницы и заваленный вперёд корпус — держите спину прямой.\n🔽 Легче: уменьшите наклон и глубину выпада.\n🔼 Тяжелее: увеличьте амплитуду и удерживайте позу дольше.",
-    "equipment_req": []
+    "equipment_req": [],
+    "stretch_type": "static"
   },
   {
     "name": "Бег на беговой дорожке",
@@ -10389,7 +10467,8 @@
     "technique_en": "To begin, lie down with your back pressed against the floor or on an exercise mat (optional). Your arms should be fully extended to the sides with your palms facing down. Note: The arms should be stationary the entire time. With a slight bend at the knees, lift your legs up so that your heels are about 6 inches off the ground. This is the starting position. Now lift your left leg up to about a 45 degree angle while your right leg is lowered until the heel is about 2-3 inches from the ground. Switch movements by raising your right leg up and lowering your left leg. Remember to breathe while performing this exercise. Repeat for the recommended amount of repetitions.",
     "kind": "растяжка",
     "howto": "⚠️ Ошибки: прогиб поясницы от пола — прижимайте низ спины к коврику.\n🔽 Легче: уменьшите амплитуду и держите колени слегка согнутыми.\n🔼 Тяжелее: увеличьте амплитуду и добавьте утяжелители на ноги.",
-    "equipment_req": []
+    "equipment_req": [],
+    "stretch_type": "dynamic"
   },
   {
     "name": "Прыжки-ножницы (сплит-прыжки)",
@@ -10528,7 +10607,8 @@
     "howto": "⚠️ Ошибки: слишком резкое усилие при сопротивлении — увеличивайте нагрузку постепенно.\n🔽 Легче: сократите время удержания и силу сопротивления.\n🔼 Тяжелее: увеличьте время сопротивления и глубину растяжки.",
     "equipment_req": [
       "партнёр"
-    ]
+    ],
+    "stretch_type": "static"
   },
   {
     "name": "Тяга нижнего блока к поясу сидя",
@@ -10594,7 +10674,8 @@
     "technique_en": "Sit up straight on an exercise mat. Bend one knee and put that foot on the floor to stabilize the torso. Straighten your other leg and flex your ankle. Using a band, towel, or your hand if you can reach, pull the toes toward you. Hold for 10 to, then switch sides.",
     "kind": "растяжка",
     "howto": "⚠️ Ошибки: рывки при подтягивании стопы — тяните плавно и без боли.\n🔽 Легче: уменьшите тягу и время удержания.\n🔼 Тяжелее: увеличьте время удержания и силу натяжения.",
-    "equipment_req": []
+    "equipment_req": [],
+    "stretch_type": "static"
   },
   {
     "name": "Концентрированный подъём штанги на бицепс сидя узким хватом",
@@ -10718,7 +10799,8 @@
     "howto": "⚠️ Ошибки: округление спины при наклоне — тянитесь от бёдер с прямой спиной.\n🔽 Легче: сократите время удержания и глубину наклона.\n🔼 Тяжелее: увеличьте время удержания и глубину наклона.",
     "equipment_req": [
       "кольца"
-    ]
+    ],
+    "stretch_type": "static"
   },
   {
     "name": "Растяжка передней дельты сидя с партнёром",
@@ -10735,7 +10817,8 @@
     "howto": "⚠️ Ошибки: чрезмерное усилие при сопротивлении — увеличивайте нагрузку постепенно.\n🔽 Легче: сократите время сопротивления и силу растяжки.\n🔼 Тяжелее: увеличьте время сопротивления и глубину растяжки.",
     "equipment_req": [
       "партнёр"
-    ]
+    ],
+    "stretch_type": "static"
   },
   {
     "name": "Растяжка ягодиц сидя с партнёром",
@@ -10752,7 +10835,8 @@
     "howto": "⚠️ Ошибки: резкое давление партнёра — усиливайте растяжку плавно.\n🔽 Легче: сократите время удержания и силу давления.\n🔼 Тяжелее: увеличьте время удержания и глубину наклона.",
     "equipment_req": [
       "партнёр"
-    ]
+    ],
+    "stretch_type": "static"
   },
   {
     "name": "Наклоны со штангой на плечах сидя на ящике",
@@ -10787,7 +10871,8 @@
     "howto": "⚠️ Ошибки: резкое давление партнёра — усиливайте растяжку плавно и без боли.\n🔽 Легче: сократите время удержания и силу давления.\n🔼 Тяжелее: увеличьте время удержания и глубину наклона.",
     "equipment_req": [
       "партнёр"
-    ]
+    ],
+    "stretch_type": "static"
   },
   {
     "name": "Растяжка бедра и голени сидя с петлёй",
@@ -10804,7 +10889,8 @@
     "howto": "⚠️ Ошибки: резкий рывок петлёй — тяните плавно до лёгкого натяжения.\n🔽 Легче: сократите время удержания и силу тяги.\n🔼 Тяжелее: увеличьте время удержания и силу тяги.",
     "equipment_req": [
       "кольца"
-    ]
+    ],
+    "stretch_type": "static"
   },
   {
     "name": "Сгибание шеи сидя с головным ремнём",
@@ -10904,7 +10990,8 @@
     "technique_en": "Sit up straight on an exercise mat. Touch the soles of your feet together with your feet six to eight inches in front of your hips. Place one hand on the floor beside you and your other hand behind your head. Lift your elbow to the ceiling as you incline your torso to the other side. Hold for 10 to, then switch sides.",
     "kind": "растяжка",
     "howto": "⚠️ Ошибки: наклон вперёд вместо строго в сторону — держите корпус в одной плоскости.\n🔽 Легче: сократите время удержания и амплитуду.\n🔼 Тяжелее: увеличьте время удержания и глубину наклона.",
-    "equipment_req": []
+    "equipment_req": [],
+    "stretch_type": "static"
   },
   {
     "name": "Сгибание запястий со штангой сидя (хват снизу)",
@@ -11040,7 +11127,8 @@
     "technique_en": "With shoulders relaxed and arms resting loosely at your sides (or in your lap if you're seated), gently roll your shoulders forward, up, back, and down. Reverse direction. You can do this exercise alternating shoulders or both at the same time.",
     "kind": "растяжка",
     "howto": "⚠️ Ошибки: слишком резкие рывки — выполняйте плавно и без напряжения шеи.\n🔽 Легче: уменьшите амплитуду вращений.\n🔼 Тяжелее: увеличьте амплитуду и число повторений.",
-    "equipment_req": []
+    "equipment_req": [],
+    "stretch_type": "dynamic"
   },
   {
     "name": "Жим плечами стоя с резиновой лентой",
@@ -11072,7 +11160,8 @@
     "technique_en": "Relax your arms to your sides and raise your shoulders up toward your ears, then back down.",
     "kind": "растяжка",
     "howto": "⚠️ Ошибки: вращение плечами вместо вертикального подъёма — двигайтесь строго вверх-вниз.\n🔽 Легче: уменьшите амплитуду движения.\n🔼 Тяжелее: добавьте гантели или увеличьте темп.",
-    "equipment_req": []
+    "equipment_req": [],
+    "stretch_type": "dynamic"
   },
   {
     "name": "Растяжка плеча поперёк тела",
@@ -11087,7 +11176,8 @@
     "technique_en": "Reach your left arm across your body and hold it straight.",
     "kind": "растяжка",
     "howto": "⚠️ Ошибки: подъём плеча при растяжке — держите плечи опущенными.\n🔽 Легче: сократите время удержания и амплитуду.\n🔼 Тяжелее: увеличьте время удержания и надавите второй рукой.",
-    "equipment_req": []
+    "equipment_req": [],
+    "stretch_type": "static"
   },
   {
     "name": "Растяжка лёжа на боку",
@@ -11102,7 +11192,8 @@
     "technique_en": "First lie on your left side, bending your left knee in front of you to stabilize your torso (use your abdominal muscles as well to hold you upright). Straighten your right leg and rest the right foot on the floor behind your left. Straighten your right arm over your head and gently pull on your right wrist to stretch the entire right side of the body. Switch sides.",
     "kind": "растяжка",
     "howto": "⚠️ Ошибки: скручивание таза вместо чистой боковой растяжки — держите бёдра неподвижными.\n🔽 Легче: сократите время удержания и амплитуду.\n🔼 Тяжелее: увеличьте время удержания и глубину растяжки.",
-    "equipment_req": []
+    "equipment_req": [],
+    "stretch_type": "static"
   },
   {
     "name": "Боковая планка",
@@ -11196,7 +11287,8 @@
     "technique_en": "Stand next to a chair, which you may hold onto as a support. Stand on one leg. This will be your starting position. Keeping your leg straight, raise it as far out to the side as possible, and swing it back down, allowing it to cross the opposite leg. Repeat this swinging motion, increasing the range of motion as you do so.",
     "kind": "растяжка",
     "howto": "⚠️ Ошибки: наклон корпуса вместо чистого маха ногой — держите корпус вертикально.\n🔽 Легче: уменьшите амплитуду маха.\n🔼 Тяжелее: увеличьте амплитуду или добавьте утяжелитель.",
-    "equipment_req": []
+    "equipment_req": [],
+    "stretch_type": "dynamic"
   },
   {
     "name": "Растяжка приводящих мышц лёжа на боку",
@@ -11211,7 +11303,8 @@
     "technique_en": "Start off by lying on your right side and bend your right knee in front of you to stabilize the torso. Rest your head on your right hand or shoulder. Lift your left leg upward and hold it by the back of the knee (easier) or the foot (harder). Pull your left knee in toward your left shoulder and simultaneously press your foot or knee down to the floor. To intensify this stretch, straighten your left leg. Switch sides.",
     "kind": "растяжка",
     "howto": "⚠️ Ошибки: резкое подтягивание колена — тяните плавно без боли.\n🔽 Легче: сократите время удержания и амплитуду.\n🔼 Тяжелее: увеличьте время удержания и выпрямите ногу.",
-    "equipment_req": []
+    "equipment_req": [],
+    "stretch_type": "static"
   },
   {
     "name": "Растяжка шеи в сторону",
@@ -11226,7 +11319,8 @@
     "technique_en": "Start with your shoulders relaxed, gently tilt your head towards your shoulder. Assist stretch with a gentle pull on the side of the head.",
     "kind": "растяжка",
     "howto": "⚠️ Ошибки: резкое усиление рукой — тяните голову плавно и без боли.\n🔽 Легче: сократите время удержания и не помогайте рукой.\n🔼 Тяжелее: увеличьте время удержания и надавите рукой сильнее.",
-    "equipment_req": []
+    "equipment_req": [],
+    "stretch_type": "static"
   },
   {
     "name": "Прыжок в сторону с места",
@@ -11273,7 +11367,8 @@
     "technique_en": "This stretch works best standing. Cross your left arm over the midline of your body and hold the left wrist in your right hand down at the level of your hips. Start the stretch with a bent left arm. Slowly straighten, pull, and lift it up to shoulder height, as pictured. Feel this stretch originate in your back, not your shoulders, and don't pull too hard on the shoulders joint. Switch sides.",
     "kind": "растяжка",
     "howto": "⚠️ Ошибки: перетягивание плечевого сустава — поднимайте руку плавно и без боли.\n🔽 Легче: сократите амплитуду подъёма руки.\n🔼 Тяжелее: увеличьте амплитуду и время удержания.",
-    "equipment_req": []
+    "equipment_req": [],
+    "stretch_type": "static"
   },
   {
     "name": "Боковые перепрыгивания через тумбу",
@@ -11529,7 +11624,8 @@
     "technique_en": "Stand with your feet shoulder width apart. This will be your starting position. Begin the movement by flexing your knees and hips, sitting back with your hips. Continue until you have squatted a portion of the way down, but are above parallel, and quickly reverse the motion until you return to the starting position. Repeat the movement.",
     "kind": "растяжка",
     "howto": "⚠️ Ошибки: заваливание колен внутрь при пружинящем движении — держите колени по линии стоп.\n🔽 Легче: уменьшите глубину и темп приседаний.\n🔼 Тяжелее: увеличьте темп или число повторений.",
-    "equipment_req": []
+    "equipment_req": [],
+    "stretch_type": "dynamic"
   },
   {
     "name": "Катание на роликах",
@@ -12214,7 +12310,8 @@
     "technique_en": "Sit in a chair so your back is straight and your feet planted on the floor. Interlace your fingers behind your head, elbows out and your chin down. Twist your upper body to one side as far as you can. Then lean forward and twist your torso to reach your elbow to the floor on the inside of your knee. Return to upright position and then repeat for your other side.",
     "kind": "растяжка",
     "howto": "⚠️ Ошибки: резкое скручивание корпуса — выполняйте плавно, без рывков.\n🔽 Легче: меньшая амплитуда скручивания и наклона.\n🔼 Тяжелее: увеличить амплитуду и время удержания.",
-    "equipment_req": []
+    "equipment_req": [],
+    "stretch_type": "static"
   },
   {
     "name": "Взятие штанги на грудь в ножницы (сплит-клин)",
@@ -12312,7 +12409,8 @@
     "technique_en": "Being in a standing position. Jump into a split leg position, with one leg forward and one leg back, flexing the knees and lowering your hips slightly as you do so. As you descend, immediately reverse direction, standing back up and jumping, reversing the position of your legs. Repeat the movement on each leg.",
     "kind": "растяжка",
     "howto": "⚠️ Ошибки: жёсткое приземление без амортизации коленями — мягко гасите удар при каждом приземлении.\n🔽 Легче: заменить прыжок на простую смену ног шагом.\n🔼 Тяжелее: увеличить высоту прыжка или число повторений.",
-    "equipment_req": []
+    "equipment_req": [],
+    "stretch_type": "dynamic"
   },
   {
     "name": "Толчок штанги от груди в сед (сквот-жерк)",
@@ -12532,7 +12630,8 @@
     "technique_en": "Clasp your hands behind your back with your palms together, straighten arms and then rotate them so your palms face downward. Raise your arms up and hold until you feel a stretch in your biceps.",
     "kind": "растяжка",
     "howto": "⚠️ Ошибки: резкий рывок руками вверх — поднимайте плавно до лёгкого натяжения.\n🔽 Легче: меньшая амплитуда подъёма рук.\n🔼 Тяжелее: увеличить амплитуду и время удержания.",
-    "equipment_req": []
+    "equipment_req": [],
+    "stretch_type": "static"
   },
   {
     "name": "Жим Бредфорда стоя",
@@ -12753,7 +12852,8 @@
     "howto": "⚠️ Ошибки: сильный прогиб поясницы назад — держите таз подкрученным, растягивайте бедро.\n🔽 Легче: меньшая высота опоры, короче время удержания.\n🔼 Тяжелее: увеличить высоту опоры или время удержания.",
     "equipment_req": [
       "скамья"
-    ]
+    ],
+    "stretch_type": "static"
   },
   {
     "name": "Подъём штанги перед собой над головой стоя",
@@ -12787,7 +12887,8 @@
     "howto": "⚠️ Ошибки: сгибание опорного колена снимает растяжение — держите растягиваемую ногу прямой.\n🔽 Легче: меньше тянуть носок на себя.\n🔼 Тяжелее: увеличить натяжение и время удержания.",
     "equipment_req": [
       "тумба"
-    ]
+    ],
+    "stretch_type": "static"
   },
   {
     "name": "Растяжка бицепса бедра и икры стоя с петлёй",
@@ -12804,7 +12905,8 @@
     "howto": "⚠️ Ошибки: сгибание передней ноги в колене снимает растяжение — держите её прямой.\n🔽 Легче: меньше тянуть ремень, короче время удержания.\n🔼 Тяжелее: сильнее тянуть ремень или увеличить время удержания.",
     "equipment_req": [
       "кольца"
-    ]
+    ],
+    "stretch_type": "static"
   },
   {
     "name": "Круговые движения бедром стоя",
@@ -12819,7 +12921,8 @@
     "technique_en": "Begin standing on one leg, holding to a vertical support. Raise the unsupported knee to 90 degrees. This will be your starting position. Open the hip as far as possible, attempting to make a big circle with your knee. Perform this movement slowly for a number of repetitions, and repeat on the other side.",
     "kind": "растяжка",
     "howto": "⚠️ Ошибки: слишком быстрый темп теряет контроль — двигайтесь медленно и подконтрольно.\n🔽 Легче: уменьшить амплитуду круга.\n🔼 Тяжелее: увеличить амплитуду или добавить утяжелитель на ногу.",
-    "equipment_req": []
+    "equipment_req": [],
+    "stretch_type": "dynamic"
   },
   {
     "name": "Растяжка сгибателей бедра стоя",
@@ -12834,7 +12937,8 @@
     "technique_en": "Stand up straight with the spine vertical, the left foot slightly in front of the right. Bend both knees and lift the back heel off the floor as you press the right hip forward. You can't get a thorough, deep stretch in this position, however, because it's hard to relax the hip flexor and stand on it at the same time. Switch sides.",
     "kind": "растяжка",
     "howto": "⚠️ Ошибки: недостаточный наклон таза вперёд — активно подавайте бедро вперёд для растяжения.\n🔽 Легче: меньшая амплитуда и короче удержание.\n🔼 Тяжелее: увеличить наклон таза и время удержания.",
-    "equipment_req": []
+    "equipment_req": [],
+    "stretch_type": "static"
   },
   {
     "name": "Сгибание рук с гантелями хватом нейтрально стоя",
@@ -12866,7 +12970,8 @@
     "technique_en": "Take a slightly wider than hip distance stance with your knees slightly bent. Place your right hand on your right hip to support the spine. Raise your left arm in a vertical line and place your left hand behind your head. Keep it there as you incline your torso to the right. Keep your weight evenly distributed between both legs (don't lean into your left hip). Switch sides.",
     "kind": "растяжка",
     "howto": "⚠️ Ошибки: наклон вперёд вместо строго в сторону — держите корпус во фронтальной плоскости.\n🔽 Легче: меньшая амплитуда наклона.\n🔼 Тяжелее: увеличить амплитуду и время удержания.",
-    "equipment_req": []
+    "equipment_req": [],
+    "stretch_type": "static"
   },
   {
     "name": "Сгибание ноги стоя в тренажёре",
@@ -13099,7 +13204,8 @@
     "technique_en": "Start off with your feet hip-distance apart. Bend your knees slightly to keep them soft and springy. You may want to move your pelvis forward and backward and back few times before holding the tailbone forward in this stretch.",
     "kind": "растяжка",
     "howto": "⚠️ Ошибки: движение всей спиной вместо таза — изолируйте работу в тазобедренном суставе.\n🔽 Легче: меньшая амплитуда качания таза.\n🔼 Тяжелее: увеличить амплитуду и время удержания в растяжке.",
-    "equipment_req": []
+    "equipment_req": [],
+    "stretch_type": "dynamic"
   },
   {
     "name": "Скручивания на верхнем блоке с канатом стоя",
@@ -13131,7 +13237,8 @@
     "technique_en": "Stand with your feet hip-distance apart, one foot slightly in front of the other. Bend both knees, keeping your back heel on the floor. Switch sides.",
     "kind": "растяжка",
     "howto": "⚠️ Ошибки: отрыв задней пятки от пола — прижимайте пятку к полу для правильной растяжки.\n🔽 Легче: меньший сгиб колен, короче удержание.\n🔼 Тяжелее: увеличить сгиб колен и время удержания.",
-    "equipment_req": []
+    "equipment_req": [],
+    "stretch_type": "static"
   },
   {
     "name": "Наклоны к носкам стоя",
@@ -13146,7 +13253,8 @@
     "technique_en": "Stand with some space in front and behind you. Bend at the waist, keeping your legs straight, until you can relax and let your upper body hang down in front of you. Let your arms and hands hang down naturally. Hold for 10 to.",
     "kind": "растяжка",
     "howto": "⚠️ Ошибки: сгибание колен снимает растяжение с задней поверхности бедра — держите ноги прямыми.\n🔽 Легче: неполный наклон, короче время удержания.\n🔼 Тяжелее: увеличить наклон и время удержания.",
-    "equipment_req": []
+    "equipment_req": [],
+    "stretch_type": "static"
   },
   {
     "name": "Разгибание рук на трицепс с полотенцем стоя",
@@ -13293,7 +13401,8 @@
     "technique_en": "To begin, stand straight with your feet shoulder width apart from each other. Place your hands on your hips. This is the starting position. Now slowly inhale as much air as possible and then start to exhale as much as possible while bringing your stomach in as much as possible and hold this position. Try to visualize your navel touching your backbone. Hold the isometric contraction while trying to breathe normally. Then inhale and bring your stomach back to the starting position. With practice, try to hold the contraction for longer.",
     "kind": "растяжка",
     "howto": "⚠️ Ошибки: задержка дыхания вместо нормального дыхания при удержании — дышите свободно, сохраняя втянутый живот.\n🔽 Легче: сократите время удержания.\n🔼 Тяжелее: увеличьте время удержания или выполняйте стоя на одной ноге.",
-    "equipment_req": []
+    "equipment_req": [],
+    "stretch_type": "static"
   },
   {
     "name": "Пуловер с гантелью на прямых руках",
@@ -13652,7 +13761,8 @@
     "technique_en": "Begin in a seated, upright position. Start by extending your legs in front of you in a V. With your hands on the floor, lean forward as far as possible. Hold for 10 to.",
     "kind": "растяжка",
     "howto": "⚠️ Ошибки: округление спины вместо наклона от таза — тянитесь вперёд с прямой спиной.\n🔽 Легче: уменьшите наклон и время удержания.\n🔼 Тяжелее: увеличьте время удержания или наклон вперёд.",
-    "equipment_req": []
+    "equipment_req": [],
+    "stretch_type": "static"
   },
   {
     "name": "Разведение ног в тренажёре (абдукция)",
@@ -13718,7 +13828,8 @@
     "technique_en": "To begin, lie down on the floor or an exercise mat with your back pressed against the floor. Your arms should be lying across your sides with the palms facing down. Your legs should be touching each other. Slowly elevate your legs up in the air until they are almost perpendicular to the floor with a slight bend at the knees. Your feet should be parallel to the floor. Move your arms so that they are fully extended at a 45 degree angle from the floor. This is the starting position. While keeping your lower back pressed against the floor, slowly lift your torso and use your hands to try and touch your toes. Remember to exhale while perform this part of the exercise. Slowly begin to lower your torso and arms back down to the starting position while inhaling. Remember to keep your arms straight out pointing towards your toes. Repeat for the recommended amount of repetitions.",
     "kind": "растяжка",
     "howto": "⚠️ Ошибки: отрыв поясницы от пола — держите поясницу прижатой, работайте только прессом.\n🔽 Легче: согните колени сильнее и уменьшите амплитуду.\n🔼 Тяжелее: держите ноги ровнее и замедлите темп.",
-    "equipment_req": []
+    "equipment_req": [],
+    "stretch_type": "static"
   },
   {
     "name": "Повороты корпуса с мячом",
@@ -13735,7 +13846,8 @@
     "howto": "⚠️ Ошибки: поворот только руками без вращения корпуса — вращайте весь торс.\n🔽 Легче: используйте более лёгкий мяч и меньшую амплитуду.\n🔼 Тяжелее: используйте более тяжёлый мяч.",
     "equipment_req": [
       "медбол"
-    ]
+    ],
+    "stretch_type": "dynamic"
   },
   {
     "name": "Бег/ходьба по пересечённой местности",
@@ -13799,7 +13911,8 @@
     "technique_en": "Bring right arm across your body and over your left shoulder, holding your elbow with your left hand, until you feel a stretch in your tricep. Then repeat for your other arm.",
     "kind": "растяжка",
     "howto": "⚠️ Ошибки: слишком сильное давление на локоть — тяните мягко без боли.\n🔽 Легче: сократите время удержания.\n🔼 Тяжелее: увеличьте время удержания.",
-    "equipment_req": []
+    "equipment_req": [],
+    "stretch_type": "static"
   },
   {
     "name": "Французский жим на блоке из-за головы с канатом",
@@ -13884,7 +13997,8 @@
     "technique_en": "Reach your hand behind your head, grasp your elbow and gently pull. Hold for 10 to, then switch sides.",
     "kind": "растяжка",
     "howto": "⚠️ Ошибки: рывковое давление на локоть — тяните плавно без боли.\n🔽 Легче: сократите время удержания.\n🔼 Тяжелее: увеличьте время удержания.",
-    "equipment_req": []
+    "equipment_req": [],
+    "stretch_type": "static"
   },
   {
     "name": "Скручивания с подтягиванием коленей",
@@ -14000,7 +14114,8 @@
     "technique_en": "While seated, bend forward to hug your thighs from underneath with both arms. Keep your knees together and your legs extended out as you bring your chest down to your knees. You can also stretch your middle back by pulling your back away from your knees as your hugging them.",
     "kind": "растяжка",
     "howto": "⚠️ Ошибки: сгибание коленей при наклоне — держите ноги прямыми.\n🔽 Легче: сократите время удержания и наклон.\n🔼 Тяжелее: увеличьте время удержания и наклон вперёд.",
-    "equipment_req": []
+    "equipment_req": [],
+    "stretch_type": "static"
   },
   {
     "name": "Растяжка верхней части спины",
@@ -14015,7 +14130,8 @@
     "technique_en": "Clasp fingers together with your thumbs pointing down, round your shoulders as you reach your hands forward.",
     "kind": "растяжка",
     "howto": "⚠️ Ошибки: недостаточное округление плеч — тянитесь руками вперёд, максимально округляя спину.\n🔽 Легче: сократите время удержания.\n🔼 Тяжелее: увеличьте время удержания.",
-    "equipment_req": []
+    "equipment_req": [],
+    "stretch_type": "static"
   },
   {
     "name": "Тяга штанги к подбородку",
@@ -14081,7 +14197,8 @@
     "technique_en": "Extend both hands straight above your head, palms touching. Slowly push your hands up and back, keeping your back straight.",
     "kind": "растяжка",
     "howto": "⚠️ Ошибки: чрезмерный прогиб поясницы — держите корпус стабильным, тянитесь только руками.\n🔽 Легче: сократите время удержания.\n🔼 Тяжелее: увеличьте время удержания.",
-    "equipment_req": []
+    "equipment_req": [],
+    "stretch_type": "static"
   },
   {
     "name": "Тяга верхнего блока V-рукоятью",
@@ -14494,7 +14611,8 @@
     "technique_en": "Lie on your back with your arms extended out to the sides and your legs straight. This will be your starting position. Lift one leg and quickly cross it over your body, attempting to touch the ground near the opposite hand. Return to the starting position, and repeat with the opposite leg. Continue to alternate.",
     "kind": "растяжка",
     "howto": "⚠️ Ошибки: сгибание колена при заведении ноги — держите ногу прямой.\n🔽 Легче: уменьшите амплитуду и темп.\n🔼 Тяжелее: увеличьте темп или амплитуду.",
-    "equipment_req": []
+    "equipment_req": [],
+    "stretch_type": "dynamic"
   },
   {
     "name": "Комплексная растяжка \"Лучшая в мире\"",
@@ -14509,7 +14627,8 @@
     "technique_en": "This is a three-part stretch. Begin by lunging forward, with your front foot flat on the ground and on the toes of your back foot. With your knees bent, squat down until your knee is almost touching the ground. Keep your torso erect, and hold this position. Now, place the arm on the same side as your front leg on the ground, with the elbow next to the foot. Your other hand should be placed on the ground, parallel to your lead leg, to help support you during this portion of the stretch. After, place your hands on either side of your front foot. Raise the toes of the front foot off of the ground, and straighten your leg. You may need to reposition your rear leg to do so. Hold, and then repeat the entire sequence for the other side.",
     "kind": "растяжка",
     "howto": "⚠️ Ошибки: округление спины в положении выпада — держите спину прямой на каждом этапе.\n🔽 Легче: сократите время удержания каждого этапа.\n🔼 Тяжелее: увеличьте время удержания или глубину выпада.",
-    "equipment_req": []
+    "equipment_req": [],
+    "stretch_type": "both"
   },
   {
     "name": "Круговые вращения кистями",
@@ -14524,7 +14643,8 @@
     "technique_en": "Start by standing straight with your feet being shoulder width apart from each other. Elevate your arms to the side of you until they are fully extended and parallel to the floor at a height that is evenly aligned with your shoulders. Tip: Your torso and arms should form the letter \"T: Your palms should be facing down. This is the starting position. Keeping your entire body stationary except for the wrists, begin to rotate both wrists forward in a circular motion. Tip: Pretend that you are trying to draw circles by using your hands as the brush. Breathe normally as you perform this exercise. Repeat for the recommended amount of repetitions.",
     "kind": "растяжка",
     "howto": "⚠️ Ошибки: движение всей рукой вместо изолированной работы кистью — вращайте только кистью.\n🔽 Легче: уменьшите скорость и амплитуду вращения.\n🔼 Тяжелее: увеличьте число повторений или амплитуду.",
-    "equipment_req": []
+    "equipment_req": [],
+    "stretch_type": "dynamic"
   },
   {
     "name": "Скручивание запястного ролика",

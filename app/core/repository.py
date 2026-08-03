@@ -271,7 +271,9 @@ async def build_custom_plan(
     Разминка/заминка сохраняются как элементы плана с фазой (phase). Возвращает число дней.
     """
     # Палитра по инвентарю — чтобы enrich не подтянул недоступное (пусто = только вес тела)
-    pool = catalog.main_candidates(equipment or "", limit=10_000) + catalog.warmup_candidates(equipment or "")
+    pool = (catalog.main_candidates(equipment or "", limit=10_000)
+            + catalog.warmup_candidates(equipment or "")
+            + catalog.cooldown_candidates(equipment or ""))
 
     # Оставляем только валидные дни (0..6, без дублей). Если валидных нет — НЕ трогаем старый план.
     valid: list[dict] = []

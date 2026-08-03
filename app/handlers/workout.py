@@ -329,7 +329,7 @@ def _cooldown_for_zones(zones: list[str], n: int = 5) -> list[dict]:
     """Подбирает движения заминки (растяжки каталога) под фактические зоны дня."""
     from app.core import catalog
     flat = [z.strip() for zg in zones for z in (zg or "").split("/") if z.strip()]
-    pool = catalog.warmup_candidates("Всё оборудование", zones=flat)  # растяжки — вес тела
+    pool = catalog.cooldown_candidates("Всё оборудование", zones=flat)  # заминка = статические растяжки
     out, seen = [], set()
     for e in pool:
         if e["name"] in seen:
