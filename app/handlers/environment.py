@@ -77,12 +77,13 @@ async def _regenerate(message: Message, tg_id: int, state: FSMContext) -> None:
         async with async_session() as db:
             user = await repo.get_user_by_tg(db, tg_id)
             days = await repo.active_weekdays(db, user.id)
-            profile, goal, env, equip, sex, level, per_day, uid = (
+            profile, goal, env, equip, sex, level, per_day, uid, disliked = (
                 user.profile_summary, user.goal, user.environment, user.equipment,
-                user.sex, user.level, user.exercises_per_day or 4, user.id,
+                user.sex, user.level, user.exercises_per_day or 4, user.id, user.disliked,
             )
         days = days or [0, 2, 4]
-        workouts = await llm.generate_plan(profile, goal, days, env, equip, sex, level, per_day)
+        workouts = await llm.generate_plan(profile, goal, days, env, equip, sex, level, per_day,
+                                          disliked=disliked)
         if workouts:
             async with async_session() as db:
                 await repo.build_custom_plan(db, uid, workouts, environment=env, equipment=equip)

@@ -14,6 +14,7 @@ from app.core.db import async_session
 from app.core import nutrition, progress
 from app.core import repository as repo
 from app.core import vector
+from app.handlers import coach_actions
 from app.handlers.environment import start_environment
 from app.handlers.schedule import start_schedule
 from app.keyboards import main_menu, reset_confirm_kb, settings_menu
@@ -375,3 +376,45 @@ async def show_progress(cb: CallbackQuery) -> None:
         text = await progress.progress_report(db, user.id)
     await cb.answer()
     await cb.message.answer(text)
+
+
+@router.callback_query(F.data == "macro:skip")
+async def macro_skip(cb: CallbackQuery) -> None:
+    await cb.answer("Ок, оставляем как есть")
+    try:
+        await cb.message.edit_reply_markup(reply_markup=None)
+    except Exception:
+        pass
+
+
+@router.callback_query(F.data == "macro:apply")
+async def macro_apply(cb: CallbackQuery) -> None:
+    """Применяет макро-коррекцию: пересобирает программу с пожеланиями из анализа."""
+    import json as _json
+    from app.core import limits as _lim
+
+    advice = None
+    try:
+        r = _lim._client()
+        raw = await r.get(f"macro_wishes:{cb.from_user.id}")
+        advice = _json.loads(raw) if raw else None
+    except Exception:
+        pass
+    if not advice:
+        await cb.answer("Разбор устарел — открой «Прогресс» и попроси тренера обновить план",
+                        show_alert=True)
+        return
+    await cb.answer("Собираю новую программу…")
+    try:
+        await cb.message.edit_reply_markup(reply_markup=None)
+    except Exception:
+        pass
+    result, _ = await coach_actions.apply(
+        {"name": "set_plan", "args": {"wishes": advice.get("wishes", "")}}, cb.from_user.id
+    )
+    await cb.message.answer(f"✅ {result}")
+    try:
+        r = _lim._client()
+        await r.delete(f"macro_wishes:{cb.from_user.id}")
+    except Exception:
+        pass

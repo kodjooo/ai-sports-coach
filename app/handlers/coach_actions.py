@@ -133,6 +133,7 @@ async def apply(action: dict, tg_id: int) -> tuple[str, int | None]:
             workouts = await llm.generate_plan(
                 profile, user.goal, days, user.environment, user.equipment,
                 user.sex, user.level, user.exercises_per_day or 4,
+                disliked=user.disliked,
             )
             if not workouts:
                 return "Не получилось собрать программу — попробуй ещё раз чуть позже.", None

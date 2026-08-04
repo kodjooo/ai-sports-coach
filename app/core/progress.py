@@ -202,3 +202,73 @@ async def progress_report(db: AsyncSession, user_id: int) -> str:
             lines.append(f"{sign} {g['name']}: {g['from']} → {g['to']}")
 
     return "\n".join(lines)
+
+
+async def macro_advice(db: AsyncSession, user_id: int) -> dict | None:
+    """Макро-коррекция (уровень B): раз в неделю смотрим 3 недели истории и решаем,
+    нужно ли перестраивать программу.
+
+    ПРИОРИТЕТ: сначала питание, потом нагрузка — если вес стоит из-за несоблюдения калорий,
+    НЕ утяжеляем тренировки (иначе перетрен вместо результата).
+    Возвращает {"reason": текст для пользователя, "wishes": пожелания генератору} или None.
+    """
+    user = await db.get(User, user_id)
+    if user is None:
+        return None
+    today = local_today()
+    since = today - timedelta(days=21)
+    done = await repo.count_workouts_in_period(db, user_id, since)
+    planned = len(await repo.list_templates(db, user_id)) * 3 or 1
+    weights = await repo.weight_by_week(db, user_id, weeks=4)
+    kcals = await repo.kcal_by_week(db, user_id, weeks=3)
+    norm = nutrition.daily_norm(user)
+
+    # Данных мало — не советуем ничего (нужна хотя бы пара недель истории)
+    if done < 3 or len(weights) < 2:
+        return None
+
+    goal = (user.nutrition_goal or user.goal or "").lower()
+    losing = "похуд" in goal or "снизить" in goal
+    weight_delta = weights[-1][1] - weights[0][1]
+    stalled = abs(weight_delta) < 0.4  # вес практически стоит за период
+
+    # Соблюдение калорий: сколько дней записано и средний перебор
+    days_logged = sum(d for _, _, d in kcals) if kcals else 0
+    avg_kcal = round(sum(a for _, a, _ in kcals) / len(kcals)) if kcals else 0
+    over_norm = bool(norm and avg_kcal > norm["kcal"] * 1.05)
+    poor_tracking = days_logged < 10  # меньше половины дней за 3 недели
+
+    skipping = done < planned * 0.6
+
+    # 1) ПИТАНИЕ — приоритетнее нагрузки
+    if losing and stalled and (over_norm or poor_tracking):
+        why = ("ешь в среднем выше нормы" if over_norm else "мало дней с записями еды")
+        return {
+            "reason": (f"За 3 недели вес почти не изменился ({weight_delta:+.1f} кг), и при этом {why}. "
+                       "Программу усложнять не будем — сначала наладим питание. "
+                       "Тренировки оставлю в текущем объёме, чуть добавлю активности."),
+            "wishes": ("Сохранить текущий уровень сложности, не увеличивать объём; добавить немного "
+                       "лёгкой активности/кардио. Причина: вес стоит из-за питания, не из-за тренировок."),
+        }
+
+    # 2) Пропуски — упрощаем, чтобы вернуть регулярность
+    if skipping:
+        return {
+            "reason": (f"За 3 недели сделано {done} тренировок из ~{planned} по плану. "
+                       "Сделаю программу короче и проще — важнее регулярность, чем объём."),
+            "wishes": "Сделать программу проще и короче (меньше упражнений, умеренная нагрузка), "
+                      "чтобы её было легко выполнять регулярно.",
+        }
+
+    # 3) Всё соблюдается, но вес стоит при цели похудения — меняем стимул нагрузки
+    if losing and stalled:
+        return {
+            "reason": (f"Тренировки идёшь стабильно ({done} за 3 недели), питание в норме, "
+                       "но вес встал. Обновлю программу: сменю акценты и добавлю объёма на большие "
+                       "группы мышц — это подтолкнёт расход."),
+            "wishes": "Обновить программу: сменить упражнения на большие группы мышц, немного "
+                      "увеличить общий объём, добавить кардио-элемент.",
+        }
+
+    # 4) Прогресс есть — ничего не трогаем
+    return None

@@ -5,6 +5,7 @@ import logging
 from datetime import date, datetime, timedelta
 
 from aiogram import Bot
+from aiogram.types import InlineKeyboardButton, InlineKeyboardMarkup
 from apscheduler.schedulers.asyncio import AsyncIOScheduler
 from apscheduler.triggers.cron import CronTrigger
 from sqlalchemy import select
@@ -124,6 +125,24 @@ async def _weekly_report(bot: Bot) -> None:
                     body += "\n\n💬 " + takeaway
                 body += "\n\nНапиши текущий вес числом, чтобы я отслеживал динамику."
                 await bot.send_message(user.tg_id, body)
+
+                # Макро-коррекция программы (уровень B): раз в неделю проверяем 3 недели истории.
+                # Приоритет: если вес стоит из-за питания — НЕ утяжеляем тренировки.
+                advice = await progress.macro_advice(db, user.id)
+                if advice:
+                    import json as _json
+                    from app.core import limits as _lim
+                    try:
+                        r = _lim._client()
+                        await r.set(f"macro_wishes:{user.tg_id}", _json.dumps(advice), ex=604800)
+                    except Exception:
+                        pass
+                    kb = InlineKeyboardMarkup(inline_keyboard=[[
+                        InlineKeyboardButton(text="🔄 Обновить программу", callback_data="macro:apply"),
+                        InlineKeyboardButton(text="↩️ Пока не надо", callback_data="macro:skip"),
+                    ]])
+                    await bot.send_message(
+                        user.tg_id, "🧭 <b>Разбор за 3 недели</b>\n" + advice["reason"], reply_markup=kb)
             except Exception as exc:
                 # Ошибка по одному пользователю не должна прерывать рассылку остальным
                 logger.warning("Отчёт пропущен для %s: %s", user.tg_id, exc)

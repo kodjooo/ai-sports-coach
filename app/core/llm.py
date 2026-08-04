@@ -407,6 +407,7 @@ async def generate_plan(
     level: str | None = None,
     per_day: int = 4,
     model: str | None = None,
+    disliked: str | None = None,
 ) -> list[dict]:
     """Генерирует персональный план тренировок под профиль, пол, уровень, среду и дни.
 
@@ -420,6 +421,12 @@ async def generate_plan(
     main_pool = catalog.main_candidates(equipment, level)
     warm_pool = catalog.warmup_candidates(equipment)   # динамические — для разминки
     cool_pool = catalog.cooldown_candidates(equipment)  # статические — для заминки
+    # «Больше не предлагать»: исключаем нелюбимые движения из всех палитр
+    skip = {x.strip().lower() for x in (disliked or "").split(",") if x.strip()}
+    if skip:
+        main_pool = [e for e in main_pool if e["name"].lower() not in skip] or main_pool
+        warm_pool = [e for e in warm_pool if e["name"].lower() not in skip] or warm_pool
+        cool_pool = [e for e in cool_pool if e["name"].lower() not in skip] or cool_pool
     if not main_pool:
         logger.error("generate_plan: пустая палитра каталога (инвентарь=%s)", equipment)
         return []
