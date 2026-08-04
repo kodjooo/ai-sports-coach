@@ -2,6 +2,7 @@
 from __future__ import annotations
 
 import json
+import logging
 from datetime import date, datetime, timedelta, timezone
 from zoneinfo import ZoneInfo
 
@@ -10,6 +11,8 @@ from sqlalchemy.ext.asyncio import AsyncSession
 
 from app.config import settings
 from app.core import catalog
+
+logger = logging.getLogger(__name__)
 
 
 def _enrich_from_catalog(m: dict, pool: list[dict] | None = None) -> dict:
@@ -23,31 +26,6 @@ def _enrich_from_catalog(m: dict, pool: list[dict] | None = None) -> dict:
     hit = catalog.resolve_in(name, pool) if pool else catalog.resolve(name, fuzzy=True)
     if not hit:
         return m
-    out = dict(m)
-    out.update({
-        "name": hit["name"], "muscle_group": hit["muscle_group"],
-        "technique": hit["technique"], "gif": hit["gif"],
-        "environment": hit["environment"], "equipment": hit["equipment"],
-    })
-    return out
-
-
-def _catalog_fallback(m: dict, pool: list[dict], used: set[str] | None = None) -> dict:
-    """Если движение НЕ нашлось в каталоге (нет gif) — берём каталожный аналог той же группы
-    мышц из палитры. Так в плане не появляются самодельные упражнения без анимации техники
-    («Приседания с контролем темпа», «Подъёмы на стул» и т.п.).
-    """
-    if m.get("gif") or not pool:
-        return m
-    want = (m.get("muscle_group") or "").split("/")[0].strip().lower()
-    used = used or set()
-    def ok(e: dict) -> bool:
-        return bool(e.get("gif")) and e["name"] not in used
-    same = [e for e in pool if ok(e) and want and want in (e.get("muscle_group") or "").lower()]
-    pick = (same or [e for e in pool if ok(e)])
-    if not pick:
-        return m
-    hit = pick[0]
     out = dict(m)
     out.update({
         "name": hit["name"], "muscle_group": hit["muscle_group"],
@@ -358,7 +336,10 @@ async def build_custom_plan(
         used: set[str] = set()
         for m in warm:
             m = _enrich_from_catalog(m, pool)
-            m = _catalog_fallback(m, warm_p, used)
+            if not m.get("gif"):
+                logger.error("build_custom_plan: разминка «%s» вне каталога — пропускаю "
+                             "(план должен собираться только из каталожных движений)", m.get("name"))
+                continue
             used.add(m.get("name", ""))
             exo = await find_or_create_exercise(
                 db, m.get("name", "Разминка"), m.get("muscle_group"), m.get("technique"),
@@ -370,7 +351,10 @@ async def build_custom_plan(
             order += 1
         for ex in w.get("exercises", []):
             ex = _enrich_from_catalog(ex, pool)
-            ex = _catalog_fallback(ex, main_p, used)
+            if not ex.get("gif"):
+                logger.error("build_custom_plan: упражнение «%s» вне каталога — пропускаю "
+                             "(план должен собираться только из каталожных упражнений)", ex.get("name"))
+                continue
             used.add(ex.get("name", ""))
             exo = await find_or_create_exercise(
                 db, ex.get("name", "Упражнение"), ex.get("muscle_group"), ex.get("technique"),
@@ -383,7 +367,10 @@ async def build_custom_plan(
             order += 1
         for m in cool:
             m = _enrich_from_catalog(m, pool)
-            m = _catalog_fallback(m, cool_p, used)
+            if not m.get("gif"):
+                logger.error("build_custom_plan: заминка «%s» вне каталога — пропускаю "
+                             "(план должен собираться только из каталожных движений)", m.get("name"))
+                continue
             used.add(m.get("name", ""))
             exo = await find_or_create_exercise(
                 db, m.get("name", "Заминка"), m.get("muscle_group"), m.get("technique"),
