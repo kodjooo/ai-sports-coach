@@ -31,9 +31,10 @@ def describe(action: dict) -> str | None:
     if name == "log_meal":
         return f"Записать съеденное: {args.get('description')}"
     if name == "set_plan":
-        workouts = args.get("workouts", [])
-        parts = [f"{_wd(w.get('weekday', 0))} ({len(w.get('exercises', []))} упр.)" for w in workouts]
-        line = f"Новый план на {len(workouts)} дн.: " + ", ".join(parts)
+        line = f"Пересобрать программу: {args.get('wishes') or 'обновить план'}"
+        days = args.get("weekdays")
+        if days:
+            line += "; дни: " + ", ".join(_wd(int(d)) for d in days)
         if args.get("hour") is not None:
             line += f"; напоминания {int(args['hour']):02d}:{int(args.get('minute', 0)):02d}"
         return line
@@ -59,10 +60,16 @@ async def apply(action: dict, tg_id: int) -> tuple[str, int | None]:
             return (f"Готово, обновил нагрузку «{ex.name}»." if n else "В плане нет этого упражнения."), None
 
         if name == "replace_exercise":
+            from app.core import catalog
+
             old = await repo.find_exercise_by_name(db, args.get("old_exercise", ""))
-            new = await repo.find_exercise_by_name(db, args.get("new_exercise", ""))
+            # Новое ищем ТОЛЬКО в палитре каталога под инвентарь/уровень клиента — иначе коуч
+            # мог подставить самодельную запись без GIF и техники.
+            pool = catalog.main_candidates(user.equipment, user.level, limit=10_000)
+            hit = catalog.resolve_in(args.get("new_exercise", ""), pool)
+            new = await repo.find_exercise_by_name(db, hit["name"]) if hit else None
             if not old or not new:
-                return "Не нашёл одно из упражнений в каталоге.", None
+                return ("Не нашёл подходящей замены в каталоге под твой инвентарь и уровень.", None)
             n = await repo.replace_exercise_in_plan(db, user.id, old.id, new.id)
             return (f"Заменил «{old.name}» на «{new.name}»." if n else "В плане нет исходного упражнения."), None
 
@@ -111,12 +118,28 @@ async def apply(action: dict, tg_id: int) -> tuple[str, int | None]:
             return msg, meal.id
 
         if name == "set_plan":
-            workouts = args.get("workouts", [])
+            # ЕДИНЫЙ генератор: упражнения подбирает generate_plan строго из каталога-палитры
+            # (инвентарь + уровень + правила безопасности), а коуч передаёт только ПОЖЕЛАНИЯ.
+            from app.core import llm
+
+            wishes = (args.get("wishes") or "").strip()
+            days = [int(d) for d in (args.get("weekdays") or []) if 0 <= int(d) <= 6]
+            if not days:
+                days = sorted({t.weekday for t in await repo.list_templates(db, user.id)
+                               if t.weekday is not None}) or [0, 2, 4]
+            profile = (user.profile_summary or "")
+            if wishes:
+                profile = (profile + "\nПОЖЕЛАНИЯ К НОВОЙ ПРОГРАММЕ: " + wishes).strip()
+            workouts = await llm.generate_plan(
+                profile, user.goal, days, user.environment, user.equipment,
+                user.sex, user.level, user.exercises_per_day or 4,
+            )
             if not workouts:
-                return "Пустой план — нечего применять.", None
-            n = await repo.build_custom_plan(db, user.id, workouts, environment=user.environment, equipment=user.equipment)
+                return "Не получилось собрать программу — попробуй ещё раз чуть позже.", None
+            n = await repo.build_custom_plan(db, user.id, workouts,
+                                             environment=user.environment, equipment=user.equipment)
             if args.get("hour") is not None:
                 await repo.set_train_time(db, user, int(args["hour"]), int(args.get("minute", 0)))
-            return f"Готово! Собрал новый план на {n} дн. Загляни в «План недели».", None
+            return f"Готово! Собрал новую программу на {n} дн. Загляни в «План недели».", None
 
     return "Не понял действие.", None

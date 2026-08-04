@@ -142,47 +142,30 @@ COACH_TOOLS = [
         "function": {
             "name": "set_plan",
             "description": (
-                "Полностью пересобрать план тренировок клиента: задать дни недели и "
-                "упражнения на каждый день. Используй, когда предлагаешь новую программу. "
-                "Указывай упражнения ОБЩЕПРИНЯТЫМИ названиями (приседания, жим лёжа, тяга блока, "
-                "подтягивания и т.п.) — система сопоставит их с каталогом (там техника и видео). "
-                "Не выдумывай экзотические названия."
+                "Пересобрать программу тренировок клиента. НЕ перечисляй упражнения сам — "
+                "опиши ПОЖЕЛАНИЯ (что изменить и почему): акценты по группам мышц, что убрать "
+                "из-за боли/травмы, сделать легче/тяжелее, сменить дни. Конкретные упражнения "
+                "подберёт система строго из каталога (с техникой и видео) под инвентарь и уровень клиента."
             ),
             "parameters": {
                 "type": "object",
                 "properties": {
-                    "workouts": {
+                    "wishes": {
+                        "type": "string",
+                        "description": (
+                            "Пожелания к новой программе в 1-3 предложениях: акценты, что исключить "
+                            "(напр. «без нагрузки на правое колено»), сделать легче/тяжелее и т.п."
+                        ),
+                    },
+                    "weekdays": {
                         "type": "array",
-                        "description": "По одному объекту на тренировочный день",
-                        "items": {
-                            "type": "object",
-                            "properties": {
-                                "weekday": {"type": "integer", "description": "0=Пн … 6=Вс"},
-                                "warmup": {"type": "string", "description": "Разминка дня"},
-                                "cooldown": {"type": "string", "description": "Заминка дня"},
-                                "exercises": {
-                                    "type": "array",
-                                    "items": {
-                                        "type": "object",
-                                        "properties": {
-                                            "name": {"type": "string"},
-                                            "sets": {"type": "integer"},
-                                            "reps": {"type": "integer"},
-                                            "rest_sec": {"type": "integer", "description": "Отдых между подходами, сек"},
-                                            "muscle_group": {"type": "string"},
-                                            "technique": {"type": "string"},
-                                        },
-                                        "required": ["name", "sets", "reps", "rest_sec"],
-                                    },
-                                },
-                            },
-                            "required": ["weekday", "exercises"],
-                        },
+                        "items": {"type": "integer"},
+                        "description": "Дни недели 0=Пн … 6=Вс. Не указывай, если менять не нужно.",
                     },
                     "hour": {"type": "integer"},
                     "minute": {"type": "integer"},
                 },
-                "required": ["workouts"],
+                "required": ["wishes"],
             },
         },
     },
