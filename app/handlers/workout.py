@@ -25,6 +25,7 @@ from app.keyboards import (
     reps_kb,
     replace_scope_kb,
     warmup_done_kb,
+    swap_scope_kb,
     warmup_step_kb,
     workout_menu,
 )
@@ -390,7 +391,11 @@ async def _advance(target, state: FSMContext) -> None:
         _start_rest(target, rest, state)
     else:
         _cancel_rest(target.chat.id)
-        await _rest_between_phases(target, "💪 Основная часть готова! Отдышись ~30–60 сек — и лёгкая заминка 🧘")
+        data2 = await state.get_data()
+        first_cool = (data2.get("cool_items") or [{}])[0].get("name")
+        nxt = f" Дальше: <b>{first_cool}</b> — {_equipment_note({'name': first_cool})}." if first_cool else ""
+        await _rest_between_phases(
+            target, f"💪 Основная часть готова! Отдышись ~30–60 сек — и лёгкая заминка 🧘{nxt}")
         await _show_cooldown(target, state)
 
 
@@ -755,3 +760,92 @@ async def replace_apply(cb: CallbackQuery, state: FSMContext) -> None:
     await cb.message.answer(f"Готово: теперь {ex.name} — {load['sets']}×{load['reps']} {unit}.")
     await cb.answer()
     await _show_set(cb.message, state)
+
+
+# ---------- Замена движения разминки/заминки ----------
+
+def _disliked_set(user) -> set[str]:
+    return {x.strip() for x in (user.disliked or "").split(",") if x.strip()}
+
+
+async def _pick_phase_alt(phase: str, cur: dict, equipment: str | None,
+                          used: set[str], disliked: set[str]) -> dict | None:
+    """Каталожная альтернатива движению разминки/заминки: та же группа мышц, доступный
+    инвентарь, есть GIF, не использована сегодня и не в «нелюбимых»."""
+    from app.core import catalog
+    zone = (cur.get("muscle_group") or "").split("/")[0].strip().lower()
+    pool = (catalog.warmup_candidates(equipment or "", zones=[zone] if zone else None)
+            if phase == "warmup" else
+            catalog.cooldown_candidates(equipment or "", zones=[zone] if zone else None))
+    for e in pool:
+        if not e.get("gif") or e["name"] in used or e["name"] in disliked:
+            continue
+        if e["name"] == cur.get("name"):
+            continue
+        return {"name": e["name"], "muscle_group": e["muscle_group"],
+                "technique": e["technique"], "gif": e["gif"]}
+    return None
+
+
+@router.callback_query(Workout.in_progress, F.data.startswith("wk:swap:"))
+async def swap_ask(cb: CallbackQuery, state: FSMContext) -> None:
+    """Спрашиваем: заменить только сейчас или больше не предлагать это движение."""
+    phase = cb.data.split(":")[2]
+    data = await state.get_data()
+    idx = data.get("warm_idx", 0) if phase == "warmup" else data.get("cool_idx", 0)
+    await cb.answer()
+    await cb.message.answer("Заменить это движение:", reply_markup=swap_scope_kb(phase, idx))
+
+
+@router.callback_query(Workout.in_progress, F.data == "wk:swapc")
+async def swap_cancel(cb: CallbackQuery) -> None:
+    await cb.answer("Оставляем как есть")
+    try:
+        await cb.message.delete()
+    except Exception:
+        pass
+
+
+async def _do_swap(cb: CallbackQuery, state: FSMContext, phase: str, idx: int, forever: bool) -> None:
+    data = await state.get_data()
+    key_items = "warm_items" if phase == "warmup" else "cool_items"
+    items = list(data.get(key_items) or [])
+    if not items or idx >= len(items):
+        await cb.answer("Движение не найдено", show_alert=True)
+        return
+    cur = items[idx]
+    async with async_session() as db:
+        user = await repo.get_user_by_tg(db, cb.from_user.id)
+        disliked = _disliked_set(user) if user else set()
+        if forever and user:
+            disliked.add(cur.get("name", ""))
+            user.disliked = ",".join(sorted(x for x in disliked if x))
+            await db.commit()
+    used = {it.get("name", "") for it in items}
+    alt = await _pick_phase_alt(phase, cur, data.get("equipment"), used, disliked)
+    if not alt:
+        await cb.answer("Нет подходящей замены под твой инвентарь 🤔", show_alert=True)
+        return
+    items[idx] = alt
+    await state.update_data(**{key_items: items})
+    await cb.answer("Заменил" + (" и больше не предложу" if forever else ""))
+    try:
+        await cb.message.delete()  # убираем сообщение с выбором
+    except Exception:
+        pass
+    if phase == "warmup":
+        await _show_warmup_step(cb.message, state)
+    else:
+        await _show_cooldown_step(cb.message, state)
+
+
+@router.callback_query(Workout.in_progress, F.data.startswith("wk:swapn:"))
+async def swap_now(cb: CallbackQuery, state: FSMContext) -> None:
+    _, _, phase, idx = cb.data.split(":")
+    await _do_swap(cb, state, phase, int(idx), forever=False)
+
+
+@router.callback_query(Workout.in_progress, F.data.startswith("wk:swapf:"))
+async def swap_forever(cb: CallbackQuery, state: FSMContext) -> None:
+    _, _, phase, idx = cb.data.split(":")
+    await _do_swap(cb, state, phase, int(idx), forever=True)

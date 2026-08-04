@@ -157,12 +157,13 @@ def warmup_done_kb() -> InlineKeyboardMarkup:
     )
 
 
-def warmup_step_kb(last: bool) -> InlineKeyboardMarkup:
-    """Пошаговая разминка: «Далее» между движениями, «К упражнениям» на последнем."""
+def warmup_step_kb(last: bool, can_replace: bool = True) -> InlineKeyboardMarkup:
+    """Пошаговая разминка: «Далее»/«К упражнениям» + замена движения (если есть на что)."""
     text = "▶️ К упражнениям" if last else "➡️ Далее"
-    return InlineKeyboardMarkup(
-        inline_keyboard=[[InlineKeyboardButton(text=text, callback_data="wk:warm_next")]]
-    )
+    rows = [[InlineKeyboardButton(text=text, callback_data="wk:warm_next")]]
+    if can_replace:
+        rows.append([InlineKeyboardButton(text="🔄 Заменить движение", callback_data="wk:swap:warmup")])
+    return InlineKeyboardMarkup(inline_keyboard=rows)
 
 
 # Чеклист инвентаря (мультивыбор). Текст сохраняется в user.equipment и парсится catalog.available_equipment.
@@ -198,12 +199,22 @@ def equipment_kb(selected: set[int]) -> InlineKeyboardMarkup:
     return InlineKeyboardMarkup(inline_keyboard=rows)
 
 
-def cooldown_step_kb(last: bool) -> InlineKeyboardMarkup:
-    """Пошаговая заминка: «Далее» между движениями, «Завершить» на последнем."""
+def cooldown_step_kb(last: bool, can_replace: bool = True) -> InlineKeyboardMarkup:
+    """Пошаговая заминка: «Далее»/«Завершить» + замена движения (если есть на что)."""
     text = "✅ Завершить тренировку" if last else "➡️ Далее"
-    return InlineKeyboardMarkup(
-        inline_keyboard=[[InlineKeyboardButton(text=text, callback_data="wk:cool_next")]]
-    )
+    rows = [[InlineKeyboardButton(text=text, callback_data="wk:cool_next")]]
+    if can_replace:
+        rows.append([InlineKeyboardButton(text="🔄 Заменить движение", callback_data="wk:swap:cooldown")])
+    return InlineKeyboardMarkup(inline_keyboard=rows)
+
+
+def swap_scope_kb(phase: str, idx: int) -> InlineKeyboardMarkup:
+    """Выбор: заменить только сейчас или исключить движение навсегда (не любимое)."""
+    return InlineKeyboardMarkup(inline_keyboard=[
+        [InlineKeyboardButton(text="🔁 Только сейчас", callback_data=f"wk:swapn:{phase}:{idx}")],
+        [InlineKeyboardButton(text="🚫 Больше не предлагать", callback_data=f"wk:swapf:{phase}:{idx}")],
+        [InlineKeyboardButton(text="↩️ Отмена", callback_data="wk:swapc")],
+    ])
 
 
 def confirm_action_kb() -> InlineKeyboardMarkup:

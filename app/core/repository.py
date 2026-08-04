@@ -32,6 +32,31 @@ def _enrich_from_catalog(m: dict, pool: list[dict] | None = None) -> dict:
     return out
 
 
+def _catalog_fallback(m: dict, pool: list[dict], used: set[str] | None = None) -> dict:
+    """Если движение НЕ нашлось в каталоге (нет gif) — берём каталожный аналог той же группы
+    мышц из палитры. Так в плане не появляются самодельные упражнения без анимации техники
+    («Приседания с контролем темпа», «Подъёмы на стул» и т.п.).
+    """
+    if m.get("gif") or not pool:
+        return m
+    want = (m.get("muscle_group") or "").split("/")[0].strip().lower()
+    used = used or set()
+    def ok(e: dict) -> bool:
+        return bool(e.get("gif")) and e["name"] not in used
+    same = [e for e in pool if ok(e) and want and want in (e.get("muscle_group") or "").lower()]
+    pick = (same or [e for e in pool if ok(e)])
+    if not pick:
+        return m
+    hit = pick[0]
+    out = dict(m)
+    out.update({
+        "name": hit["name"], "muscle_group": hit["muscle_group"],
+        "technique": hit["technique"], "gif": hit["gif"],
+        "environment": hit["environment"], "equipment": hit["equipment"],
+    })
+    return out
+
+
 def _local_day_start(days_ago: int = 0) -> datetime:
     """Начало локального дня (по TZ бота) N дней назад, в UTC для сравнения с logged_at."""
     tz = ZoneInfo(settings.tz)
@@ -285,9 +310,10 @@ async def build_custom_plan(
     Разминка/заминка сохраняются как элементы плана с фазой (phase). Возвращает число дней.
     """
     # Палитра по инвентарю — чтобы enrich не подтянул недоступное (пусто = только вес тела)
-    pool = (catalog.main_candidates(equipment or "", limit=10_000)
-            + catalog.warmup_candidates(equipment or "")
-            + catalog.cooldown_candidates(equipment or ""))
+    main_p = catalog.main_candidates(equipment or "", limit=10_000)
+    warm_p = catalog.warmup_candidates(equipment or "")
+    cool_p = catalog.cooldown_candidates(equipment or "")
+    pool = main_p + warm_p + cool_p
 
     # Оставляем только валидные дни (0..6, без дублей). Если валидных нет — НЕ трогаем старый план.
     valid: list[dict] = []
@@ -329,8 +355,11 @@ async def build_custom_plan(
         await db.flush()
 
         order = 0
+        used: set[str] = set()
         for m in warm:
             m = _enrich_from_catalog(m, pool)
+            m = _catalog_fallback(m, warm_p, used)
+            used.add(m.get("name", ""))
             exo = await find_or_create_exercise(
                 db, m.get("name", "Разминка"), m.get("muscle_group"), m.get("technique"),
                 environment=m.get("environment") or environment, equipment=m.get("equipment"),
@@ -341,6 +370,8 @@ async def build_custom_plan(
             order += 1
         for ex in w.get("exercises", []):
             ex = _enrich_from_catalog(ex, pool)
+            ex = _catalog_fallback(ex, main_p, used)
+            used.add(ex.get("name", ""))
             exo = await find_or_create_exercise(
                 db, ex.get("name", "Упражнение"), ex.get("muscle_group"), ex.get("technique"),
                 environment=ex.get("environment") or environment, equipment=ex.get("equipment"),
@@ -352,6 +383,8 @@ async def build_custom_plan(
             order += 1
         for m in cool:
             m = _enrich_from_catalog(m, pool)
+            m = _catalog_fallback(m, cool_p, used)
+            used.add(m.get("name", ""))
             exo = await find_or_create_exercise(
                 db, m.get("name", "Заминка"), m.get("muscle_group"), m.get("technique"),
                 environment=m.get("environment") or environment, equipment=m.get("equipment"),
