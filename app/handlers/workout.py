@@ -129,6 +129,14 @@ async def _purge(target, state: FSMContext) -> None:
     await state.update_data(tracked_msgs=[])
 
 
+async def _step(target, state: FSMContext, text: str, reply_markup=None):
+    """Одно активное сообщение: удаляем предыдущее и отправляем новое."""
+    await _purge(target, state)
+    sent = await target.answer(text, reply_markup=reply_markup)
+    await _remember(state, sent)
+    return sent
+
+
 def _phase_caption(m: dict, idx: int, total: int, dose: str) -> str:
     """Подпись движения разминки/заминки: номер, название, доза (повторы/сек), короткая техника."""
     tech = (m.get("technique") or "").strip()
@@ -336,14 +344,14 @@ async def manual_reps_input(message: Message, state: FSMContext) -> None:
         return
     await state.set_state(Workout.in_progress)
     await state.update_data(pending_reps=int(m.group()))
-    await _remember(state, await message.answer("Как ощущение?", reply_markup=effort_kb()))
+    await _step(message, state, "Как ощущение?", reply_markup=effort_kb())
 
 
 @router.callback_query(Workout.in_progress, F.data.startswith("reps:"))
 async def choose_reps(cb: CallbackQuery, state: FSMContext) -> None:
     reps = int(cb.data.split(":")[1])
     await state.update_data(pending_reps=reps)
-    await _remember(state, await cb.message.answer("Как ощущение?", reply_markup=effort_kb()))
+    await _step(cb.message, state, "Как ощущение?", reply_markup=effort_kb())
     await cb.answer()
 
 
@@ -411,7 +419,7 @@ async def _show_cooldown(target, state: FSMContext) -> None:
             await state.update_data(cool_items=cool_items)
     if cool_items:
         await state.update_data(cool_idx=0)
-        await _remember(state, await target.answer("🧘 Финишная прямая — заминка по одному движению."))
+        await _step(target, state, "🧘 Финишная прямая — заминка по одному движению.")
         await _show_cooldown_step(target, state)
     else:
         cooldown = data.get("cooldown")
@@ -427,15 +435,14 @@ async def _advance(target, state: FSMContext) -> None:
     item = items[i]
     if data["cur_set"] < item["target_sets"]:
         rest = item.get("rest_sec") or 60
-        await _remember(state, await target.answer(f"⏱ Отдых {rest} сек — дам сигнал, когда продолжать."))
+        await _step(target, state, f"⏱ Отдых {rest} сек — дам сигнал, когда продолжать.")
         await state.update_data(cur_set=data["cur_set"] + 1, pending_reps=None)
         _start_rest(target, rest, state)  # карточку подхода покажем ПОСЛЕ отдыха
     elif i + 1 < len(items):
         rest = item.get("rest_sec") or 60
         nxt = items[i + 1]
-        await target.answer(
-            f"⏱ Отдых {rest} сек. Дальше: <b>{nxt['name']}</b> — {_equipment_note(nxt)}."
-        )
+        await _step(target, state,
+                    f"⏱ Отдых {rest} сек. Дальше: <b>{nxt['name']}</b> — {_equipment_note(nxt)}.")
         await state.update_data(cur_item=i + 1, cur_set=1, pending_reps=None, suggest=None)
         _start_rest(target, rest, state)
     else:
@@ -515,9 +522,10 @@ async def finish_discard(cb: CallbackQuery, state: FSMContext) -> None:
 
 async def _rest_between_phases(target, text: str, state: FSMContext | None = None) -> None:
     """Короткая пауза-подсказка между фазами (после разминки / перед заминкой)."""
-    sent = await target.answer(text)
     if state is not None:
-        await _remember(state, sent)
+        await _step(target, state, text)
+    else:
+        await target.answer(text)
 
 
 @router.callback_query(Workout.in_progress, F.data == "wk:warmup_done")
@@ -583,11 +591,11 @@ async def _rest_timer(message, seconds: int, state: FSMContext | None = None) ->
     try:
         if seconds >= 75:
             await asyncio.sleep(seconds / 2)
-            await _remember(state, await message.answer(f"⏳ Половина отдыха, осталось ~{seconds // 2} сек."))
+            await _step(message, state, f"⏳ Половина отдыха, осталось ~{seconds // 2} сек.")
             await asyncio.sleep(seconds - seconds / 2)
         else:
             await asyncio.sleep(seconds)
-        await _remember(state, await message.answer("⏱ Время! Следующий подход 💪"))
+        await _step(message, state, "⏱ Время! Следующий подход 💪")
         if state is not None:
             await _show_set(message, state)
     except asyncio.CancelledError:
