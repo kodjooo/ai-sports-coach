@@ -2,6 +2,7 @@
 from __future__ import annotations
 
 import asyncio
+import logging
 import os
 from datetime import date, datetime
 from zoneinfo import ZoneInfo
@@ -33,6 +34,7 @@ from app.states import Workout
 from app.utils import is_time_based, md_bold_to_html, typing
 
 router = Router()
+logger = logging.getLogger(__name__)
 
 def _is_time_based(name: str, muscle_group: str) -> bool:
     # Единый источник в app.utils.is_time_based (чтобы карточка и план недели не расходились)
@@ -664,6 +666,64 @@ async def _finish_inner(target, state: FSMContext) -> None:
     if burned:
         msg += f"\n\n🔥 Потрачено ~{burned} ккал за тренировку."
     await target.answer(msg, reply_markup=main_menu())
+
+    sid = data.get("session_id")  # state уже очищен — берём id из прочитанных ранее данных
+    # Микро-прогрессия: по итогам подходов и ощущений корректируем нагрузку в плане.
+    # Правила детерминированные (без LLM), изменение отменяемо кнопкой.
+    try:
+        async with async_session() as db:
+            user2 = await repo.get_user_by_tg(db, target.chat.id)
+            changes = await repo.apply_progression(db, user2.id, sid) if (user2 and sid) else []
+        if changes:
+            lines = ["📈 <b>Обновил нагрузку на следующий раз</b>"]
+            for ch in changes:
+                lines.append(f"• {ch['name']}: {ch['old_sets']}×{ch['old_reps']} → "
+                             f"{ch['new_sets']}×{ch['new_reps']}")
+            import json as _json
+            from app.core import limits as _lim
+            try:  # снимок для отмены (сутки в Redis)
+                r = _lim._client()
+                await r.set(f"prog_undo:{target.chat.id}", _json.dumps(changes), ex=86400)
+            except Exception:
+                pass
+            from aiogram.types import InlineKeyboardButton, InlineKeyboardMarkup
+            kb = InlineKeyboardMarkup(inline_keyboard=[[
+                InlineKeyboardButton(text="↩️ Оставить как было", callback_data="prog:undo")
+            ]])
+            await target.answer("\n".join(lines), reply_markup=kb)
+    except Exception as exc:
+        logger.warning("прогрессия не применена: %s", exc)
+
+
+@router.callback_query(F.data == "prog:undo")
+async def progression_undo(cb: CallbackQuery) -> None:
+    """Откат автоматической прогрессии нагрузки."""
+    import json as _json
+    from app.core import limits as _lim
+
+    changes = []
+    try:
+        r = _lim._client()
+        raw = await r.get(f"prog_undo:{cb.from_user.id}")
+        changes = _json.loads(raw) if raw else []
+    except Exception:
+        pass
+    if not changes:
+        await cb.answer("Уже нечего откатывать", show_alert=True)
+        return
+    async with async_session() as db:
+        n = await repo.revert_progression(db, changes)
+    try:
+        r = _lim._client()
+        await r.delete(f"prog_undo:{cb.from_user.id}")
+    except Exception:
+        pass
+    await cb.answer("Вернул прежнюю нагрузку")
+    try:
+        await cb.message.edit_reply_markup(reply_markup=None)
+    except Exception:
+        pass
+    await cb.message.answer(f"↩️ Оставил нагрузку как была ({n} упр.).")
 
 
 # ---------- Техника и замена ----------

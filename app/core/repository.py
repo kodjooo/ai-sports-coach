@@ -944,3 +944,151 @@ async def delete_favorite(db: AsyncSession, fav_id: int, user_id: int) -> bool:
     await db.delete(fav)
     await db.commit()
     return True
+
+
+# ---------- Прогресс: аналитика по датам ----------
+
+async def volume_by_week(db: AsyncSession, user_id: int, weeks: int = 4) -> list[dict]:
+    """Объём нагрузки по неделям: сумма повторов и число подходов (только реальные тренировки)."""
+    since = _local_day_start(weeks * 7)
+    rows = (await db.execute(
+        select(SetLog.logged_at, SetLog.reps, Exercise.muscle_group)
+        .join(Session, Session.id == SetLog.session_id)
+        .join(Exercise, Exercise.id == SetLog.exercise_id)
+        .where(Session.user_id == user_id, SetLog.logged_at >= since, SetLog.reps > 0)
+    )).all()
+    buckets: dict[date, dict] = {}
+    for logged_at, reps, mg in rows:
+        d = logged_at.astimezone(ZoneInfo(settings.tz)).date()
+        wk = d - timedelta(days=d.weekday())  # понедельник этой недели
+        b = buckets.setdefault(wk, {"week": wk, "sets": 0, "reps": 0, "groups": {}})
+        b["sets"] += 1
+        b["reps"] += int(reps or 0)
+        key = (mg or "прочее").split("/")[0].strip()
+        b["groups"][key] = b["groups"].get(key, 0) + int(reps or 0)
+    return [buckets[k] for k in sorted(buckets)]
+
+
+async def weight_by_week(db: AsyncSession, user_id: int, weeks: int = 6) -> list[tuple]:
+    """Средний вес по неделям (сглаживает дневные колебания)."""
+    since = datetime.now(timezone.utc) - timedelta(days=weeks * 7)
+    rows = (await db.execute(
+        select(WeightLog.logged_at, WeightLog.weight_kg)
+        .where(WeightLog.user_id == user_id, WeightLog.logged_at >= since)
+        .order_by(WeightLog.logged_at)
+    )).all()
+    buckets: dict[date, list] = {}
+    for logged_at, w in rows:
+        d = logged_at.astimezone(ZoneInfo(settings.tz)).date()
+        wk = d - timedelta(days=d.weekday())
+        buckets.setdefault(wk, []).append(float(w))
+    return [(k, round(sum(v) / len(v), 1)) for k, v in sorted(buckets.items())]
+
+
+async def kcal_by_week(db: AsyncSession, user_id: int, weeks: int = 4) -> list[tuple]:
+    """Среднесуточные калории по неделям и число дней с записями."""
+    since = _local_day_start(weeks * 7)
+    rows = (await db.execute(
+        select(Meal.logged_at, Meal.kcal).where(Meal.user_id == user_id, Meal.logged_at >= since)
+    )).all()
+    days: dict[date, float] = {}
+    for logged_at, kcal in rows:
+        d = logged_at.astimezone(ZoneInfo(settings.tz)).date()
+        days[d] = days.get(d, 0) + float(kcal or 0)
+    buckets: dict[date, list] = {}
+    for d, total in days.items():
+        wk = d - timedelta(days=d.weekday())
+        buckets.setdefault(wk, []).append(total)
+    return [(k, round(sum(v) / len(v)), len(v)) for k, v in sorted(buckets.items())]
+
+
+async def exercise_progress(db: AsyncSession, user_id: int, limit: int = 5) -> list[dict]:
+    """Рост по упражнениям: лучший подход в первую и последнюю неделю периода."""
+    since = _local_day_start(28)
+    rows = (await db.execute(
+        select(Exercise.name, SetLog.logged_at, SetLog.reps)
+        .join(Session, Session.id == SetLog.session_id)
+        .join(Exercise, Exercise.id == SetLog.exercise_id)
+        .where(Session.user_id == user_id, SetLog.logged_at >= since, SetLog.reps > 0)
+    )).all()
+    by_ex: dict[str, list] = {}
+    for name, logged_at, reps in rows:
+        by_ex.setdefault(name, []).append((logged_at, int(reps)))
+    out = []
+    for name, vals in by_ex.items():
+        vals.sort()
+        if len(vals) < 2:
+            continue
+        first = max(r for t, r in vals[: max(1, len(vals) // 3)])
+        last = max(r for t, r in vals[-max(1, len(vals) // 3):])
+        if last != first:
+            out.append({"name": name, "from": first, "to": last, "delta": last - first})
+    out.sort(key=lambda x: -abs(x["delta"]))
+    return out[:limit]
+
+
+# ---------- Прогрессия нагрузки (детерминированные правила) ----------
+
+async def apply_progression(db: AsyncSession, user_id: int, session_id: int) -> list[dict]:
+    """Двойная прогрессия по итогам тренировки.
+
+    Правила: всё выполнено и «легко» → +2 повтора (или +1 подход на потолке 15);
+    недобрал цель или «тяжело» → −2 повтора (минимум 6). Возвращает список изменений
+    [{item_id, name, old_sets, old_reps, new_sets, new_reps}] для показа и отмены.
+    """
+    logs = (await db.execute(select(SetLog).where(SetLog.session_id == session_id))).scalars().all()
+    if not logs:
+        return []
+    sess = await db.get(Session, session_id)
+    if sess is None or sess.template_id is None:
+        return []
+    items = await list_template_items(db, sess.template_id)
+    by_ex = {it.exercise_id: it for it in items if getattr(it, "phase", "main") == "main"}
+
+    grouped: dict[int, list] = {}
+    for lg in logs:
+        grouped.setdefault(lg.exercise_id, []).append(lg)
+
+    changes: list[dict] = []
+    for ex_id, rows in grouped.items():
+        item = by_ex.get(ex_id)
+        if item is None:
+            continue
+        target_reps = item.target_reps or 10
+        target_sets = item.target_sets or 3
+        done_reps = [int(r.reps or 0) for r in rows]
+        efforts = [(r.effort or "") for r in rows]
+        all_done = len(done_reps) >= target_sets and all(r >= target_reps for r in done_reps)
+        easy = efforts.count("easy") >= max(1, len(efforts) // 2)
+        hard = efforts.count("hard") >= max(1, len(efforts) // 2)
+        new_reps, new_sets = target_reps, target_sets
+        if all_done and easy:
+            if target_reps >= 15 and target_sets < 4:
+                new_sets, new_reps = target_sets + 1, max(8, target_reps - 4)
+            else:
+                new_reps = min(20, target_reps + 2)
+        elif hard or (done_reps and min(done_reps) < target_reps):
+            new_reps = max(6, target_reps - 2)
+        if (new_reps, new_sets) == (target_reps, target_sets):
+            continue
+        ex = await db.get(Exercise, ex_id)
+        item.target_reps, item.target_sets = new_reps, new_sets
+        changes.append({"item_id": item.id, "name": ex.name if ex else "упражнение",
+                        "old_sets": target_sets, "old_reps": target_reps,
+                        "new_sets": new_sets, "new_reps": new_reps})
+    if changes:
+        await db.commit()
+    return changes
+
+
+async def revert_progression(db: AsyncSession, changes: list[dict]) -> int:
+    """Откат прогрессии (кнопка «Оставить как было»)."""
+    n = 0
+    for ch in changes:
+        item = await db.get(TemplateItem, int(ch["item_id"]))
+        if item:
+            item.target_sets, item.target_reps = int(ch["old_sets"]), int(ch["old_reps"])
+            n += 1
+    if n:
+        await db.commit()
+    return n

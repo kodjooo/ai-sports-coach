@@ -250,7 +250,9 @@ async def show_stats(message: Message) -> None:
             await message.answer("Сначала нажми /start")
             return
         report = await progress.full_stats(db, user.id)
-    await message.answer(report)
+    await message.answer(report, reply_markup=InlineKeyboardMarkup(inline_keyboard=[[
+        InlineKeyboardButton(text="📈 Прогресс и динамика", callback_data="stat:progress")
+    ]]))
 
 
 # ---------- Настройки ----------
@@ -360,3 +362,16 @@ async def reset_confirm(cb: CallbackQuery, state: FSMContext) -> None:
     # Запускаем онбординг с чистого листа
     from app.handlers.start import _start_interview
     await _start_interview(cb.message, state)
+
+
+@router.callback_query(F.data == "stat:progress")
+async def show_progress(cb: CallbackQuery) -> None:
+    """Экран прогресса: объём, вес, питание, рост по упражнениям."""
+    async with async_session() as db:
+        user = await repo.get_user_by_tg(db, cb.from_user.id)
+        if user is None:
+            await cb.answer("Сначала /start", show_alert=True)
+            return
+        text = await progress.progress_report(db, user.id)
+    await cb.answer()
+    await cb.message.answer(text)

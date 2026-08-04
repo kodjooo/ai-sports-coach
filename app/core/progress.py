@@ -155,3 +155,50 @@ async def nutrition_week(db: AsyncSession, user_id: int) -> str:
         if avg_prot < norm["protein"] * 0.9:
             lines.append("⚠️ Белка в среднем маловато — добавь источники белка.")
     return "\n".join(lines)
+
+
+async def progress_report(db: AsyncSession, user_id: int) -> str:
+    """Экран «Прогресс»: динамика объёма, веса, питания и рост по упражнениям."""
+    vol = await repo.volume_by_week(db, user_id, weeks=4)
+    weights = await repo.weight_by_week(db, user_id, weeks=6)
+    kcals = await repo.kcal_by_week(db, user_id, weeks=4)
+    growth = await repo.exercise_progress(db, user_id)
+
+    lines = ["📈 <b>Прогресс</b>", ""]
+
+    if vol:
+        cur = vol[-1]
+        prev = vol[-2] if len(vol) > 1 else None
+        lines.append("<b>Объём нагрузки</b> (подходы × повторы)")
+        line = f"• Эта неделя: {cur['sets']} подх. / {cur['reps']} повт."
+        if prev and prev["reps"]:
+            d = round((cur["reps"] - prev["reps"]) / prev["reps"] * 100)
+            line += f" ({'+' if d >= 0 else ''}{d}% к прошлой)"
+        lines.append(line)
+        top = sorted(cur["groups"].items(), key=lambda x: -x[1])[:3]
+        if top:
+            lines.append("• Больше всего: " + ", ".join(f"{g} ({r})" for g, r in top))
+    else:
+        lines.append("Пока нет записанных подходов — начни тренировку 💪")
+
+    if len(weights) >= 2:
+        lines.append("")
+        lines.append("<b>Вес по неделям</b>")
+        lines.append("• " + " → ".join(f"{w:g}" for _, w in weights[-4:]) + " кг")
+        delta = weights[-1][1] - weights[0][1]
+        lines.append(f"• За период: {'−' if delta < 0 else '+'}{abs(delta):.1f} кг")
+
+    if kcals:
+        lines.append("")
+        lines.append("<b>Питание</b>")
+        for wk, avg, days in kcals[-2:]:
+            lines.append(f"• Неделя с {wk.strftime('%d.%m')}: ~{avg} ккал/день, записей {days} дн.")
+
+    if growth:
+        lines.append("")
+        lines.append("<b>Рост по упражнениям</b> (за месяц)")
+        for g in growth:
+            sign = "📈" if g["delta"] > 0 else "📉"
+            lines.append(f"{sign} {g['name']}: {g['from']} → {g['to']}")
+
+    return "\n".join(lines)
