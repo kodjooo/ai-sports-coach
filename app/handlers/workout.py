@@ -111,11 +111,21 @@ async def _purge(target, state: FSMContext) -> None:
         return
     data = await state.get_data()
     ids = data.get("tracked_msgs") or []
+    if not ids:
+        return
+    bot = getattr(target, "bot", None)
+    if bot is None:  # подстраховка: берём бот из текущего контекста aiogram
+        from aiogram.client.bot import Bot as _Bot
+        bot = _Bot.get_current(no_error=True) if hasattr(_Bot, "get_current") else None
+    if bot is None:
+        logger.warning("[COMPACT] нет объекта bot — не могу удалить %d сообщений", len(ids))
+        await state.update_data(tracked_msgs=[])
+        return
     for mid in ids:
         try:
-            await target.bot.delete_message(target.chat.id, mid)
-        except Exception:
-            pass  # уже удалено/старое — не мешаем тренировке
+            await bot.delete_message(target.chat.id, mid)
+        except Exception as exc:
+            logger.warning("[COMPACT] не удалил сообщение %s: %s", mid, exc)
     await state.update_data(tracked_msgs=[])
 
 
