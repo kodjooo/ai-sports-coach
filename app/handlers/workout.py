@@ -189,6 +189,7 @@ async def _begin(target, user_tg: int, state: FSMContext) -> None:
         cur_set=1,
         pending_reps=None,
         groups=groups,
+        equipment=user.equipment,  # нужен для пересборки заминки под доступный инвентарь
         warmup=stored_warmup or warmup.warmup_text(groups),
         cooldown=stored_cooldown,
     )
@@ -325,11 +326,15 @@ async def choose_effort(cb: CallbackQuery, state: FSMContext) -> None:
     await _advance(cb.message, state)
 
 
-def _cooldown_for_zones(zones: list[str], n: int = 5) -> list[dict]:
-    """Подбирает движения заминки (растяжки каталога) под фактические зоны дня."""
+def _cooldown_for_zones(zones: list[str], n: int = 5, equipment: str | None = None) -> list[dict]:
+    """Подбирает движения заминки (статические растяжки) под фактические зоны дня.
+
+    equipment — ИНВЕНТАРЬ КЛИЕНТА: обязателен, иначе в заминку попадут фитбол/палка/скамья,
+    которых у него нет (пустая строка = только вес тела).
+    """
     from app.core import catalog
     flat = [z.strip() for zg in zones for z in (zg or "").split("/") if z.strip()]
-    pool = catalog.cooldown_candidates("Всё оборудование", zones=flat)  # заминка = статические растяжки
+    pool = catalog.cooldown_candidates(equipment or "", zones=flat)
     out, seen = [], set()
     for e in pool:
         if e["name"] in seen:
@@ -350,7 +355,7 @@ async def _show_cooldown(target, state: FSMContext) -> None:
     # Если во время тренировки меняли упражнения — пересобираем заминку под фактические мышцы
     if data.get("replaced"):
         zones = [it.get("muscle_group", "") for it in data.get("items", [])]
-        rebuilt = _cooldown_for_zones(zones)
+        rebuilt = _cooldown_for_zones(zones, equipment=data.get("equipment"))
         if rebuilt:
             cool_items = rebuilt
             await state.update_data(cool_items=cool_items)

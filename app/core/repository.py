@@ -209,11 +209,22 @@ async def find_or_create_exercise(
     technique: str | None = None,
     environment: str | None = None,
     equipment: str | None = None,
+    gif: str | None = None,
 ) -> Exercise:
-    """Находит упражнение по названию или создаёт новое (автопополнение каталога)."""
+    """Находит упражнение по названию или создаёт новое (автопополнение каталога).
+
+    gif передаём обязательно, если он известен из каталога — иначе в плане появятся
+    упражнения без анимации техники (карточка уходит текстовым фолбэком).
+    """
     name = name.strip()
     ex = await find_exercise_by_name(db, name)
     if ex:
+        # У старых записей (созданных до маппинга на каталог) gif мог быть пустым — дозаполним
+        if gif and not ex.gif:
+            ex.gif = gif
+            if technique and (not ex.technique or ex.technique == "Техника не описана."):
+                ex.technique = technique
+            await db.flush()
         return ex
     ex = Exercise(
         name=name,
@@ -221,6 +232,7 @@ async def find_or_create_exercise(
         technique=technique or "Техника не описана.",
         environment=environment,
         equipment=equipment,
+        gif=gif,
     )
     db.add(ex)
     await db.flush()
@@ -322,6 +334,7 @@ async def build_custom_plan(
             exo = await find_or_create_exercise(
                 db, m.get("name", "Разминка"), m.get("muscle_group"), m.get("technique"),
                 environment=m.get("environment") or environment, equipment=m.get("equipment"),
+                gif=m.get("gif"),
             )
             db.add(TemplateItem(template_id=template.id, exercise_id=exo.id,
                                 order_idx=order, phase="warmup"))
@@ -331,6 +344,7 @@ async def build_custom_plan(
             exo = await find_or_create_exercise(
                 db, ex.get("name", "Упражнение"), ex.get("muscle_group"), ex.get("technique"),
                 environment=ex.get("environment") or environment, equipment=ex.get("equipment"),
+                gif=ex.get("gif"),
             )
             db.add(TemplateItem(template_id=template.id, exercise_id=exo.id,
                                 target_sets=ex.get("sets") or 3, target_reps=ex.get("reps") or 10,
@@ -341,6 +355,7 @@ async def build_custom_plan(
             exo = await find_or_create_exercise(
                 db, m.get("name", "Заминка"), m.get("muscle_group"), m.get("technique"),
                 environment=m.get("environment") or environment, equipment=m.get("equipment"),
+                gif=m.get("gif"),
             )
             db.add(TemplateItem(template_id=template.id, exercise_id=exo.id,
                                 order_idx=order, phase="cooldown"))
