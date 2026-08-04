@@ -22,6 +22,8 @@ class Settings(BaseSettings):
     # недельный вывод): luna — качество ≈ gpt-5 на связном тексте, но дешевле/быстрее.
     # ВАЖНО: только там, где НЕ нужны function tools (иначе luna требует reasoning=none и не вызывает их).
     openai_model_text: str = "gpt-5.6-luna"
+    # Компактный режим тренировки: удалять предыдущие шаги, оставляя одну активную карточку
+    workout_compact: bool = True
     # Экономная модель для узких/служебных задач (в ~10 раз дешевле)
     openai_model_mini: str = "gpt-5-mini"
     openai_embed_model: str = "text-embedding-3-small"

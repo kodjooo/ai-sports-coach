@@ -78,16 +78,43 @@ def _gif_path(gif: str | None) -> str | None:
     return path if os.path.exists(path) else None
 
 
-async def _send_exercise_card(target, item: dict, caption: str, reply_markup=None) -> None:
-    """Отправляет карточку упражнения с GIF-анимацией техники; если файла нет — текстом."""
+async def _send_exercise_card(target, item: dict, caption: str, reply_markup=None):
+    """Отправляет карточку упражнения с GIF-анимацией техники; если файла нет — текстом.
+    Возвращает отправленное сообщение (нужно для компактного режима)."""
     path = _gif_path(item.get("gif"))
     if path:
         try:
-            await target.answer_animation(FSInputFile(path), caption=caption, reply_markup=reply_markup)
-            return
+            return await target.answer_animation(FSInputFile(path), caption=caption,
+                                                 reply_markup=reply_markup)
         except Exception:
             pass
-    await target.answer(caption, reply_markup=reply_markup)
+    return await target.answer(caption, reply_markup=reply_markup)
+
+
+# ---------- Компактный режим: одна активная карточка вместо ленты сообщений ----------
+
+async def _remember(state: FSMContext, msg) -> None:
+    """Запоминает id служебного сообщения тренировки, чтобы удалить его на следующем шаге."""
+    if not settings.workout_compact or msg is None:
+        return
+    data = await state.get_data()
+    ids = list(data.get("tracked_msgs") or [])
+    ids.append(msg.message_id)
+    await state.update_data(tracked_msgs=ids[-30:])
+
+
+async def _purge(target, state: FSMContext) -> None:
+    """Удаляет сообщения предыдущего шага (карточку + таймеры/вопросы)."""
+    if not settings.workout_compact:
+        return
+    data = await state.get_data()
+    ids = data.get("tracked_msgs") or []
+    for mid in ids:
+        try:
+            await target.bot.delete_message(target.chat.id, mid)
+        except Exception:
+            pass  # уже удалено/старое — не мешаем тренировке
+    await state.update_data(tracked_msgs=[])
 
 
 def _phase_caption(m: dict, idx: int, total: int, dose: str) -> str:
@@ -107,7 +134,10 @@ async def _show_warmup_step(target, state: FSMContext) -> None:
     m = items[idx]
     dose = _warmup_dose(m.get("name", ""), m.get("muscle_group", ""))
     caption = "🔥 " + _phase_caption(m, idx, len(items), dose)
-    await _send_exercise_card(target, m, caption, reply_markup=warmup_step_kb(last=idx + 1 >= len(items)))
+    await _purge(target, state)
+    sent = await _send_exercise_card(target, m, caption,
+                                     reply_markup=warmup_step_kb(last=idx + 1 >= len(items)))
+    await _remember(state, sent)
 
 
 async def _show_cooldown_step(target, state: FSMContext) -> None:
@@ -117,7 +147,10 @@ async def _show_cooldown_step(target, state: FSMContext) -> None:
     idx = data.get("cool_idx", 0)
     m = items[idx]
     caption = "🧘 " + _phase_caption(m, idx, len(items), "~20–30 сек")  # заминка — статичная растяжка
-    await _send_exercise_card(target, m, caption, reply_markup=cooldown_step_kb(last=idx + 1 >= len(items)))
+    await _purge(target, state)
+    sent = await _send_exercise_card(target, m, caption,
+                                     reply_markup=cooldown_step_kb(last=idx + 1 >= len(items)))
+    await _remember(state, sent)
 
 
 # ---------- Запуск тренировки ----------
@@ -221,17 +254,21 @@ async def _show_set(target, state: FSMContext) -> None:
     )
     set_body = f"сет {data['cur_set']} из {item['target_sets']} (цель ~{goal} {unit}{per_side})\n{prompt}"
     kb = reps_kb(target=goal, is_time=is_time)
+    # Ориентир «где мы»: номер упражнения в основной части
+    pos = f"Упражнение {data['cur_item'] + 1} из {len(items)}"
+    await _purge(target, state)
     if data["cur_set"] == 1:
         # Первый подход — единая карточка: GIF + название · группа + техника + строка сета + кнопки
         tech = (item.get("technique") or "").strip()
         muscle = item.get("muscle_group") or ""
         head = f"<b>{item['name']}</b>" + (f" · {muscle}" if muscle else "")
-        caption = head + (f"\n{tech}" if tech else "")
+        caption = f"{pos}\n" + head + (f"\n{tech}" if tech else "")
         caption += f"\n\n{set_body[0].upper()}{set_body[1:]}"
-        await _send_exercise_card(target, item, caption, reply_markup=kb)
+        sent = await _send_exercise_card(target, item, caption, reply_markup=kb)
     else:
         # Последующие подходы — только строка сета с кнопками (без гифки и описания)
-        await target.answer(f"<b>{item['name']}</b> — {set_body}", reply_markup=kb)
+        sent = await target.answer(f"{pos}\n<b>{item['name']}</b> — {set_body}", reply_markup=kb)
+    await _remember(state, sent)
 
 
 @router.message(F.text == "▶️ Тренировка")
@@ -287,14 +324,14 @@ async def manual_reps_input(message: Message, state: FSMContext) -> None:
         return
     await state.set_state(Workout.in_progress)
     await state.update_data(pending_reps=int(m.group()))
-    await message.answer("Как ощущение?", reply_markup=effort_kb())
+    await _remember(state, await message.answer("Как ощущение?", reply_markup=effort_kb()))
 
 
 @router.callback_query(Workout.in_progress, F.data.startswith("reps:"))
 async def choose_reps(cb: CallbackQuery, state: FSMContext) -> None:
     reps = int(cb.data.split(":")[1])
     await state.update_data(pending_reps=reps)
-    await cb.message.answer("Как ощущение?", reply_markup=effort_kb())
+    await _remember(state, await cb.message.answer("Как ощущение?", reply_markup=effort_kb()))
     await cb.answer()
 
 
@@ -362,7 +399,7 @@ async def _show_cooldown(target, state: FSMContext) -> None:
             await state.update_data(cool_items=cool_items)
     if cool_items:
         await state.update_data(cool_idx=0)
-        await target.answer("🧘 Финишная прямая — заминка по одному движению.")
+        await _remember(state, await target.answer("🧘 Финишная прямая — заминка по одному движению."))
         await _show_cooldown_step(target, state)
     else:
         cooldown = data.get("cooldown")
@@ -378,7 +415,7 @@ async def _advance(target, state: FSMContext) -> None:
     item = items[i]
     if data["cur_set"] < item["target_sets"]:
         rest = item.get("rest_sec") or 60
-        await target.answer(f"⏱ Отдых {rest} сек — дам сигнал, когда продолжать.")
+        await _remember(state, await target.answer(f"⏱ Отдых {rest} сек — дам сигнал, когда продолжать."))
         await state.update_data(cur_set=data["cur_set"] + 1, pending_reps=None)
         _start_rest(target, rest, state)  # карточку подхода покажем ПОСЛЕ отдыха
     elif i + 1 < len(items):
@@ -395,7 +432,7 @@ async def _advance(target, state: FSMContext) -> None:
         first_cool = (data2.get("cool_items") or [{}])[0].get("name")
         nxt = f" Дальше: <b>{first_cool}</b> — {_equipment_note({'name': first_cool})}." if first_cool else ""
         await _rest_between_phases(
-            target, f"💪 Основная часть готова! Отдышись ~30–60 сек — и лёгкая заминка 🧘{nxt}")
+            target, state=state, text=f"💪 Основная часть готова! Отдышись ~30–60 сек — и лёгкая заминка 🧘{nxt}")
         await _show_cooldown(target, state)
 
 
@@ -464,15 +501,17 @@ async def finish_discard(cb: CallbackQuery, state: FSMContext) -> None:
     await cb.answer()
 
 
-async def _rest_between_phases(target, text: str) -> None:
+async def _rest_between_phases(target, text: str, state: FSMContext | None = None) -> None:
     """Короткая пауза-подсказка между фазами (после разминки / перед заминкой)."""
-    await target.answer(text)
+    sent = await target.answer(text)
+    if state is not None:
+        await _remember(state, sent)
 
 
 @router.callback_query(Workout.in_progress, F.data == "wk:warmup_done")
 async def warmup_done(cb: CallbackQuery, state: FSMContext) -> None:
     await cb.answer()
-    await _rest_between_phases(cb.message, "🧘 Разминка окончена — переведи дух ~30 сек, и переходим к основной части 💪")
+    await _rest_between_phases(cb.message, state=state, text="🧘 Разминка окончена — переведи дух ~30 сек, и переходим к основной части 💪")
     await _show_set(cb.message, state)
 
 
@@ -487,7 +526,7 @@ async def warm_next(cb: CallbackQuery, state: FSMContext) -> None:
         await state.update_data(warm_idx=idx)
         await _show_warmup_step(cb.message, state)
     else:
-        await _rest_between_phases(cb.message, "🧘 Разминка окончена — переведи дух ~30 сек, и переходим к основной части 💪")
+        await _rest_between_phases(cb.message, state=state, text="🧘 Разминка окончена — переведи дух ~30 сек, и переходим к основной части 💪")
         await _show_set(cb.message, state)
 
 
@@ -532,11 +571,11 @@ async def _rest_timer(message, seconds: int, state: FSMContext | None = None) ->
     try:
         if seconds >= 75:
             await asyncio.sleep(seconds / 2)
-            await message.answer(f"⏳ Половина отдыха, осталось ~{seconds // 2} сек.")
+            await _remember(state, await message.answer(f"⏳ Половина отдыха, осталось ~{seconds // 2} сек."))
             await asyncio.sleep(seconds - seconds / 2)
         else:
             await asyncio.sleep(seconds)
-        await message.answer("⏱ Время! Следующий подход 💪")
+        await _remember(state, await message.answer("⏱ Время! Следующий подход 💪"))
         if state is not None:
             await _show_set(message, state)
     except asyncio.CancelledError:
