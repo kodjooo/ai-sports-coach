@@ -69,3 +69,18 @@ def daily_norm(user: User) -> dict | None:
     fat = round(0.25 * kcal / 9)           # 25% калорий из жиров
     carbs = round((kcal - protein * 4 - fat * 9) / 4)
     return {"kcal": kcal, "protein": protein, "fat": max(fat, 0), "carbs": max(carbs, 0)}
+
+
+def estimate_burn_mets(weight_kg: float | None, minutes: int | None,
+                       sets_done: int = 0, hard: bool = False) -> int:
+    """Расход калорий за тренировку по формуле МЕТ (без LLM — стабильно и бесплатно).
+
+    kcal = МЕТ × вес(кг) × часы. Для домашней силовой берём 3.5 МЕТ (умеренная) или
+    5.0 при тяжёлых ощущениях. Если длительность неизвестна — прикидываем по числу
+    подходов (~1.5 мин на подход с отдыхом).
+    """
+    if not weight_kg:
+        return 0
+    mins = minutes or max(10, int(sets_done * 1.5))
+    met = 5.0 if hard else 3.5
+    return max(0, round(met * float(weight_kg) * (mins / 60.0)))

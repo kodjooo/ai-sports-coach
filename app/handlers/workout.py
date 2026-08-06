@@ -86,6 +86,12 @@ async def _send_exercise_card(target, item: dict, caption: str, reply_markup=Non
     path = _gif_path(item.get("gif"))
     if path:
         try:
+            # Одно-кадровые GIF Telegram отдаёт файлом-документом — шлём их как фото
+            with open(path, "rb") as f:
+                frames = f.read().count(b"\x21\xF9\x04")
+            if frames <= 1:
+                return await target.answer_photo(FSInputFile(path), caption=caption,
+                                                 reply_markup=reply_markup)
             return await target.answer_animation(FSInputFile(path), caption=caption,
                                                  reply_markup=reply_markup)
         except Exception:
@@ -248,7 +254,8 @@ async def _begin(target, user_tg: int, state: FSMContext) -> None:
         cooldown=stored_cooldown,
     )
     # Прячем главное меню на время тренировки (чтобы случайно не начать новую)
-    await target.answer("🏋️ Поехали! Начнём с разминки — по одному движению.", reply_markup=workout_menu())
+    await _remember(state, await target.answer(
+        "🏋️ Поехали! Начнём с разминки — по одному движению.", reply_markup=workout_menu()))
     # Разминка пошагово: движения каталога с GIF; если их нет — старый текст
     if warm_items:
         await _show_warmup_step(target, state)
@@ -450,9 +457,10 @@ async def _advance(target, state: FSMContext) -> None:
         data2 = await state.get_data()
         first_cool = (data2.get("cool_items") or [{}])[0].get("name")
         nxt = f" Дальше: <b>{first_cool}</b> — {_equipment_note({'name': first_cool})}." if first_cool else ""
-        await _rest_between_phases(
-            target, state=state, text=f"💪 Основная часть готова! Отдышись ~30–60 сек — и лёгкая заминка 🧘{nxt}")
-        await _show_cooldown(target, state)
+        await _step(target, state,
+                    f"💪 Основная часть готова! Отдышись 45 сек — и лёгкая заминка 🧘{nxt}")
+        await state.update_data(after_rest="cooldown")
+        _start_rest(target, 45, state)
 
 
 @router.callback_query(Workout.in_progress, F.data == "wk:skipset")
@@ -531,7 +539,8 @@ async def _rest_between_phases(target, text: str, state: FSMContext | None = Non
 @router.callback_query(Workout.in_progress, F.data == "wk:warmup_done")
 async def warmup_done(cb: CallbackQuery, state: FSMContext) -> None:
     await cb.answer()
-    await _rest_between_phases(cb.message, state=state, text="🧘 Разминка окончена — переведи дух ~30 сек, и переходим к основной части 💪")
+    await _step(cb.message, state, "🧘 Разминка окончена — переведи дух 30 сек, потом начнём 💪")
+    _start_rest(cb.message, 30, state)
     await _show_set(cb.message, state)
 
 
@@ -546,8 +555,8 @@ async def warm_next(cb: CallbackQuery, state: FSMContext) -> None:
         await state.update_data(warm_idx=idx)
         await _show_warmup_step(cb.message, state)
     else:
-        await _rest_between_phases(cb.message, state=state, text="🧘 Разминка окончена — переведи дух ~30 сек, и переходим к основной части 💪")
-        await _show_set(cb.message, state)
+        await _step(cb.message, state, "🧘 Разминка окончена — переведи дух 30 сек, потом начнём 💪")
+        _start_rest(cb.message, 30, state)
 
 
 @router.callback_query(Workout.in_progress, F.data == "wk:cool_next")
@@ -595,9 +604,17 @@ async def _rest_timer(message, seconds: int, state: FSMContext | None = None) ->
             await asyncio.sleep(seconds - seconds / 2)
         else:
             await asyncio.sleep(seconds)
-        await _step(message, state, "⏱ Время! Следующий подход 💪")
         if state is not None:
-            await _show_set(message, state)
+            data = await state.get_data()
+            if data.get("after_rest") == "cooldown":  # пауза перед заминкой
+                await state.update_data(after_rest=None)
+                await _step(message, state, "⏱ Поехали, заминка 🧘")
+                await _show_cooldown(message, state)
+            else:
+                await _step(message, state, "⏱ Время! Следующий подход 💪")
+                await _show_set(message, state)
+        else:
+            await _step(message, state, "⏱ Время! Следующий подход 💪")
     except asyncio.CancelledError:
         return  # отдых отменён (завершение/пропуск) — карточку не показываем
     except Exception:
@@ -657,8 +674,14 @@ async def _finish_inner(target, state: FSMContext) -> None:
         burn_summary = summary + (" | " + "; ".join(extra) if extra else "")
         # Активность была, если сделаны подходы ИЛИ хотя бы разминка
         if logged or warm_done:
-            burned = await llm.estimate_burn(
-                burn_summary, float(user.weight_kg) if user.weight_kg else None, user.sex
+            # Расход считаем формулой МЕТ (стабильно, бесплатно и ближе к фитнес-трекерам),
+            # LLM для этого не нужна — она систематически завышала.
+            from app.core.nutrition import estimate_burn_mets
+            hard_flag = any((l.get("effort") if isinstance(l, dict) else None) == "hard"
+                            for l in (logged or []))
+            burned = estimate_burn_mets(
+                float(user.weight_kg) if user.weight_kg else None,
+                dur_min, sets_done=len(logged or []), hard=hard_flag,
             )
         else:
             burned = 0
